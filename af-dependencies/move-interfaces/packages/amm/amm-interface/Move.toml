@@ -1,0 +1,17 @@
+[package]
+name = "AftermathAmmInterface"
+version = "1.0.1"
+published-at = "0x8d8bba50c626753589aa5abbc006c9fa07736f55f4e6fb57481682997c0b0d52"
+# upgrade-cap = "0x389daad7ed25bc149e0e7a5dcbc940a5a93d0b2a171e28ed8e5fdea904a18b36"
+
+[dependencies.Sui]
+git = "https://github.com/MystenLabs/sui.git"
+subdir = "crates/sui-framework/packages/sui-framework"
+rev = "framework/mainnet"
+# rev = "mainnet-v1.3.2"
+
+[dependencies.AftermathAmm]
+local = "../amm/"
+
+[addresses]
+amm_interface = "0x0625dc2cd40aee3998a1d6620de8892964c15066e0a285d8b573910ed4c75d50"

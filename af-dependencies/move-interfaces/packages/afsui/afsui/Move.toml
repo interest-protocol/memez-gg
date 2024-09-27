@@ -1,0 +1,15 @@
+[package]
+name = "AfSui"
+version = "0.0.1"
+published-at = "0xf325ce1300e8dac124071d3152c5c5ee6174914f8bc2161e88329cf579246efc"
+
+[dependencies.Sui]
+git = "https://github.com/MystenLabs/sui.git"
+subdir = "crates/sui-framework/packages/sui-framework"
+rev = "framework/mainnet"
+
+[dependencies.Safe]
+local = "../../utility/safe"
+
+[addresses]
+afsui = "0xf325ce1300e8dac124071d3152c5c5ee6174914f8bc2161e88329cf579246efc"

@@ -1,0 +1,38 @@
+[package]
+name = "AftermathLSD"
+version = "0.0.1"
+published-at = "0x13881e2d84136c31a89bcc0b849dd15701004a6092ad9bd466d1195016bdb410"
+
+[dependencies.Sui]
+git = "https://github.com/MystenLabs/sui.git"
+subdir = "crates/sui-framework/packages/sui-framework"
+rev = "framework/mainnet"
+
+[dependencies.SuiSystem]
+git = "https://github.com/MystenLabs/sui.git"
+subdir = "crates/sui-framework/packages/sui-system"
+rev = "framework/mainnet"
+
+[dependencies.Safe]
+local = "../../utility/safe"
+
+[dependencies.AfSui]
+local = "../afsui"
+
+[dependencies.SuiSystemUtils]
+local = "../../utility/sui-system-utils"
+
+[dependencies.LinkedSet]
+local = "../../utility/linked-set"
+
+[dependencies.utilities]
+local = "../../utility/utilities"
+
+[dependencies.AfSuiReferralVault]
+local = "../afsui-referral-vault"
+
+[dependencies.AfSuiTreasury]
+local = "../afsui-treasury"
+
+[addresses]
+lsd = "0x13881e2d84136c31a89bcc0b849dd15701004a6092ad9bd466d1195016bdb410"

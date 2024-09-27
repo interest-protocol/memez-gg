@@ -1,0 +1,15 @@
+[package]
+name = "AfterburnerVaults"
+version = "0.0.1"
+published-at = "0xf4ca5e7276ba7b55b7d46ba17c703fcbd3f4d0d37d28c1d3818dc9007ce1c23f"
+
+[dependencies.Sui]
+git = "https://github.com/MystenLabs/sui.git"
+subdir = "crates/sui-framework/packages/sui-framework"
+rev = "framework/mainnet"
+
+[dependencies.utilities]
+local = "../../utility/utilities"
+
+[addresses]
+afterburner_vaults = "0xf4ca5e7276ba7b55b7d46ba17c703fcbd3f4d0d37d28c1d3818dc9007ce1c23f"

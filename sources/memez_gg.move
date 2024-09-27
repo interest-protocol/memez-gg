@@ -40,7 +40,7 @@ use memez_gg::{
 
 // @dev Mimic UniV2
 const WEIGHTS: vector<u64> = vector[500_000_000_000_000_000, 500_000_000_000_000_000];
-// @dev Maixmum volatility 
+// @dev Maximum volatility
 const FLATNESS: u64 = 0; 
 const DEAD_WALLET: address = @0x0;
 // @dev 1 billion total supply with 9 decimals

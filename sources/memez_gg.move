@@ -105,6 +105,10 @@ fun init(ctx: &mut TxContext) {
 
 // === Public View Functions ===
 
+public fun pool_exists<Meme>(memez_registry: &MemezRegistry): bool{
+    memez_registry.lp_coins.contains(type_name::get<RegistryKey<SUI, Meme>>())
+}
+
 public fun pool_from_lp_coin<LpCoin>(memez_registry: &MemezRegistry): address {
     *memez_registry.lp_coins.borrow(type_name::get<LpCoin>())
 }
@@ -294,7 +298,7 @@ fun new_pool_and_vault<Meme, LpCoin>(
     ctx: &mut TxContext,
 ): (MemezVaultCap<LpCoin>, DaoFeePool<LpCoin>) {
     assert_weights(weights);
-    assert!(!memez_registry.pools.contains(type_name::get<RegistryKey<SUI, Meme>>()), InvalidPool);
+    assert!(!memez_registry.pool_exists<Meme>(), InvalidPool);
 
     let (pool, lp_coin) = create_pool_2_coins<LpCoin, SUI, Meme>(
         create_pool_cap,

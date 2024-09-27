@@ -345,7 +345,7 @@ fun new_pool_and_vault<Meme, LpCoin>(
 
 fun assert_weights(weights: vector<u64>) {
     assert!(weights.length() == 2, InvalidWeightLength);
-    assert!(weights[0] >= MAXIMUM_SUI_WEIGHT, InvalidSuiWeight);
+    assert!(MAXIMUM_SUI_WEIGHT >= weights[0], InvalidSuiWeight);
     assert!(
         MAXIMUM_WEIGHT > weights[0] 
         && MAXIMUM_WEIGHT > weights[1]

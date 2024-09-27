@@ -349,6 +349,7 @@ fun assert_weights(weights: vector<u64>) {
     assert!(
         MAXIMUM_WEIGHT > weights[0] 
         && MAXIMUM_WEIGHT > weights[1]
+        && weights[0] + weights[1] == MAXIMUM_WEIGHT
         && weights[0] != 0
         && weights[1] != 0,
         InvalidWeights

@@ -31,6 +31,7 @@ use referral_vault::referral_vault::ReferralVault;
 
 use memez_gg::{
     events,
+    black_ice,
     lp_metadata,
     version::CurrentVersion,
     vault::{MemezVaultConfig, MemezVaultCap},
@@ -38,11 +39,8 @@ use memez_gg::{
 
 // === Constants ===
 
-// @dev Mimic UniV2
-const WEIGHTS: vector<u64> = vector[500_000_000_000_000_000, 500_000_000_000_000_000];
 // @dev Maximum volatility
 const FLATNESS: u64 = 0; 
-const DEAD_WALLET: address = @0x0;
 // @dev 1 billion total supply with 9 decimals
 const MEME_SUPPLY: u64 = 1_000_000_000_000_000_000;
 // @dev 90% of the supply
@@ -51,6 +49,10 @@ const MAX_BURN_AMOUNT: u64 = 900_000_000_000_000_000;
 const TWO_PERCENT_BPS: u16 = 200;
 // @dev 100% slippage since we are the deployer and first buyer, slippage is not an issue
 const MAXIMUM_SLIPPAGE: u64 = 1_000_000_000_000_000_000;
+
+const MAXIMUM_WEIGHT: u64 = 1_000_000_000_000_000_000;
+
+const MAXIMUM_SUI_WEIGHT: u64 = 500_000_000_000_000_000;
 
 // Constants 
 
@@ -62,6 +64,18 @@ const InvalidMemeDecimals: vector<u8> = b"Meme Coin must have 9 decimals";
 
 #[error]
 const InvalidBurnAmount: vector<u8> = b"You cannot burn more than 90% of the supply";
+
+#[error]
+const InvalidWeights: vector<u8> = b"Weights are out of range";
+
+#[error]
+const InvalidSuiWeight: vector<u8> = b"Maximum weight for Sui is 50%";
+
+#[error]
+const InvalidWeightLength: vector<u8> = b"Please provide two weight values";
+
+#[error]
+const InvalidPool: vector<u8> = b"The pair already exists";
 
 // Structs 
 
@@ -108,6 +122,7 @@ public fun new<Meme, LpCoin>(
     vault_config: &MemezVaultConfig,
     meme_metadata: &CoinMetadata<Meme>,
     create_pool_cap: CreatePoolCap<LpCoin>,
+    weights: vector<u64>,
     sui_coin: Coin<SUI>,
     meme_coin: Coin<Meme>,
     version: &CurrentVersion,
@@ -121,6 +136,7 @@ public fun new<Meme, LpCoin>(
         vault_config,
         meme_metadata,
         create_pool_cap,
+        weights,
         sui_coin,
         meme_coin,
         ctx
@@ -139,6 +155,7 @@ public fun launch<Meme, LpCoin>(
     meme_treasury: TreasuryCap<Meme>,
     meme_metadata: &CoinMetadata<Meme>,
     create_pool_cap: CreatePoolCap<LpCoin>,
+    weights: vector<u64>,
     sui_coin: Coin<SUI>,
     burn_amount: u64,
     version: &CurrentVersion,
@@ -152,7 +169,12 @@ public fun launch<Meme, LpCoin>(
         vault_config, 
         meme_treasury, 
         meme_metadata, 
-        create_pool_cap, sui_coin, burn_amount, ctx);
+        create_pool_cap, 
+        weights,
+        sui_coin, 
+        burn_amount, 
+        ctx
+    );
 
     transfer::public_share_object(pool);
 
@@ -166,6 +188,7 @@ public fun start_launch_with_first_buy<Meme, LpCoin>(
     meme_treasury: TreasuryCap<Meme>,
     meme_metadata: &CoinMetadata<Meme>,
     create_pool_cap: CreatePoolCap<LpCoin>,
+    weights: vector<u64>,
     sui_coin: Coin<SUI>,
     burn_amount: u64,
     version: &CurrentVersion,
@@ -180,6 +203,7 @@ public fun start_launch_with_first_buy<Meme, LpCoin>(
         meme_treasury, 
         meme_metadata, 
         create_pool_cap, 
+        weights,
         sui_coin, 
         burn_amount, 
         ctx
@@ -231,6 +255,7 @@ fun launch_impl<Meme, LpCoin>(
     mut meme_treasury: TreasuryCap<Meme>,
     meme_metadata: &CoinMetadata<Meme>,
     create_pool_cap: CreatePoolCap<LpCoin>,
+    weights: vector<u64>,
     sui_coin: Coin<SUI>,
     burn_amount: u64,
     ctx: &mut TxContext,
@@ -241,8 +266,8 @@ fun launch_impl<Meme, LpCoin>(
 
     let mut meme_coin = meme_treasury.mint(MEME_SUPPLY, ctx);
 
-    transfer::public_transfer(meme_coin.split(burn_amount, ctx), DEAD_WALLET);
-    transfer::public_transfer(meme_treasury, DEAD_WALLET);
+    black_ice::freeze_it(meme_coin.split(burn_amount, ctx), ctx); 
+    black_ice::freeze_it(meme_treasury, ctx);
 
     new_pool_and_vault(
         memez_registry,
@@ -250,6 +275,7 @@ fun launch_impl<Meme, LpCoin>(
         vault_config,
         meme_metadata,
         create_pool_cap,
+        weights,
         sui_coin,
         meme_coin,
         ctx
@@ -262,10 +288,14 @@ fun new_pool_and_vault<Meme, LpCoin>(
     vault_config: &MemezVaultConfig,
     meme_metadata: &CoinMetadata<Meme>,
     create_pool_cap: CreatePoolCap<LpCoin>,
+    weights: vector<u64>,
     sui_coin: Coin<SUI>,
     meme_coin: Coin<Meme>,
     ctx: &mut TxContext,
 ): (MemezVaultCap<LpCoin>, DaoFeePool<LpCoin>) {
+    assert_weights(weights);
+    assert!(!memez_registry.pools.contains(type_name::get<RegistryKey<SUI, Meme>>()), InvalidPool);
+
     let (pool, lp_coin) = create_pool_2_coins<LpCoin, SUI, Meme>(
         create_pool_cap,
         pool_registry, 
@@ -274,7 +304,7 @@ fun new_pool_and_vault<Meme, LpCoin>(
         lp_metadata::symbol(meme_metadata.get_symbol()), 
         lp_metadata::description(),
         lp_metadata::icon_url(), 
-        WEIGHTS,
+        weights,
         FLATNESS,
         vector[0, 0],
         vector[0, 0],
@@ -291,7 +321,7 @@ fun new_pool_and_vault<Meme, LpCoin>(
     memez_registry.lp_coins.add(type_name::get<LpCoin>(), object::id(&pool).to_address());
     memez_registry.pools.add(type_name::get<RegistryKey<SUI, Meme>>(), object::id(&pool).to_address());
 
-    transfer::public_transfer(lp_coin, DEAD_WALLET);
+    black_ice::freeze_it(lp_coin, ctx);
 
     let (vault, cap) = vault_config.new<Meme, LpCoin>( ctx);
     
@@ -307,4 +337,16 @@ fun new_pool_and_vault<Meme, LpCoin>(
     transfer::public_transfer(owner_cap, @admin);
 
     (cap, pool)
+}
+
+fun assert_weights(weights: vector<u64>) {
+    assert!(weights.length() == 2, InvalidWeightLength);
+    assert!(weights[0] >= MAXIMUM_SUI_WEIGHT, InvalidSuiWeight);
+    assert!(
+        MAXIMUM_WEIGHT > weights[0] 
+        && MAXIMUM_WEIGHT > weights[1]
+        && weights[0] != 0
+        && weights[1] != 0,
+        InvalidWeights
+    );
 }

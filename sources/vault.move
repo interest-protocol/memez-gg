@@ -29,7 +29,7 @@ const MAX_FEE: u64 = 200_000_000;
 // === Errors ===
 
 #[error]
-const InvalidFee: vector<u8> = b"The maximum fee is 10%";
+const InvalidFee: vector<u8> = b"The maximum fee is 20%";
 #[error]
 const InvalidCap: vector<u8> = b"The cap is not for this vault";
 

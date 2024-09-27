@@ -22,7 +22,7 @@ use memez_gg::{
 // 1e9
 const FEE_DENOMINATOR: u64 = 1_000_000_000;
 // 10% 
-const DEFAULT_FEE: u64 = 10_000_000;
+const DEFAULT_FEE: u64 = 100_000_000;
 // 20%
 const MAX_FEE: u64 = 200_000_000;
 

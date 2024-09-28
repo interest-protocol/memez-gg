@@ -121,7 +121,7 @@ public fun new<Meme, LpCoin>(
     meme_coin: Coin<Meme>,
     version: &CurrentVersion,
     ctx: &mut TxContext,
-): (MemezVaultCap<LpCoin>, DaoFeePool<LpCoin>) {
+): (DaoFeePool<LpCoin>, MemezVaultCap<LpCoin>, Coin<LpCoin>) {
     version.assert_is_valid();
 
     new_pool_and_vault(
@@ -149,7 +149,7 @@ public fun launch<Meme, LpCoin>(
     burn_amount: u64,
     version: &CurrentVersion,
     ctx: &mut TxContext,
-): (MemezVaultCap<LpCoin>, DaoFeePool<LpCoin>) {
+): (DaoFeePool<LpCoin>, MemezVaultCap<LpCoin>) {
     version.assert_is_valid();
 
     launch_impl(
@@ -184,7 +184,7 @@ fun launch_impl<Meme, LpCoin>(
     sui_coin: Coin<SUI>,
     burn_amount: u64,
     ctx: &mut TxContext,
-): (MemezVaultCap<LpCoin>, DaoFeePool<LpCoin>) {
+): (DaoFeePool<LpCoin>, MemezVaultCap<LpCoin>) {
     assert!(meme_treasury.total_supply() == 0, InvalidMemeSupply);
     assert!(meme_metadata.get_decimals() == 9, InvalidMemeDecimals);
     assert!(MAX_BURN_AMOUNT >= burn_amount, InvalidBurnAmount);
@@ -194,7 +194,7 @@ fun launch_impl<Meme, LpCoin>(
     black_ice::freeze_it(meme_coin.split(burn_amount, ctx), ctx); 
     black_ice::freeze_it(meme_treasury, ctx);
 
-    new_pool_and_vault(
+    let (pool, cap, lp_coin) = new_pool_and_vault(
         memez_registry,
         pool_registry,
         vault_config,
@@ -204,7 +204,11 @@ fun launch_impl<Meme, LpCoin>(
         sui_coin,
         meme_coin,
         ctx
-    )
+    );
+
+    black_ice::freeze_it(lp_coin, ctx);
+
+    (pool, cap)
 }
 
 fun new_pool_and_vault<Meme, LpCoin>(
@@ -217,7 +221,7 @@ fun new_pool_and_vault<Meme, LpCoin>(
     sui_coin: Coin<SUI>,
     meme_coin: Coin<Meme>,
     ctx: &mut TxContext,
-): (MemezVaultCap<LpCoin>, DaoFeePool<LpCoin>) {
+): (DaoFeePool<LpCoin>, MemezVaultCap<LpCoin>, Coin<LpCoin>) {
     assert_weights(weights);
     assert!(!memez_registry.pool_exists<Meme>(), InvalidPool);
 
@@ -248,8 +252,6 @@ fun new_pool_and_vault<Meme, LpCoin>(
     memez_registry.lp_coins.add(type_name::get<LpCoin>(), pool_address);
     memez_registry.pools.add(type_name::get<RegistryKey<SUI, Meme>>(), pool_address);
 
-    black_ice::freeze_it(lp_coin, ctx);
-
     let (vault, cap) = vault_config.new<Meme, LpCoin>( ctx);
 
     let vault_address = vault.addy();
@@ -265,7 +267,7 @@ fun new_pool_and_vault<Meme, LpCoin>(
     vault.share();
     transfer::public_transfer(owner_cap, @admin);
 
-    (cap, pool)
+    (pool, cap, lp_coin)
 }
 
 fun assert_weights(weights: vector<u64>) {

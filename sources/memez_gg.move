@@ -252,7 +252,7 @@ fun new_pool_and_vault<Meme, LpCoin>(
     memez_registry.lp_coins.add(type_name::get<LpCoin>(), pool_address);
     memez_registry.pools.add(type_name::get<RegistryKey<SUI, Meme>>(), pool_address);
 
-    let (vault, cap) = vault_config.new<Meme, LpCoin>( ctx);
+    let (vault, cap) = vault_config.new<Meme, LpCoin>(ctx);
 
     let vault_address = vault.addy();
     

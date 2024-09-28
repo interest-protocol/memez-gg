@@ -16,4 +16,3 @@ public(package) fun freeze_it<T: store>(data: T, ctx: &mut TxContext) {
 
     transfer::freeze_object(black_ice);
 }
-

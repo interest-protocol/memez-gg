@@ -32,4 +32,3 @@ public(package) fun symbol(meme_symbol: ascii::String): vector<u8> {
 public(package) fun description(): vector<u8> {
     b"Memez.gg Liquidity Provider Coin"
 }
-

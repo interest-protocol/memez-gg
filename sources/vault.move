@@ -195,16 +195,16 @@ public fun collect_fee<Meme, LpCoin>(
 // === Private Functions ===
 
 fun register_coin<CoinType>(
-    vault: &mut UID,
+    id: &mut UID,
 ) {
     df::add(
-        vault, 
+        id, 
         BalanceKey(type_name::get<CoinType>()),
         balance::zero<CoinType>()
     );
 
     df::add(
-        vault, 
+        id, 
         AdminBalanceKey(type_name::get<CoinType>()),
         balance::zero<CoinType>()
     );

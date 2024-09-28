@@ -1,5 +1,5 @@
 module memez_gg::memez_gg;
-// Imports 
+// === Imports ===
 
 use std::type_name::{Self, TypeName};
 
@@ -171,7 +171,7 @@ public fun share<LpCoin>(pool: DaoFeePool<LpCoin>) {
     transfer::public_share_object(pool);
 }
 
-// === Public Private ===
+// === Private Functions ===
 
 fun launch_impl<Meme, LpCoin>(
     memez_registry: &mut MemezRegistry,

@@ -114,7 +114,7 @@ public fun collect<Meme, LpCoin>(
     (sui_balance.into_coin(ctx), meme_balance.into_coin(ctx))
 }   
 
-// View Functions 
+// === View Functions ===
 
 public fun balances<Meme, LpCoin>(vault: &MemezVault<LpCoin>): (u64, u64) {
     let sui_value = borrow_balance<SUI>(&vault.id).value();

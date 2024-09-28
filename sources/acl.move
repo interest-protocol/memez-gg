@@ -23,7 +23,7 @@ const InvalidEpoch: vector<u8> = b"You can only transfer the super admin after t
 const InvalidAdmin: vector<u8> = b"It is not an admin";
 
 #[error]
-const InvalidNewAdmin: vector<u8> = b"We do not allow transfers to the zero address or to oneself";
+const InvalidNewSuperAdmin: vector<u8> = b"We do not allow transfers to the zero address or to oneself";
 
 // === Structs === 
 
@@ -133,7 +133,7 @@ public fun start_super_admin_transfer(super_admin: &mut SuperAdmin, new_admin: a
     super_admin.new_admin = new_admin;
 
     //@dev Destroy it instead for the Sui rebate
-    assert!(new_admin != @0x0 && new_admin != ctx.sender(), InvalidNewAdmin);
+    assert!(new_admin != @0x0 && new_admin != ctx.sender(), InvalidNewSuperAdmin);
 
     emit(StartSuperAdminTransfer {
         new_admin,

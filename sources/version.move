@@ -19,9 +19,7 @@ public struct Version has key {
     version: u64,
 }
 
-public struct CurrentVersion has drop {
-    version: u64
-}
+public struct CurrentVersion(u64) has drop;
 
 // === Initializer ===
 
@@ -37,9 +35,7 @@ fun init(ctx: &mut TxContext) {
 // === Public Functions ===
 
 public fun get_version(self: &Version): CurrentVersion {
-    CurrentVersion {
-        version: self.version
-    }
+    CurrentVersion(self.version)
 }
 
 // === Admin Functions === 
@@ -51,5 +47,5 @@ public fun update_version(self: &mut Version, _: &AuthWitness) {
 // === Public Package Functions ===
 
 public(package) fun assert_is_valid(self: &CurrentVersion) {
-    assert!(self.version == VERSION, InvalidVersion);
+    assert!(self.0 == VERSION, InvalidVersion);
 }

@@ -35,13 +35,9 @@ const InvalidCap: vector<u8> = b"The cap is not for this vault";
 
 // Structs 
 
-public struct BalanceKey has copy, store, drop {
-    coin_type: TypeName,
-}
+public struct BalanceKey(TypeName) has copy, store, drop;
 
-public struct AdminBalanceKey has copy, store, drop {
-    coin_type: TypeName,
-}
+public struct AdminBalanceKey(TypeName) has copy, store, drop;
 
 public struct MemezVault<phantom CoinType> has key {
     id: UID,
@@ -82,8 +78,8 @@ public fun receive<Meme, LpCoin>(
     let sui_coin = public_receive(&mut vault.id, sui_receiving);
     let meme_coin = public_receive(&mut vault.id, meme_receiving);
 
-    vault.borrow_balance_mut<SUI, LpCoin>().join(sui_coin.into_balance());
-    vault.borrow_balance_mut<Meme, LpCoin>().join(meme_coin.into_balance());
+    borrow_balance_mut<SUI>(&mut vault.id).join(sui_coin.into_balance());
+    borrow_balance_mut<Meme>(&mut vault.id).join(meme_coin.into_balance());
 }
 
 public fun collect<Meme, LpCoin>(
@@ -97,29 +93,29 @@ public fun collect<Meme, LpCoin>(
     // @dev sanity check as LpCoins are OTWs
     assert!(vault.id.to_address() == cap.vault_id, InvalidCap);
 
-    let mut balance_sui = vault.borrow_balance_mut<SUI, LpCoin>().withdraw_all();
-    let mut balance_meme = vault.borrow_balance_mut<Meme, LpCoin>().withdraw_all();
+    let mut sui_balance = borrow_balance_mut<SUI>(&mut vault.id).withdraw_all();
+    let mut meme_balance = borrow_balance_mut<Meme>(&mut vault.id).withdraw_all();
 
-    let sui_value = balance_sui.value();
-    let meme_value = balance_meme.value();
+    let sui_value = sui_balance.value();
+    let meme_value = meme_balance.value();
 
     let sui_fee = math64::mul_div_up(sui_value, vault.fee, FEE_DENOMINATOR);
     let meme_fee = math64::mul_div_up(meme_value, vault.fee, FEE_DENOMINATOR);
 
-    let admin_balance_sui = vault.borrow_admin_balance_mut<SUI, LpCoin>();
-    admin_balance_sui.join(balance_sui.split(sui_fee));
+    let sui_admin_balance = borrow_admin_balance_mut<SUI>(&mut vault.id);
+    sui_admin_balance.join(sui_balance.split(sui_fee));
 
-    let admin_balance_meme = vault.borrow_admin_balance_mut<Meme, LpCoin>();
-    admin_balance_meme.join(balance_meme.split(meme_fee));
+    let meme_admin_balance = borrow_admin_balance_mut<Meme>(&mut vault.id);
+    meme_admin_balance.join(meme_balance.split(meme_fee));
 
-    (balance_sui.into_coin(ctx), balance_meme.into_coin(ctx))
+    (sui_balance.into_coin(ctx), meme_balance.into_coin(ctx))
 }   
 
 // View Functions 
 
 public fun balances<Meme, LpCoin>(vault: &MemezVault<LpCoin>): (u64, u64) {
-    let sui_value = vault.borrow_balance<Meme, LpCoin>().value();
-    let meme_value = vault.borrow_balance<Meme, LpCoin>().value();
+    let sui_value = borrow_balance<SUI>(&vault.id).value();
+    let meme_value = borrow_balance<Meme>(&vault.id).value();
 
     (sui_value, meme_value)
 }
@@ -150,8 +146,8 @@ public(package) fun new<Meme, LpCoin>(
         vault_id: vault.id.to_address()
     };
 
-    vault.register_coin<SUI, LpCoin>();
-    vault.register_coin<Meme, LpCoin>();
+    register_coin<SUI>(&mut vault.id);
+    register_coin<Meme>(&mut vault.id);
 
     (vault, cap)
 }
@@ -187,53 +183,53 @@ public fun collect_fee<Meme, LpCoin>(
     _auth: &AuthWitness,
     ctx: &mut TxContext,
 ): (Coin<SUI>, Coin<Meme>) {
-    let balance_sui = vault.borrow_admin_balance_mut<SUI, LpCoin>().withdraw_all();
-    let balance_meme = vault.borrow_admin_balance_mut<Meme, LpCoin>().withdraw_all();
+    let sui_balance = borrow_admin_balance_mut<SUI>(&mut vault.id).withdraw_all();
+    let meme_balance = borrow_admin_balance_mut<Meme>(&mut vault.id).withdraw_all();
 
-    (balance_sui.into_coin(ctx), balance_meme.into_coin(ctx))
+    (sui_balance.into_coin(ctx), meme_balance.into_coin(ctx))
 }
 
 // === Private Functions ===
 
-fun register_coin<CoinType, LpCoin>(
-    vault: &mut MemezVault<LpCoin>,
+fun register_coin<CoinType>(
+    vault: &mut UID,
 ) {
     df::add(
-        &mut vault.id, 
-        BalanceKey { coin_type: type_name::get<CoinType>() },
+        vault, 
+        BalanceKey(type_name::get<CoinType>()),
         balance::zero<CoinType>()
     );
 
     df::add(
-        &mut vault.id, 
-        AdminBalanceKey { coin_type: type_name::get<CoinType>() },
+        vault, 
+        AdminBalanceKey(type_name::get<CoinType>()),
         balance::zero<CoinType>()
     );
 }
 
-fun borrow_balance<CoinType, LpCoin>(
-    vault: &MemezVault<LpCoin>,
+fun borrow_balance<CoinType>(
+    id: &UID,
 ): &Balance<CoinType> {
     df::borrow(
-        &vault.id, 
-        BalanceKey { coin_type: type_name::get<CoinType>() },
+        id, 
+        BalanceKey(type_name::get<CoinType>()),
     )
 }
 
-fun borrow_balance_mut<CoinType, LpCoin>(
-    vault: &mut MemezVault<LpCoin>,
+fun borrow_balance_mut<CoinType>(
+    id: &mut UID,
 ): &mut Balance<CoinType> {
     df::borrow_mut(
-        &mut vault.id, 
-        BalanceKey { coin_type: type_name::get<CoinType>() },
+        id, 
+        BalanceKey(type_name::get<CoinType>()),
     )
 }
 
-fun borrow_admin_balance_mut<CoinType, LpCoin>(
-    vault: &mut MemezVault<LpCoin>,
+fun borrow_admin_balance_mut<CoinType>(
+    id: &mut UID,
 ): &mut Balance<CoinType> {
     df::borrow_mut(
-        &mut vault.id, 
-        AdminBalanceKey { coin_type: type_name::get<CoinType>() },
+        id, 
+        AdminBalanceKey(type_name::get<CoinType>()),
     )
 }

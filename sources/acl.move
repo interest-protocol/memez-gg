@@ -10,6 +10,7 @@ use sui::{
 
 // @dev Each epoch is roughly 1 day
 const THREE_EPOCHS: u64 = 3;
+
 // @dev Sentinel value for SuperAdmin.start
 const MAX_U64: u64 = 0xFFFFFFFFFFFFFFFF;
 
@@ -20,6 +21,9 @@ const InvalidEpoch: vector<u8> = b"You can only transfer the super admin after t
 
 #[error]
 const InvalidAdmin: vector<u8> = b"It is not an admin";
+
+#[error]
+const InvalidNewAdmin: vector<u8> = b"We do not allow transfers to the zero address or to oneself";
 
 // === Structs === 
 
@@ -129,7 +133,7 @@ public fun start_super_admin_transfer(super_admin: &mut SuperAdmin, new_admin: a
     super_admin.new_admin = new_admin;
 
     //@dev Destroy it instead for the Sui rebate
-    assert!(new_admin != @0x0);
+    assert!(new_admin != @0x0 && new_admin != ctx.sender(), InvalidNewAdmin);
 
     emit(StartSuperAdminTransfer {
         new_admin,

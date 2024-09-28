@@ -105,11 +105,11 @@ public fun destroy_admin(admin: Admin) {
 
 public use fun start_super_admin_transfer as SuperAdmin.start_transfer;
 public fun start_super_admin_transfer(super_admin: &mut SuperAdmin, new_admin: address, ctx: &mut TxContext) {
-    super_admin.start = ctx.epoch();
-    super_admin.new_admin = new_admin;
-
     //@dev Destroy it instead for the Sui rebate
     assert!(new_admin != @0x0 && new_admin != ctx.sender(), InvalidNewSuperAdmin);
+    
+    super_admin.start = ctx.epoch();
+    super_admin.new_admin = new_admin;
 
     events::start_super_admin_transfer(new_admin, super_admin.start);
 }

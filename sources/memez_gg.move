@@ -224,6 +224,8 @@ public fun swap_exact_in<CoinIn, CoinOut, LpCoin>(
     revenue::take_swap_fee(&self.id, coin_in, ctx);
     revenue::take_freeze_fee(&self.id, coin_in, ctx);
 
+    self.start_liquidity_event(pool_registry, protocol_fee_vault, treasury, insurance_fund, referral_vault, ctx);
+
     let coin_in_value = coin_in.value();
 
     af_swap::swap_exact_in(
@@ -262,26 +264,7 @@ public fun swap_exact_out<CoinIn, CoinOut, LpCoin>(
     revenue::take_swap_fee(&self.id, coin_in, ctx);
     revenue::take_freeze_fee(&self.id, coin_in, ctx);
 
-    let sui_coin = liquidity::start(&mut self.id, ctx);
-
-    if (sui_coin.value() == 0) {
-        sui_coin.destroy_zero();
-    } else {
-        let lp_coin =af_deposit::deposit_1_coins(
-            self.af_pool_mut<LpCoin>(),
-            pool_registry,
-            protocol_fee_vault,
-            treasury,
-            insurance_fund,
-            referral_vault,
-            sui_coin,
-            0,
-            0,
-            ctx
-        );
-
-        black_ice::freeze_it(lp_coin, ctx);
-    };
+    self.start_liquidity_event(pool_registry, protocol_fee_vault, treasury, insurance_fund, referral_vault, ctx);
 
     af_swap::swap_exact_out(
         self.af_pool_mut<LpCoin>(),
@@ -599,6 +582,37 @@ fun new_impl<Meme, LpCoin>(
     };
 
     (Init { pool: memez_pool }, deployer, lp_coin)
+}
+
+fun start_liquidity_event<LpCoin>(
+    self: &mut MemezPool<LpCoin>,
+    pool_registry: &PoolRegistry,
+    protocol_fee_vault: &ProtocolFeeVault,
+    treasury: &mut Treasury,
+    insurance_fund: &mut InsuranceFund,
+    referral_vault: &ReferralVault,
+    ctx: &mut TxContext,
+) {
+    let sui_coin = liquidity::start(&mut self.id, ctx);
+
+    if (sui_coin.value() == 0) {
+        sui_coin.destroy_zero();
+    } else {
+        let lp_coin =af_deposit::deposit_1_coins(
+            self.af_pool_mut<LpCoin>(),
+            pool_registry,
+            protocol_fee_vault,
+            treasury,
+            insurance_fund,
+            referral_vault,
+            sui_coin,
+            0,
+            0,
+            ctx
+        );
+
+        black_ice::freeze_it(lp_coin, ctx);
+    };
 }
 
 fun assert_weights(weights: vector<u64>) {

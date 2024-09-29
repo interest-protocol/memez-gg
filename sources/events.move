@@ -48,7 +48,6 @@ public struct NewAdmin(address) has copy, store, drop;
 
 public struct RevokeAdmin(address) has copy, store, drop;
 
-
 // === Package Functions ===
 
 public(package) fun new_pool<Meme, LpCoin>(

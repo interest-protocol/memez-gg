@@ -31,7 +31,7 @@ const InvalidFreezeFee: vector<u8> = b"The maximum freeze fee is 10%";
 #[error]
 const InvalidAdminFee: vector<u8> = b"The maximum admin fee is 20%";
 
-// Structs 
+// === Structs ===
 
 public struct RevenueKey() has copy, store, drop;
 

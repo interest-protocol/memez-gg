@@ -2,11 +2,10 @@
 
 [move]
 version = 2
-manifest_digest = "30866C81046772DA1DAA63783F2C3BCF64F5814A286B86650C9994ABC0760304"
-deps_digest = "060AD7E57DFB13104F21BE5F5C3759D03F0553FC3229247D9A7A6B45F50D03A3"
+manifest_digest = "648DB3213642A7650818549E456E4CC081441378500F168FEA407AC2223222B2"
+deps_digest = "3C4103934B1E040BB6B23F1D610B4EF9F2F1166A50A104EADCF77467C004C600"
 dependencies = [
   { name = "AftermathAmm" },
-  { name = "AftermathAmmExtensionDaoFee" },
   { name = "Sui" },
 ]
 
@@ -18,19 +17,6 @@ dependencies = [
   { name = "AmmMath" },
   { name = "ProtocolFeeVault" },
   { name = "Sui" },
-]
-
-[[move.package]]
-name = "AftermathAmmExtensionDaoFee"
-source = { local = "af-dependencies/move-amm-extensions/amm-extension-dao-fee" }
-
-dependencies = [
-  { name = "AftermathAmm" },
-  { name = "InsuranceFund" },
-  { name = "ProtocolFeeVault" },
-  { name = "ReferralVault" },
-  { name = "Sui" },
-  { name = "Treasury" },
 ]
 
 [[move.package]]

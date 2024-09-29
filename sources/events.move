@@ -11,9 +11,8 @@ use sui::{
 // === Structs === 
 
 public struct NewPool has copy, drop, store {
-    pool_id: address,
-    vault_id: address,
-    vault_cap_id: address,
+    memez_pool: address,
+    af_pool: address,
     sui: TypeName,
     meme: TypeName,
     lp_coin: TypeName,
@@ -53,14 +52,12 @@ public struct RevokeAdmin(address) has copy, store, drop;
 // === Package Functions ===
 
 public(package) fun new_pool<Meme, LpCoin>(
-    pool_id: address,
-    vault_id: address,
-    vault_cap_id: address,
+    memez_pool: address, 
+    af_pool: address
 ) { 
     emit(NewPool {
-        pool_id,
-        vault_id,
-        vault_cap_id,
+        memez_pool,
+        af_pool,
         sui: type_name::get<SUI>(),
         meme: type_name::get<Meme>(),
         lp_coin: type_name::get<LpCoin>(),

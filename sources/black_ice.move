@@ -1,18 +1,22 @@
 module memez_gg::black_ice;
 
+use sui::dynamic_object_field as dof;
+
+public struct BlackIceKey() has store, copy, drop;
+
 // @dev Bonus points if you know where this is from. 
-public struct BlackIce<T: store> has key {
+public struct BlackIce<phantom T> has key {
     id: UID,
-    data: T,
 }
 
 // === Public Package Functions ===
 
-public(package) fun freeze_it<T: store>(data: T, ctx: &mut TxContext) {
-    let black_ice = BlackIce<T> {
+public(package) fun freeze_it<T: key + store>(data: T, ctx: &mut TxContext) {
+    let mut black_ice = BlackIce<T> {
         id: object::new(ctx),
-        data,
     };
+
+    dof::add(&mut black_ice.id, BlackIceKey(), data);
 
     transfer::freeze_object(black_ice);
 }

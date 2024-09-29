@@ -598,7 +598,7 @@ fun start_liquidity_event<LpCoin>(
     if (sui_coin.value() == 0) {
         sui_coin.destroy_zero();
     } else {
-        let lp_coin =af_deposit::deposit_1_coins(
+        let lp_coin = af_deposit::deposit_1_coins(
             self.af_pool_mut<LpCoin>(),
             pool_registry,
             protocol_fee_vault,

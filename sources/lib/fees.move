@@ -2,8 +2,7 @@ module memez_gg::fees;
 
 // === Constants ===    
 
-// 1e9
-const FEE_DENOMINATOR: u64 = 1_000_000_000;
+const FEE_DENOMINATOR: u64 = 1__000_000_000;
 
 const FIVE_PERCENT: u64 = { FEE_DENOMINATOR / 20 };
 
@@ -15,28 +14,20 @@ const FIFTY_PERCENT: u64 = { FEE_DENOMINATOR / 2 };
 
 // === Public Package Functions ===
 
-public(package) fun max_liquidity_fee(): u64 {
+public(package) fun five_percent(): u64 {
     FIVE_PERCENT
 }
 
-public(package) fun max_swap_fee(): u64 {
-    FIFTY_PERCENT
-}
-
-public(package) fun max_freeze_fee(): u64 {
+public(package) fun ten_percent(): u64 {
     TEN_PERCENT
 }   
 
-public(package) fun max_liquidity_management_fee(): u64 {
-    TEN_PERCENT
-}
-
-public(package) fun default_admin_fee(): u64 {
-    TEN_PERCENT
-}
-
-public(package) fun max_admin_fee(): u64 {
+public(package) fun twenty_percent(): u64 {
     TWENTY_PERCENT
+}
+
+public(package) fun fifty_percent(): u64 {
+    FIFTY_PERCENT
 }
 
 public(package) fun calculate(x: u64, y: u64): u64 {

@@ -34,7 +34,7 @@ public struct Liquidity<phantom CoinType> has store {
 // === Public Package Functions === 
 
 public(package) fun new(id: &mut UID, fee: u64) {
-    assert!(fees::max_liquidity_fee() >= fee, InvalidLiquidityFee);
+    assert!(fees::five_percent() >= fee, InvalidLiquidityFee);
 
     let liquidity = Liquidity {
         fee,

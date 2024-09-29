@@ -67,15 +67,15 @@ public(package) fun beneficiary(id: &UID): address {
 
 public(package) fun new(id: &mut UID, fees: vector<u64>, beneficiary: address) {
     assert!(fees.length() == 3, InvalidFeeLength);
-    assert!(fees::max_swap_fee() >= fees[0], InvalidSwapFee);
-    assert!(fees::max_liquidity_management_fee() >= fees[1], InvalidLiquidityFee);
-    assert!(fees::max_freeze_fee() >= fees[2], InvalidFreezeFee);
+    assert!(fees::fifty_percent() >= fees[0], InvalidSwapFee);
+    assert!(fees::ten_percent() >= fees[1], InvalidLiquidityFee);
+    assert!(fees::ten_percent() >= fees[2], InvalidFreezeFee);
 
     let revenue = Revenue {
         swap_fee: fees[0],
         liquidity_management_fee: fees[1],
         freeze_fee: fees[2],
-        admin_fee: fees::default_admin_fee(),
+        admin_fee: fees::ten_percent(),
         beneficiary,
     };
 
@@ -115,7 +115,7 @@ public(package) fun set_beneficiary(id: &mut UID, beneficiary: address) {
 }
 
 public(package) fun set_admin_fee(id: &mut UID, admin_fee: u64) {
-    assert!(fees::max_admin_fee() >= admin_fee, InvalidAdminFee);
+    assert!(fees::twenty_percent() >= admin_fee, InvalidAdminFee);
 
     let revenue = revenue_mut(id);
 

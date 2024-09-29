@@ -17,7 +17,7 @@ use memez_gg::{
 // === Errors ===
 
 #[error]
-const InvalidFeeLength: vector<u8> = b"The protocol supports 2 fees";
+const InvalidFeeLength: vector<u8> = b"The protocol supports 3 fees";
 
 #[error]
 const InvalidSwapFee: vector<u8> = b"The maximum swap fee is 50%";
@@ -66,7 +66,7 @@ public(package) fun beneficiary(id: &UID): address {
 }
 
 public(package) fun new(id: &mut UID, fees: vector<u64>, beneficiary: address) {
-    assert!(fees.length() == 2, InvalidFeeLength);
+    assert!(fees.length() == 3, InvalidFeeLength);
     assert!(fees::max_swap_fee() >= fees[0], InvalidSwapFee);
     assert!(fees::max_liquidity_management_fee() >= fees[1], InvalidLiquidityFee);
     assert!(fees::max_freeze_fee() >= fees[2], InvalidFreezeFee);

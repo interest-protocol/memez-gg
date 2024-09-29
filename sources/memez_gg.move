@@ -53,6 +53,9 @@ const MAX_BURN_AMOUNT: u64 = 900_000_000__000_000_000;
 // @dev 100%
 const MAX_WEIGHT: u64 = 1__000_000_000_000_000_000;
 
+// @dev 100%
+const MAX_SLIPPAGE: u64 = 1__000_000_000_000_000_000;
+
 // @dev 50%
 const MAX_SUI_WEIGHT: u64 = 500_000_000_000_000_000;
 
@@ -107,6 +110,10 @@ public struct DeployerCap<phantom LpCoin> has key, store {
     pool: address
 }
 
+public struct Init<phantom LpCoin> {
+    pool: MemezPool<LpCoin>,
+}
+
 // === Initializers ===
 
 fun init(ctx: &mut TxContext) {
@@ -135,7 +142,7 @@ public fun new<Meme, LpCoin>(
     version: &CurrentVersion,
     allows_liquidity_management: bool,
     ctx: &mut TxContext,
-): (MemezPool<LpCoin>, DeployerCap<LpCoin>, Coin<LpCoin>) {
+): (Init<LpCoin>, DeployerCap<LpCoin>, Coin<LpCoin>) {
     version.assert_is_valid();
 
     new_impl(
@@ -167,7 +174,7 @@ public fun launch<Meme, LpCoin>(
     version: &CurrentVersion,
     allows_liquidity_management: bool,
     ctx: &mut TxContext,
-): (MemezPool<LpCoin>, DeployerCap<LpCoin>) {
+): (Init<LpCoin>, DeployerCap<LpCoin>) {
     version.assert_is_valid();
 
     launch_impl(
@@ -187,8 +194,9 @@ public fun launch<Meme, LpCoin>(
 }
 
 #[allow(lint(share_owned))]
-public fun share<LpCoin>(self: MemezPool<LpCoin>) {
-    transfer::share_object(self);
+public fun share<LpCoin>(init: Init<LpCoin>) {
+    let Init { pool } = init;
+    transfer::share_object(pool);
 }
 
 // === Swap Functions ===
@@ -278,6 +286,35 @@ public fun swap_exact_out<CoinIn, CoinOut, LpCoin>(
         coin_in,
         expected_coin_out,
         allowable_slippage,
+        ctx,
+    )
+}
+
+public fun first_swap<CoinIn, CoinOut, LpCoin>(
+    init: &mut Init<LpCoin>,
+    pool_registry: &PoolRegistry,
+    protocol_fee_vault: &ProtocolFeeVault,
+    treasury: &mut Treasury,
+    insurance_fund: &mut InsuranceFund,
+    referral_vault: &ReferralVault,
+    coin_in: &mut Coin<CoinIn>,
+    version: &CurrentVersion,
+    ctx: &mut TxContext,
+): Coin<CoinOut> {
+    version.assert_is_valid();
+
+    let coin_in_value = coin_in.value();
+
+    af_swap::swap_exact_in(
+        init.pool.af_pool_mut<LpCoin>(),
+        pool_registry,
+        protocol_fee_vault,
+        treasury,
+        insurance_fund,
+        referral_vault,
+        coin_in.split(coin_in_value, ctx),
+        0,
+        MAX_SLIPPAGE,
         ctx,
     )
 }
@@ -401,14 +438,18 @@ public fun beneficiary<LpCoin>(self: &MemezPool<LpCoin>): address {
     revenue::beneficiary(&self.id)
 }
 
+public fun set_revenue_beneficiary<LpCoin>(self: &mut MemezPool<LpCoin>, _: &DeployerCap<LpCoin>, beneficiary: address) {
+    revenue::set_beneficiary(&mut self.id, beneficiary);
+}
+
 public fun set_revenue_admin_fee<LpCoin>(self: &mut MemezPool<LpCoin>, _: &AuthWitness, admin_fee: u64) {
     revenue::set_admin_fee(&mut self.id, admin_fee);
 }
 
 // == Allowlist Functions ==
 
-public fun add_allowlist_plugin<LpCoin>(self: &mut MemezPool<LpCoin>, _: &DeployerCap<LpCoin>) {
-    allowlist::new(&mut self.id);
+public fun add_allowlist_plugin<LpCoin>(init: &mut Init<LpCoin>) {
+    allowlist::new(&mut init.pool.id);
 }
 
 public fun supports_allowlist<LpCoin>(self: &MemezPool<LpCoin>): bool {
@@ -433,6 +474,10 @@ public fun remove_allowlist_plugin<LpCoin>(self: &mut MemezPool<LpCoin>, _: &Dep
 
 // == Liquidity Events Functions ==
 
+public fun add_liquidity_event_plugin<LpCoin>(init: &mut Init<LpCoin>, fee: u64) {
+    liquidity::new(&mut init.pool.id, fee);
+}
+
 public fun supports_liquidity_event<LpCoin>(self: &MemezPool<LpCoin>): bool {
     liquidity::supports(&self.id)
 }
@@ -456,7 +501,7 @@ fun launch_impl<Meme, LpCoin>(
     beneficiary: address,
     allows_liquidity_management: bool,
     ctx: &mut TxContext,
-): (MemezPool<LpCoin>, DeployerCap<LpCoin>) {
+): (Init<LpCoin>, DeployerCap<LpCoin>) {
     assert!(meme_treasury.total_supply() == 0, InvalidMemeSupply);
     assert!(meme_metadata.get_decimals() == 9, InvalidMemeDecimals);
     assert!(MAX_BURN_AMOUNT >= burn_amount, InvalidBurnAmount);
@@ -466,7 +511,7 @@ fun launch_impl<Meme, LpCoin>(
     black_ice::freeze_it(meme_coin.split(burn_amount, ctx), ctx); 
     black_ice::freeze_it(meme_treasury, ctx);
 
-    let (memez_pool, deployer, lp_coin) = new_impl(
+    let (init, deployer, lp_coin) = new_impl(
         memez_registry,
         pool_registry,
         meme_metadata,
@@ -482,7 +527,7 @@ fun launch_impl<Meme, LpCoin>(
 
     black_ice::freeze_it(lp_coin, ctx);
 
-    (memez_pool, deployer)
+    (init, deployer)
 }
 
 fun new_impl<Meme, LpCoin>(
@@ -497,7 +542,7 @@ fun new_impl<Meme, LpCoin>(
     beneficiary: address,
     allows_liquidity_management: bool,
     ctx: &mut TxContext,
-): (MemezPool<LpCoin>, DeployerCap<LpCoin>, Coin<LpCoin>) {
+): (Init<LpCoin>, DeployerCap<LpCoin>, Coin<LpCoin>) {
     assert_weights(weights);
     assert!(!memez_registry.contains<Meme>(), InvalidPool);
 
@@ -545,7 +590,7 @@ fun new_impl<Meme, LpCoin>(
         pool: memez_pool_address
     };
 
-    (memez_pool, deployer, lp_coin)
+    (Init { pool: memez_pool }, deployer, lp_coin)
 }
 
 fun assert_weights(weights: vector<u64>) {

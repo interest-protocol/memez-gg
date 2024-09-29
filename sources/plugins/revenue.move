@@ -108,6 +108,12 @@ public(package) fun take_freeze_fee<CoinType>(id: &UID, coin: &mut Coin<CoinType
     black_ice::freeze_it(coin.split(fee_amount, ctx), ctx);
 }
 
+public(package) fun set_beneficiary(id: &mut UID, beneficiary: address) {
+    let revenue = revenue_mut(id);
+
+    revenue.beneficiary = beneficiary;
+}
+
 public(package) fun set_admin_fee(id: &mut UID, admin_fee: u64) {
     assert!(fees::max_admin_fee() >= admin_fee, InvalidAdminFee);
 

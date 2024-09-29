@@ -6,47 +6,41 @@ module memez_gg::fees;
 const FEE_DENOMINATOR: u64 = 1_000_000_000;
 
 // 5%
-const MAX_LIQUIDITY_FEE: u64 = 50_000_000;
-
-// 50%
-const MAX_SWAP_FEE: u64 = 500_000_000;
+const FIVE_PERCENT: u64 = { FEE_DENOMINATOR / 20 };
 
 // 10%
-const MAX_FREEZE_FEE: u64 = 100_000_000;
-
-// 10% 
-const MAX_LIQUIDITY_MANAGEMENT_FEE: u64 = 100_000_000;
-
-// 10% 
-const DEFAULT_AMDIN_FEE: u64 = 100_000_000;
+const TEN_PERCENT: u64 = { FEE_DENOMINATOR / 10 };
 
 // 20%
-const MAX_ADMIN_FEE: u64 = 200_000_000;
+const TWENTY_PERCENT: u64 = { FEE_DENOMINATOR / 5 };
+
+// 50%
+const FIFTY_PERCENT: u64 = { FEE_DENOMINATOR / 2 };
 
 // === Public Package Functions ===
 
 public(package) fun max_liquidity_fee(): u64 {
-    MAX_LIQUIDITY_FEE
+    FIVE_PERCENT
 }
 
 public(package) fun max_swap_fee(): u64 {
-    MAX_SWAP_FEE
+    FIFTY_PERCENT
 }
 
 public(package) fun max_freeze_fee(): u64 {
-    MAX_FREEZE_FEE
+    TEN_PERCENT
 }   
 
 public(package) fun max_liquidity_management_fee(): u64 {
-    MAX_LIQUIDITY_MANAGEMENT_FEE
+    TEN_PERCENT
 }
 
 public(package) fun default_admin_fee(): u64 {
-    DEFAULT_AMDIN_FEE
+    TEN_PERCENT
 }
 
 public(package) fun max_admin_fee(): u64 {
-    MAX_ADMIN_FEE
+    TWENTY_PERCENT
 }
 
 public(package) fun calculate(x: u64, y: u64): u64 {

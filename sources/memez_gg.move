@@ -4,7 +4,9 @@ module memez_gg::memez_gg;
 use std::type_name::{Self, TypeName};
 
 use sui::{
+    coin,
     sui::SUI,
+    clock::Clock,
     table::{Self, Table},
     dynamic_object_field as dof,
     coin::{Coin,TreasuryCap, CoinMetadata},
@@ -208,6 +210,7 @@ public fun swap_exact_in<CoinIn, CoinOut, LpCoin>(
     treasury: &mut Treasury,
     insurance_fund: &mut InsuranceFund,
     referral_vault: &ReferralVault,
+    clock: &Clock,
     coin_in: &mut Coin<CoinIn>,
     expected_coin_out: u64,
     allowable_slippage: u64,
@@ -216,8 +219,12 @@ public fun swap_exact_in<CoinIn, CoinOut, LpCoin>(
 ): Coin<CoinOut> {
     version.assert_is_valid();
 
+    if (!self.is_user_allowed(clock, ctx.sender())) return coin::zero<CoinOut>(ctx);
+
     revenue::take_swap_fee(&self.id, coin_in, ctx);
     revenue::take_freeze_fee(&self.id, coin_in, ctx);
+
+    self.start_liquidity_event(pool_registry, protocol_fee_vault, treasury, insurance_fund, referral_vault, ctx);
 
     let coin_in_value = coin_in.value();
 
@@ -242,6 +249,7 @@ public fun swap_exact_out<CoinIn, CoinOut, LpCoin>(
     treasury: &mut Treasury,
     insurance_fund: &mut InsuranceFund,
     referral_vault: &ReferralVault,
+    clock: &Clock,
     amount_out: u64,
     coin_in: &mut Coin<CoinIn>,
     expected_coin_out: u64,
@@ -251,29 +259,12 @@ public fun swap_exact_out<CoinIn, CoinOut, LpCoin>(
 ): Coin<CoinOut> {
     version.assert_is_valid();
 
+    if (!self.is_user_allowed(clock, ctx.sender())) return coin::zero<CoinOut>(ctx);
+
     revenue::take_swap_fee(&self.id, coin_in, ctx);
     revenue::take_freeze_fee(&self.id, coin_in, ctx);
 
-    let sui_coin = liquidity::start(&mut self.id, ctx);
-
-    if (sui_coin.value() == 0) {
-        sui_coin.destroy_zero();
-    } else {
-        let lp_coin =af_deposit::deposit_1_coins(
-            self.af_pool_mut<LpCoin>(),
-            pool_registry,
-            protocol_fee_vault,
-            treasury,
-            insurance_fund,
-            referral_vault,
-            sui_coin,
-            0,
-            0,
-            ctx
-        );
-
-        black_ice::freeze_it(lp_coin, ctx);
-    };
+    self.start_liquidity_event(pool_registry, protocol_fee_vault, treasury, insurance_fund, referral_vault, ctx);
 
     af_swap::swap_exact_out(
         self.af_pool_mut<LpCoin>(),
@@ -448,16 +439,16 @@ public fun set_revenue_admin_fee<LpCoin>(self: &mut MemezPool<LpCoin>, _: &AuthW
 
 // == Allowlist Functions ==
 
-public fun add_allowlist_plugin<LpCoin>(init: &mut Init<LpCoin>) {
-    allowlist::new(&mut init.pool.id);
+public fun add_allowlist_plugin<LpCoin>(init: &mut Init<LpCoin>, clock: &Clock, duration: u64) {
+    allowlist::new(&mut init.pool.id, clock.timestamp_ms() + duration);
 }
 
 public fun supports_allowlist<LpCoin>(self: &MemezPool<LpCoin>): bool {
     allowlist::supports(&self.id)
 }
 
-public fun is_allowed<LpCoin>(self: &MemezPool<LpCoin>, sender: address): bool {
-    allowlist::contains(&self.id, sender)
+public fun is_user_allowed<LpCoin>(self: &MemezPool<LpCoin>, clock: &Clock, sender: address): bool {
+    allowlist::is_allowed(&self.id, clock, sender)
 }
 
 public fun add_to_allowlist<LpCoin>(self: &mut MemezPool<LpCoin>, _: &DeployerCap<LpCoin>, sender: address) {
@@ -591,6 +582,37 @@ fun new_impl<Meme, LpCoin>(
     };
 
     (Init { pool: memez_pool }, deployer, lp_coin)
+}
+
+fun start_liquidity_event<LpCoin>(
+    self: &mut MemezPool<LpCoin>,
+    pool_registry: &PoolRegistry,
+    protocol_fee_vault: &ProtocolFeeVault,
+    treasury: &mut Treasury,
+    insurance_fund: &mut InsuranceFund,
+    referral_vault: &ReferralVault,
+    ctx: &mut TxContext,
+) {
+    let sui_coin = liquidity::start(&mut self.id, ctx);
+
+    if (sui_coin.value() == 0) {
+        sui_coin.destroy_zero();
+    } else {
+        let lp_coin =af_deposit::deposit_1_coins(
+            self.af_pool_mut<LpCoin>(),
+            pool_registry,
+            protocol_fee_vault,
+            treasury,
+            insurance_fund,
+            referral_vault,
+            sui_coin,
+            0,
+            0,
+            ctx
+        );
+
+        black_ice::freeze_it(lp_coin, ctx);
+    };
 }
 
 fun assert_weights(weights: vector<u64>) {

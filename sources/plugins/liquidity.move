@@ -85,4 +85,3 @@ fun liquidity<CoinType>(id: &UID): &Liquidity<CoinType> {
 fun liquidity_mut<CoinType>(id: &mut UID): &mut Liquidity<CoinType> {
     df::borrow_mut(id, LiquidityKey())
 }
-

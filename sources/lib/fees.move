@@ -5,16 +5,12 @@ module memez_gg::fees;
 // 1e9
 const FEE_DENOMINATOR: u64 = 1_000_000_000;
 
-// 5%
 const FIVE_PERCENT: u64 = { FEE_DENOMINATOR / 20 };
 
-// 10%
 const TEN_PERCENT: u64 = { FEE_DENOMINATOR / 10 };
 
-// 20%
 const TWENTY_PERCENT: u64 = { FEE_DENOMINATOR / 5 };
 
-// 50%
 const FIFTY_PERCENT: u64 = { FEE_DENOMINATOR / 2 };
 
 // === Public Package Functions ===

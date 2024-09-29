@@ -2,6 +2,7 @@ module memez_gg::allowlist;
 // === Imports ===
 
 use sui::{
+    clock::Clock,
     dynamic_field as df,
     vec_set::{Self, VecSet},
 };
@@ -11,15 +12,19 @@ use sui::{
 public struct AllowlistKey() has store, copy, drop;
 
 public struct Allowlist has store {
-    inner: VecSet<address>
+    inner: VecSet<address>,
+    deadline: u64
 }
 
 // === Public Package Functions ===
 
-public(package) fun is_allowed(id: &UID, sender: address): bool {
+public(package) fun is_allowed(id: &UID, clock: &Clock, sender: address): bool {
     if (!supports(id)) return true;
 
     let allowlist = allowlist(id);
+
+    if (clock.timestamp_ms() >= allowlist.deadline) return true;
+
     allowlist.inner.contains(&sender)
 }
 
@@ -27,9 +32,10 @@ public(package) fun supports(id: &UID): bool {
     df::exists_(id, AllowlistKey())
 }
 
-public(package) fun new(id: &mut UID) {
+public(package) fun new(id: &mut UID, deadline: u64) {
     let allowlist = Allowlist {
-        inner: vec_set::empty()
+        inner: vec_set::empty(),
+        deadline
     };
 
     df::add(id, AllowlistKey(), allowlist);

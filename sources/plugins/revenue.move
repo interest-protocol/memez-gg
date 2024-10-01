@@ -1,10 +1,7 @@
 module memez_gg::revenue;
 // === Imports ===
 
-use std::type_name;
-
 use sui::{
-    sui::SUI,
     coin::Coin,
     dynamic_field as df,
 };
@@ -12,6 +9,7 @@ use sui::{
 use memez_gg::{
     fees,
     black_ice,
+    utils::is_sui
 };
 
 // === Errors ===
@@ -101,7 +99,7 @@ public(package) fun take_liquidity_management_fee<CoinType>(id: &UID, coin: &mut
 public(package) fun take_freeze_fee<CoinType>(id: &UID, coin: &mut Coin<CoinType>, ctx: &mut TxContext) {
     let revenue = revenue(id);
 
-    if (type_name::get<SUI>() == type_name::get<CoinType>() || revenue.freeze_fee == 0) return;
+    if (is_sui<CoinType>() || revenue.freeze_fee == 0) return;
 
     let fee_amount = fees::calculate(coin.value(), revenue.freeze_fee);
 
@@ -120,6 +118,16 @@ public(package) fun set_admin_fee(id: &mut UID, admin_fee: u64) {
     let revenue = revenue_mut(id);
 
     revenue.admin_fee = admin_fee;
+}
+
+public(package) fun send_or_destroy<CoinType>(id: &UID, coin: Coin<CoinType>) {
+    if (coin.value() == 0) {
+        coin.destroy_zero();
+    } else {
+        let revenue = revenue(id);
+
+        transfer::public_transfer(coin, revenue.beneficiary);
+    }
 }
 
 // === Private Functions ===

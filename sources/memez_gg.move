@@ -37,6 +37,7 @@ use memez_gg::{
     black_ice,
     liquidity,
     lp_metadata,
+    utils::is_sui,
     acl::AuthWitness,
     version::CurrentVersion,
 };
@@ -224,7 +225,14 @@ public fun swap_exact_in<CoinIn, CoinOut, LpCoin>(
     revenue::take_swap_fee(&self.id, coin_in, ctx);
     revenue::take_freeze_fee(&self.id, coin_in, ctx);
 
-    self.start_liquidity_event(pool_registry, protocol_fee_vault, treasury, insurance_fund, referral_vault, ctx);
+    self.maybe_liquidity_event<CoinIn, CoinOut, LpCoin>(
+        pool_registry, 
+        protocol_fee_vault, 
+        treasury, 
+        insurance_fund, 
+        referral_vault, 
+        ctx
+    );
 
     let coin_in_value = coin_in.value();
 
@@ -264,7 +272,14 @@ public fun swap_exact_out<CoinIn, CoinOut, LpCoin>(
     revenue::take_swap_fee(&self.id, coin_in, ctx);
     revenue::take_freeze_fee(&self.id, coin_in, ctx);
 
-    self.start_liquidity_event(pool_registry, protocol_fee_vault, treasury, insurance_fund, referral_vault, ctx);
+    self.maybe_liquidity_event<CoinIn, CoinOut, LpCoin>(
+        pool_registry, 
+        protocol_fee_vault, 
+        treasury, 
+        insurance_fund, 
+        referral_vault, 
+        ctx
+    );
 
     af_swap::swap_exact_out(
         self.af_pool_mut<LpCoin>(),
@@ -584,7 +599,7 @@ fun new_impl<Meme, LpCoin>(
     (Init { pool: memez_pool }, deployer, lp_coin)
 }
 
-fun start_liquidity_event<LpCoin>(
+fun maybe_liquidity_event<CoinIn, CoinOut, LpCoin>(
     self: &mut MemezPool<LpCoin>,
     pool_registry: &PoolRegistry,
     protocol_fee_vault: &ProtocolFeeVault,
@@ -593,23 +608,73 @@ fun start_liquidity_event<LpCoin>(
     referral_vault: &ReferralVault,
     ctx: &mut TxContext,
 ) {
-    let sui_coin = liquidity::start(&mut self.id, ctx);
+    if (is_sui<CoinIn>()) {
+        liquidity_event_impl<CoinOut, LpCoin>(
+            self,
+            pool_registry,
+            protocol_fee_vault,
+            treasury,
+            insurance_fund,
+            referral_vault,
+            ctx,
+        );
+    } else {
+        liquidity_event_impl<CoinIn, LpCoin>(
+            self,
+            pool_registry,
+            protocol_fee_vault,
+            treasury,
+            insurance_fund,
+            referral_vault,
+            ctx,
+        );
+    };
+}
+
+fun liquidity_event_impl<Meme, LpCoin>(
+    self: &mut MemezPool<LpCoin>,
+    pool_registry: &PoolRegistry,
+    protocol_fee_vault: &ProtocolFeeVault,
+    treasury: &mut Treasury,
+    insurance_fund: &mut InsuranceFund,
+    referral_vault: &ReferralVault,
+    ctx: &mut TxContext,
+) {
+    let mut sui_coin = liquidity::start(&mut self.id, ctx);
 
     if (sui_coin.value() == 0) {
         sui_coin.destroy_zero();
     } else {
-        let lp_coin = af_deposit::deposit_1_coins(
+
+        let sui_coin_value = sui_coin.value();
+
+        let mut meme_coin = af_swap::swap_exact_in<LpCoin, SUI, Meme>(
             self.af_pool_mut<LpCoin>(),
             pool_registry,
             protocol_fee_vault,
             treasury,
             insurance_fund,
             referral_vault,
-            sui_coin,
+            sui_coin.split(sui_coin_value, ctx),
             0,
-            0,
-            ctx
+            MAX_SLIPPAGE,
+            ctx,
         );
+
+        let lp_coin = af_deposit::all_coin_deposit_2_coins(
+            self.af_pool_mut<LpCoin>(),
+            pool_registry,
+            protocol_fee_vault,
+            treasury,
+            insurance_fund,
+            referral_vault,
+            &mut sui_coin,
+            &mut meme_coin,
+            ctx,
+        );
+
+        revenue::send_or_destroy(&self.id, sui_coin);
+        revenue::send_or_destroy(&self.id, meme_coin);        
 
         black_ice::freeze_it(lp_coin, ctx);
     };

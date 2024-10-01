@@ -1,8 +1,6 @@
 module memez_gg::liquidity;
 // === Imports ===
 
-use std::type_name;
-
 use sui::{
     sui::SUI,
     coin::{Self, Coin},
@@ -10,7 +8,10 @@ use sui::{
     balance::{Self, Balance}
 };
 
-use memez_gg::fees;
+use memez_gg::{
+    fees,
+    utils::is_sui
+};
 
 // === Constants ===
 
@@ -57,7 +58,7 @@ public(package) fun fee<CoinType>(id: &UID): u64 {
 }
 
 public(package) fun take<CoinType>(id: &mut UID, coin: &mut Coin<CoinType>, ctx: &mut TxContext) {
-    if (!supports(id) || type_name::get<SUI>() != type_name::get<CoinType>()) return;
+    if (!supports(id) || !is_sui<CoinType>()) return;
 
     let liquidity = liquidity_mut(id);
 

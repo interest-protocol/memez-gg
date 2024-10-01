@@ -646,7 +646,7 @@ fun liquidity_event_impl<Meme, LpCoin>(
         sui_coin.destroy_zero();
     } else {
 
-        let sui_coin_value = sui_coin.value() / 2;
+        let value_to_swap = sui_coin.value() / 2;
 
         let mut meme_coin = af_swap::swap_exact_in<LpCoin, SUI, Meme>(
             self.af_pool_mut<LpCoin>(),
@@ -655,7 +655,7 @@ fun liquidity_event_impl<Meme, LpCoin>(
             treasury,
             insurance_fund,
             referral_vault,
-            sui_coin.split(sui_coin_value, ctx),
+            sui_coin.split(value_to_swap, ctx),
             0,
             MAX_SLIPPAGE,
             ctx,

@@ -1,4 +1,3 @@
-/*
 #[test_only]
 module memez_otc::memez_otc_tests;
 // uncomment this line to import the module
@@ -15,4 +14,3 @@ fun test_memez_otc() {
 fun test_memez_otc_fail() {
     abort ENotImplemented
 }
-*/

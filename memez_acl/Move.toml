@@ -1,12 +1,11 @@
 [package]
-name = "MemezDex"
+name = "memez_acl"
 edition = "2024.beta" # edition = "legacy" to use legacy (pre-2024) Move
-license = "Apache 2.0"           # e.g., "MIT", "GPL", "Apache 2.0"
-authors = ["Jose Cerqueira (jose@interestprotocol.com)"]      # e.g., ["Joe Smith (joesmith@noemail.com)", "John Snow (johnsnow@noemail.com)"]
+# license = ""           # e.g., "MIT", "GPL", "Apache 2.0"
+# authors = ["..."]      # e.g., ["Joe Smith (joesmith@noemail.com)", "John Snow (johnsnow@noemail.com)"]
 
 [dependencies]
 Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet" }
-AftermathAmm = { local = "./dependencies/aftermath/packages/amm/amm" }
 
 # For remote import, use the `{ git = "...", subdir = "...", rev = "..." }`.
 # Revision can be a branch, a tag, and a commit hash.
@@ -20,14 +19,8 @@ AftermathAmm = { local = "./dependencies/aftermath/packages/amm/amm" }
 # Override = { local = "../conflicting/version", override = true }
 
 [addresses]
-memez_dex = "0x0"
-memez_admin = "0x0"
-memez_treasury = "0x0"
-amm = "0xefe170ec0be4d762196bedecd7a065816576198a6527c99282a2551aaa7da38c"
-insurance_fund = "0xa6baab1e668c7868991c1c3c11e144100f5734c407d020f72a01b9d1a8bcb97f"
-referral_vault = "0xc66fabf1a9253e43c70f1cc02d40a1d18db183140ecaae2a3f58fa6b66c55acf"
-treasury = "0x64213b0e4a52bac468d4ac3f140242f70714381653a1919a6d57cd49c628207a"
-protocol_fee_vault = "0x2d9316f1f1a95f6d7c85a4e690ef7c359e6649773ef2c37ad7d9857adb6bef06"
+memez_acl = "0x0"
+sui = "0x2"
 
 # Named addresses will be accessible in Move as `@name`. They're also exported:
 # for example, `std = "0x1"` is exported by the Standard Library.

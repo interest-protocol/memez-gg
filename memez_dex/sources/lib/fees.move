@@ -1,4 +1,4 @@
-module memez_gg::fees;
+module memez_dex::fees;
 
 // === Constants ===    
 

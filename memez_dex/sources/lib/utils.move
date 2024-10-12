@@ -1,4 +1,4 @@
-module memez_gg::utils; 
+module memez_dex::utils; 
 // === Imports ===
 
 use std::type_name;

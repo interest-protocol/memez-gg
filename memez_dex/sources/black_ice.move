@@ -1,4 +1,4 @@
-module memez_gg::black_ice;
+module memez_dex::black_ice;
 
 use sui::dynamic_object_field as dof;
 

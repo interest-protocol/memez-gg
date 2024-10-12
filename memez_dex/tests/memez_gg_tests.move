@@ -1,8 +1,8 @@
 /*
 #[test_only]
-module memez_gg::memez_gg_tests {
+module memez_dex::memez_gg_tests {
     // uncomment this line to import the module
-    // use memez_gg::memez_gg;
+    // use memez_dex::memez_dex;
 
     const ENotImplemented: u64 = 0;
 
@@ -11,7 +11,7 @@ module memez_gg::memez_gg_tests {
         // pass
     }
 
-    #[test, expected_failure(abort_code = ::memez_gg::memez_gg_tests::ENotImplemented)]
+    #[test, expected_failure(abort_code = ::memez_dex::memez_gg_tests::ENotImplemented)]
     fun test_memez_gg_fail() {
         abort ENotImplemented
     }

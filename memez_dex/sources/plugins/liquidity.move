@@ -1,4 +1,4 @@
-module memez_gg::liquidity;
+module memez_dex::liquidity;
 // === Imports ===
 
 use sui::{
@@ -8,7 +8,7 @@ use sui::{
     balance::{Self, Balance}
 };
 
-use memez_gg::{
+use memez_dex::{
     fees,
     utils::is_sui
 };

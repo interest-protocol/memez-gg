@@ -1,4 +1,4 @@
-module memez_gg::allowlist;
+module memez_dex::allowlist;
 // === Imports ===
 
 use sui::{

@@ -1,9 +1,9 @@
-module memez_gg::acl;
+module memez_dex::acl;
 // === Imports === 
 
 use sui::vec_set::{Self, VecSet};
 
-use memez_gg::events;
+use memez_dex::events;
 
 // === Constants === 
 

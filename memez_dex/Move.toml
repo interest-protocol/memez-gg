@@ -1,5 +1,5 @@
 [package]
-name = "memez_gg"
+name = "MemezDex"
 edition = "2024.beta" # edition = "legacy" to use legacy (pre-2024) Move
 license = "Apache 2.0"           # e.g., "MIT", "GPL", "Apache 2.0"
 authors = ["Jose Cerqueira (jose@interestprotocol.com)"]      # e.g., ["Joe Smith (joesmith@noemail.com)", "John Snow (johnsnow@noemail.com)"]
@@ -20,7 +20,7 @@ AftermathAmm = { local = "./af-dependencies/move-interfaces/packages/amm/amm" }
 # Override = { local = "../conflicting/version", override = true }
 
 [addresses]
-memez_gg = "0x0"
+memez_dex = "0x0"
 memez_admin = "0x0"
 memez_treasury = "0x0"
 amm = "0xefe170ec0be4d762196bedecd7a065816576198a6527c99282a2551aaa7da38c"

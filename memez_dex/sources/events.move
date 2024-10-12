@@ -1,4 +1,4 @@
-module memez_gg::events;
+module memez_dex::events;
 // === Imports === 
 
 use std::type_name::{Self, TypeName};

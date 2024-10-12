@@ -1,4 +1,4 @@
-module memez_gg::memez_gg;
+module memez_dex::memez_dex;
 // === Imports ===
 
 use std::type_name::{Self, TypeName};
@@ -30,7 +30,7 @@ use insurance_fund::insurance_fund::InsuranceFund;
 
 use referral_vault::referral_vault::ReferralVault;
 
-use memez_gg::{
+use memez_dex::{
     events,
     revenue,
     allowlist,

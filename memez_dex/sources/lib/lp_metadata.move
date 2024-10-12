@@ -1,4 +1,4 @@
-module memez_gg::lp_metadata; 
+module memez_dex::lp_metadata; 
 // === Imports ===
 
 use std::{

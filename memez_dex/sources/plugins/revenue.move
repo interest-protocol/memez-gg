@@ -1,4 +1,4 @@
-module memez_gg::revenue;
+module memez_dex::revenue;
 // === Imports ===
 
 use sui::{
@@ -6,7 +6,7 @@ use sui::{
     dynamic_field as df,
 };
 
-use memez_gg::{
+use memez_dex::{
     fees,
     black_ice,
     utils::is_sui

@@ -12,6 +12,5 @@ MemezACL = { local = "../acl" }
 [addresses]
 memez_otc = "0x0"
 sui = "0x2"
-memez_acl = "0x0"
 interest_math = "0x19c03bcf237434e0da432e661198f754e5b694fdc8050f633b2d2a3983b1d0b0"
 treasury = "0xdd224f2287f0b38693555c6077abe85fcb4aa13e355ad54bc167611896b007e6"

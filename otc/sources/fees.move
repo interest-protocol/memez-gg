@@ -3,7 +3,7 @@ module memez_otc::fees;
 
 use interest_math::u64;
 
-use memez_otc::acl::AuthWitness;
+use memez_acl::acl::AuthWitness;
 
 // === Constants ===  
 
@@ -19,7 +19,7 @@ const MAX_RATE: u64 = 100_000_000;
 // === Errors === 
 
 #[error]
-const ERateIsTooHigh: vector<u8> = b"The rate is too high";
+const EFeeIsTooHigh: vector<u8> = b"The fee is too high";
 
 // === Structs ===  
 
@@ -71,12 +71,19 @@ public(package) fun value(self: &Fees): u64 {
 
 // === Admin Functions ===  
 
-public fun set_rate(fees: &mut Fees, _: AuthWitness, rate: Rate) {
-    assert!(MAX_RATE >= rate.value, ERateIsTooHigh);
+public fun set_fee(fees: &mut Fees, _: &AuthWitness, fee:u64) {
+    assert!(MAX_RATE >= fee, EFeeIsTooHigh);
 
-    fees.rate = rate;
+    fees.rate.value = fee;
 }
 
-public fun set_treasury(fees: &mut Fees, _: AuthWitness, treasury: address) {
+public fun set_treasury(fees: &mut Fees, _: &AuthWitness, treasury: address) {
     fees.treasury = treasury;
+}
+
+// === Tests ===  
+
+#[test_only]
+public fun init_for_testing(ctx: &mut TxContext) {
+    init(ctx);
 }

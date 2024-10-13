@@ -7,7 +7,7 @@ use sui::{
     balance::Balance,
 };
 
-public struct Wallet<phantom T> has key, store {
+public struct VestingWallet<phantom T> has key, store {
     id: UID,
     balance: Balance<T>,
     start: u64,
@@ -17,16 +17,16 @@ public struct Wallet<phantom T> has key, store {
 
 // === Public Mutative Functions ===
 
-public fun claim<T>(self: &mut Wallet<T>, c: &Clock, ctx: &mut TxContext): Coin<T> {
-    let releasable = vesting_status(self, c);
+public fun claim<T>(self: &mut VestingWallet<T>, clock: &Clock, ctx: &mut TxContext): Coin<T> {
+    let releasable = vesting_status(self, clock);
 
     *&mut self.released = self.released + releasable;
 
     self.balance.split(releasable).into_coin(ctx)
 }
 
-public fun destroy_zero<T>(self: Wallet<T>) {
-    let Wallet { id, balance, .. } = self;
+public fun destroy_zero<T>(self: VestingWallet<T>) {
+    let VestingWallet { id, balance, .. } = self;
     
     id.delete();
 
@@ -35,7 +35,7 @@ public fun destroy_zero<T>(self: Wallet<T>) {
 
 // === Public View Function ===
 
-public fun vesting_status<T>(self: &Wallet<T>, clock: &Clock): u64 {
+public fun vesting_status<T>(self: &VestingWallet<T>, clock: &Clock): u64 {
     let vested = linear_vesting_amount(
         self.start,
         self.duration,
@@ -53,8 +53,8 @@ public(package) fun new<T>(
     clock: &Clock,
     duration: u64,
     ctx: &mut TxContext,
-): Wallet<T> {
-    Wallet {
+): VestingWallet<T> {
+    VestingWallet {
         id: object::new(ctx),
         balance,
         released: 0,

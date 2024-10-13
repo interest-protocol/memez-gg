@@ -13,7 +13,7 @@ use interest_math::u64;
 use memez_otc::{
     fees::{Fees, Rate},
     otc_events as events,
-    vesting_wallet::{Self, Wallet},
+    vesting_wallet::{Self, VestingWallet},
 };
 
 // === Errors === 
@@ -39,6 +39,15 @@ const EVestedOTC: vector<u8> = b"This is a vested OTC, use buy_vested instead";
 #[error]
 const ENormalOTC: vector<u8> = b"This is not a vested OTC, use buy instead";
 
+#[error]
+const EDeadlinePassed: vector<u8> = b"The deadline has passed";
+
+#[error]
+const EHasNoDeadline: vector<u8> = b"This OTC has no deadline";
+
+#[error]
+const EHasDeadline: vector<u8> = b"This OTC has a deadline";
+
 // === Structs === 
 
 public struct MemezOTCAccount has key, store {
@@ -53,7 +62,8 @@ public struct MemezOTC<phantom CoinType> has key {
     deposited_amount: u64,
     price: u64,
     rate: Rate,
-    vesting_duration: Option<u64>
+    vesting_duration: Option<u64>,
+    deadline: Option<u64>
 }
 
 // === Public Mutative Functions ===  
@@ -71,12 +81,14 @@ public fun new_otc<CoinType>(
     recipient: address,
     price: u64, 
     vesting_duration: Option<u64>,
+    deadline: Option<u64>,
     ctx: &mut TxContext
 ) {
     assert!(price > 0, EZeroPrice);
-    assert!(coin_in.value() > 0, EZeroCoin);
 
     let coin_in_value = coin_in.value();
+
+    assert!(coin_in_value > 0, EZeroCoin);
 
     let memez_otc = MemezOTC {      
         id: object::new(ctx),
@@ -86,7 +98,8 @@ public fun new_otc<CoinType>(
         deposited_amount: coin_in_value,
         price,
         rate: fees.rate(),
-        vesting_duration
+        vesting_duration,
+        deadline
    };
 
    events::new<CoinType>(
@@ -104,12 +117,31 @@ public fun new_otc<CoinType>(
 
 public fun buy<CoinType>(self: &mut MemezOTC<CoinType>, coin_in: Coin<SUI>, ctx: &mut TxContext): Coin<CoinType> {
     assert!(self.vesting_duration.is_none(), EVestedOTC);
+    assert!(self.deadline.is_none(), EHasDeadline);
 
     buy_internal(self, coin_in, ctx).into_coin(ctx)
 }
 
-public fun buy_vested<CoinType>(self: &mut MemezOTC<CoinType>, clock: &Clock, coin_in: Coin<SUI>, ctx: &mut TxContext): Wallet<CoinType> {
+public fun buy_with_deadline<CoinType>(
+    self: &mut MemezOTC<CoinType>,
+    clock: &Clock,
+    coin_in: Coin<SUI>,
+    ctx: &mut TxContext
+): Coin<CoinType> {
+    assert!(self.deadline.is_some(), EHasNoDeadline);
+    assert!(*self.deadline.borrow() >= clock.timestamp_ms(), EDeadlinePassed);
+
+    buy_internal(self, coin_in, ctx).into_coin(ctx)
+}
+
+public fun buy_vested<CoinType>(
+    self: &mut MemezOTC<CoinType>, 
+    clock: &Clock, 
+    coin_in: Coin<SUI>, 
+    ctx: &mut TxContext
+): VestingWallet<CoinType> {
     assert!(self.vesting_duration.is_some(), ENormalOTC);
+    assert!(self.deadline.is_none(), EHasDeadline);
 
     let balance_out = buy_internal(self, coin_in, ctx);
 
@@ -119,6 +151,33 @@ public fun buy_vested<CoinType>(self: &mut MemezOTC<CoinType>, clock: &Clock, co
         self.vesting_duration.destroy_some(), 
         ctx
     )
+}
+
+public fun buy_vested_with_deadline<CoinType>(
+    self: &mut MemezOTC<CoinType>,
+    clock: &Clock,
+    coin_in: Coin<SUI>,
+    ctx: &mut TxContext
+): VestingWallet<CoinType> {
+    assert!(self.deadline.is_some(), EHasNoDeadline);
+    assert!(*self.deadline.borrow() >= clock.timestamp_ms(), EDeadlinePassed);
+
+    let balance_out = buy_internal(self, coin_in, ctx);
+
+    vesting_wallet::new(
+        balance_out, 
+        clock, 
+        self.vesting_duration.destroy_some(), 
+        ctx
+    )
+}
+
+public fun update_deadline<CoinType>(self: &mut MemezOTC<CoinType>, account: &MemezOTCAccount, deadline: u64) {
+    assert!(self.deadline.is_some(), EHasNoDeadline); 
+
+    assert!(account.id.to_address() == self.owner, EWrongOwner);
+
+    *self.deadline.borrow_mut() = deadline;
 }
 
 public fun destroy<CoinType>(self: MemezOTC<CoinType>, account: &MemezOTCAccount, ctx: &mut TxContext): Coin<CoinType> {

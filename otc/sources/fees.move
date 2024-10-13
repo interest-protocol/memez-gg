@@ -58,7 +58,7 @@ public(package) fun calculate_fee(rate: Rate, amount: u64): u64 {
 }
 
 public(package) fun calculate_amount_in(rate: Rate, amount: u64): u64 {
-    u64::mul_div_up(amount, PRECISION, PRECISION -rate.value)
+    u64::mul_div_up(amount, PRECISION, PRECISION - rate.value)
 }
 
 public(package) fun rate(fees: &Fees): Rate {

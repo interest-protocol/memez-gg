@@ -13,20 +13,19 @@ use interest_math::u64;
 use memez_otc::{
     fees::{Fees, Rate},
     otc_events as events,
-    account::MemezOTCAccount,
     vesting_wallet::{Self, Wallet},
 };
 
 // === Errors === 
 
 #[error]
-const ENotOwner: vector<u8> = b"You are not the owner of this OTC";
+const EWrongOwner: vector<u8> = b"You are not the owner of this OTC";
 
 #[error] 
-const EZeroOTCPrice: vector<u8> = b"You cannot start an OTC with 0 price";
+const EZeroPrice: vector<u8> = b"You cannot start an OTC without a price";
 
 #[error]
-const ENoOTCDeal: vector<u8> = b"You must provide a coin to OTC";
+const EZeroCoin: vector<u8> = b"You must provide a coin to OTC";
 
 #[error]
 const ENotEnoughBalance: vector<u8> = b"The OTC does not have enough balance to sell";
@@ -38,9 +37,13 @@ const EInvalidBuyAmount: vector<u8> = b"The amount bought is too low";
 const EVestedOTC: vector<u8> = b"This is a vested OTC, use buy_vested instead";
 
 #[error]
-const ENotVestedOTC: vector<u8> = b"This is not a vested OTC, use buy instead";
+const ENormalOTC: vector<u8> = b"This is not a vested OTC, use buy instead";
 
 // === Structs === 
+
+public struct MemezOTCAccount has key, store {
+    id: UID,
+}
 
 public struct MemezOTC<phantom CoinType> has key {
     id: UID,
@@ -55,7 +58,13 @@ public struct MemezOTC<phantom CoinType> has key {
 
 // === Public Mutative Functions ===  
 
-public fun new<CoinType>(
+public fun new_account(ctx: &mut TxContext): MemezOTCAccount {
+     MemezOTCAccount {
+        id: object::new(ctx),
+    }
+}
+
+public fun new_otc<CoinType>(
     fees: &Fees,
     account: &mut MemezOTCAccount, 
     coin_in:Coin<CoinType>, 
@@ -64,15 +73,15 @@ public fun new<CoinType>(
     vesting_duration: Option<u64>,
     ctx: &mut TxContext
 ) {
-    assert!(price > 0, EZeroOTCPrice);
-    assert!(coin_in.value() > 0, ENoOTCDeal);
+    assert!(price > 0, EZeroPrice);
+    assert!(coin_in.value() > 0, EZeroCoin);
 
     let coin_in_value = coin_in.value();
 
     let memez_otc = MemezOTC {      
         id: object::new(ctx),
         balance: coin_in.into_balance(),
-        owner: account.addy(),
+        owner: account.id.to_address(),
         recipient,
         deposited_amount: coin_in_value,
         price,
@@ -82,7 +91,7 @@ public fun new<CoinType>(
 
    events::new<CoinType>(
         memez_otc.id.to_address(), 
-        account.addy(), 
+        account.id.to_address(), 
         recipient, 
         coin_in_value, 
         price, 
@@ -100,7 +109,7 @@ public fun buy<CoinType>(self: &mut MemezOTC<CoinType>, coin_in: Coin<SUI>, ctx:
 }
 
 public fun buy_vested<CoinType>(self: &mut MemezOTC<CoinType>, clock: &Clock, coin_in: Coin<SUI>, ctx: &mut TxContext): Wallet<CoinType> {
-    assert!(self.vesting_duration.is_some(), ENotVestedOTC);
+    assert!(self.vesting_duration.is_some(), ENormalOTC);
 
     let balance_out = buy_internal(self, coin_in, ctx);
 
@@ -113,7 +122,7 @@ public fun buy_vested<CoinType>(self: &mut MemezOTC<CoinType>, clock: &Clock, co
 }
 
 public fun destroy<CoinType>(self: MemezOTC<CoinType>, account: &MemezOTCAccount, ctx: &mut TxContext): Coin<CoinType> {
-    assert!(account.addy() == self.owner, ENotOwner);
+    assert!(account.id.to_address() == self.owner, EWrongOwner);
 
     let MemezOTC { id, balance, .. } = self;
 

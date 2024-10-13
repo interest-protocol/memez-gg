@@ -137,8 +137,6 @@ fun test_super_admin_transfer_error_same_sender() {
 
     world.super_admin.start_transfer(ADMIN, world.scenario.ctx()); 
 
-    world.super_admin.start_transfer(@0x0, world.scenario.ctx());
-
     world.end();
 }
 
@@ -151,8 +149,6 @@ fun test_super_admin_transfer_error_zero_address() {
     assert_eq(world.super_admin.start(), u64::max_value!());   
 
     world.super_admin.start_transfer(@0x0, world.scenario.ctx()); 
-
-    world.super_admin.start_transfer(@0x0, world.scenario.ctx());
 
     world.end();
 }

@@ -11,8 +11,8 @@ use sui::{
 use interest_math::u64;
 
 use memez_otc::{
-    events,
     fees::{Fees, Rate},
+    otc_events as events,
     account::MemezOTCAccount,
     vesting_wallet::{Self, Wallet},
 };
@@ -80,7 +80,7 @@ public fun new<CoinType>(
         vesting_duration
    };
 
-   events::new_otc<CoinType>(
+   events::new<CoinType>(
         memez_otc.id.to_address(), 
         account.addy(), 
         recipient, 
@@ -165,7 +165,7 @@ fun buy_internal<CoinType>(self: &mut MemezOTC<CoinType>, mut coin_in: Coin<SUI>
 
     let balance_out = self.balance.split(amount_out - fee_value);
 
-    events::otc_buy<CoinType>(self.id.to_address(), coin_in_value, balance_out.value(), self.vesting_duration);
+    events::buy<CoinType>(self.id.to_address(), coin_in_value, balance_out.value(), self.vesting_duration);
 
     balance_out
 }

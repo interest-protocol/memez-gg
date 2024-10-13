@@ -1,11 +1,11 @@
-module memez_otc::events;
+module memez_otc::otc_events;
 // === Imports === 
 
 use std::type_name::{Self, TypeName};
 
 use sui::event::emit; 
 
-// === OTC Events ===  
+// === Structs ===  
 
 public struct NewOTC has copy, drop {
     otc: address,
@@ -26,50 +26,9 @@ public struct OTCBuy has copy, drop {
     vesting_duration: Option<u64>
 }
 
-// === Admin Events === 
-
-public struct StartSuperAdminTransfer has copy, drop {
-    new_admin: address,
-    start: u64
-}
-
-public struct FinishSuperAdminTransfer(address) has copy, drop;
-
-public struct NewAdmin(address) has copy, drop;
-
-public struct RevokeAdmin(address) has copy, drop;
-
 // === Package Functions ===
 
-public(package) fun start_super_admin_transfer(
-    new_admin: address,
-    start: u64,
-) {
-    emit(StartSuperAdminTransfer {
-        new_admin,
-        start,
-    }); 
-}
-
-public(package) fun finish_super_admin_transfer(
-    new_admin: address,
-) {
-    emit(FinishSuperAdminTransfer(new_admin));
-}
-
-public(package) fun new_admin(
-    admin: address,
-) {
-    emit(NewAdmin(admin));
-}
-
-public(package) fun revoke_admin(
-    admin: address,
-) {
-    emit(RevokeAdmin(admin));
-}
-
-public(package) fun new_otc<CoinType>(
+public(package) fun new<CoinType>(
     otc: address,
     owner: address, 
     recipient: address,
@@ -90,7 +49,7 @@ public(package) fun new_otc<CoinType>(
     });
 }
 
-public(package) fun otc_buy<CoinType>(
+public(package) fun buy<CoinType>(
     otc: address,
     amount_in: u64,
     amount_out: u64,

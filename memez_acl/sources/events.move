@@ -1,20 +1,20 @@
-module memez_acl::events;
+module memez_acl::acl_events;
 // === Imports === 
 
 use sui::event::emit; 
 
 // === Structs === 
 
-public struct StartSuperAdminTransfer has copy, store, drop {
+public struct StartSuperAdminTransfer has copy, drop {
     new_admin: address,
     start: u64
 }
 
-public struct FinishSuperAdminTransfer(address) has copy, store, drop;
+public struct FinishSuperAdminTransfer(address) has copy, drop;
 
-public struct NewAdmin(address) has copy, store, drop;
+public struct NewAdmin(address) has copy, drop;
 
-public struct RevokeAdmin(address) has copy, store, drop;
+public struct RevokeAdmin(address) has copy, drop;
 
 // === Package Functions ===
 

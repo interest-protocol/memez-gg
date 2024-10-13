@@ -2,10 +2,11 @@
 name = "memez_otc"
 edition = "2024.beta" # edition = "legacy" to use legacy (pre-2024) Move
 license = "MIT"           # e.g., "MIT", "GPL", "Apache 2.0"
-# authors = ["..."]      # e.g., ["Joe Smith (joesmith@noemail.com)", "John Snow (johnsnow@noemail.com)"]
+authors = ["Jose Cerqueira (jose@interestprotocol.com)"]      # e.g., ["Joe Smith (joesmith@noemail.com)", "John Snow(johnsnow@noemail.com)"]
 
 [dependencies]
 Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet" }
+MemezACL = { local = "../memez_acl" }
 InterestMath = { git = "https://github.com/interest-protocol/interest-math.git", rev = "main" }
 # For remote import, use the `{ git = "...", subdir = "...", rev = "..." }`.
 # Revision can be a branch, a tag, and a commit hash.
@@ -21,6 +22,7 @@ InterestMath = { git = "https://github.com/interest-protocol/interest-math.git",
 [addresses]
 memez_otc = "0x0"
 sui = "0x2"
+memez_acl = "0x0"
 interest_math = "0x827cf89500e4df1b5491cc314ae917126a42393579cca1911bf4d5903194d1b0"
 treasury = "0xdd224f2287f0b38693555c6077abe85fcb4aa13e355ad54bc167611896b007e6"
 

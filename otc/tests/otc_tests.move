@@ -259,6 +259,269 @@ fun test_account_functions() {
     world.end();
 }
 
+#[test]
+#[expected_failure(abort_code = otc::EZeroPrice)]
+fun test_new_with_zero_price() {
+    let mut world = start(); 
+
+    let fees = &world.fees;
+
+    world.account.new(
+        fees, 
+        mint_for_testing<Meme>(TOTAL_MEME_AMOUNT, world.scenario.ctx()), 
+        ALICE,
+        0, 
+        option::some(189),
+        option::some(170),
+        world.scenario.ctx()
+    );
+
+    world.end();
+}
+
+#[test]
+#[expected_failure(abort_code = otc::EZeroCoin)]
+fun test_buy_after_deadline() {
+    let mut world = start(); 
+
+    let fees = &world.fees;
+
+    world.account.new(
+        fees, 
+        mint_for_testing<Meme>(0, world.scenario.ctx()), 
+        ALICE,
+        500, 
+        option::some(189),
+        option::some(170),
+        world.scenario.ctx()
+    );
+
+    world.end();
+}
+
+#[test]
+#[expected_failure(abort_code = otc::EVestedOTC)]
+fun test_buy_error_vested_otc() {
+    let mut world = start(); 
+
+    let fees = &world.fees;
+
+    world.account.new(
+        fees, 
+        mint_for_testing<Meme>(TOTAL_MEME_AMOUNT, world.scenario.ctx()), 
+        ALICE,
+        500, 
+        option::some(189),
+        option::none(),
+        world.scenario.ctx()
+    );
+
+    world.scenario.next_tx(ADMIN); 
+
+    let mut otc = world.scenario.take_shared<MemezOTC<Meme>>();
+
+    let meme_coin = otc.buy(
+        mint_for_testing<SUI>(100, world.scenario.ctx()), 
+        world.scenario.ctx()
+    );
+
+    destroy(meme_coin);
+    destroy(otc);
+    world.end();
+}
+
+#[test]
+#[expected_failure(abort_code = otc::EHasDeadline)]
+fun test_buy_error_had_deadline() {
+    let mut world = start(); 
+
+    let fees = &world.fees;
+
+    world.account.new(
+        fees, 
+        mint_for_testing<Meme>(TOTAL_MEME_AMOUNT, world.scenario.ctx()), 
+        ALICE,
+        500, 
+        option::none(),
+        option::some(170),
+        world.scenario.ctx()
+    );
+
+    world.scenario.next_tx(ADMIN); 
+
+    let mut otc = world.scenario.take_shared<MemezOTC<Meme>>();
+
+    let meme_coin = otc.buy(
+        mint_for_testing<SUI>(100, world.scenario.ctx()), 
+        world.scenario.ctx()
+    );
+
+    destroy(meme_coin);
+    destroy(otc);
+    world.end();
+}
+
+#[test]
+#[expected_failure(abort_code = otc::EHasNoDeadline)]
+fun test_buy_with_deadline_error_had_deadline() {
+    let mut world = start(); 
+
+    let fees = &world.fees;
+
+    world.account.new(
+        fees, 
+        mint_for_testing<Meme>(TOTAL_MEME_AMOUNT, world.scenario.ctx()), 
+        ALICE,
+        500, 
+        option::none(),
+        option::none(),
+        world.scenario.ctx()
+    );
+
+    world.scenario.next_tx(ADMIN); 
+
+    let mut otc = world.scenario.take_shared<MemezOTC<Meme>>();
+
+    let meme_coin = otc.buy_with_deadline(
+        &world.clock,
+        mint_for_testing<SUI>(100, world.scenario.ctx()), 
+        world.scenario.ctx()
+    );
+
+    destroy(meme_coin);
+    destroy(otc);
+    world.end();
+}
+
+#[test]
+#[expected_failure(abort_code = otc::ENormalOTC)]
+fun test_buy_vested_error_normal_otc() {
+    let mut world = start(); 
+
+    let fees = &world.fees;
+
+    world.account.new(
+        fees, 
+        mint_for_testing<Meme>(TOTAL_MEME_AMOUNT, world.scenario.ctx()), 
+        ALICE,
+        500, 
+        option::none(),
+        option::none(),
+        world.scenario.ctx()
+    );
+
+    world.scenario.next_tx(ADMIN); 
+
+    let mut otc = world.scenario.take_shared<MemezOTC<Meme>>();
+
+    let meme_coin = otc.buy_vested(
+        &world.clock,
+        mint_for_testing<SUI>(100, world.scenario.ctx()), 
+        world.scenario.ctx()
+    );
+
+    destroy(meme_coin);
+    destroy(otc);
+    world.end();
+}
+
+#[test]
+#[expected_failure(abort_code = otc::EHasDeadline)]
+fun test_buy_vested_error_has_deadline() {
+    let mut world = start(); 
+
+    let fees = &world.fees;
+
+    world.account.new(
+        fees, 
+        mint_for_testing<Meme>(TOTAL_MEME_AMOUNT, world.scenario.ctx()), 
+        ALICE,
+        500, 
+        option::some(100),
+        option::some(99),
+        world.scenario.ctx()
+    );
+
+    world.scenario.next_tx(ADMIN); 
+
+    let mut otc = world.scenario.take_shared<MemezOTC<Meme>>();
+
+    let meme_coin = otc.buy_vested(
+        &world.clock,
+        mint_for_testing<SUI>(100, world.scenario.ctx()), 
+        world.scenario.ctx()
+    );
+
+    destroy(meme_coin);
+    destroy(otc);
+    world.end();
+}
+
+#[test]
+#[expected_failure(abort_code = otc::EHasNoDeadline)]
+fun test_buy_vested_with_deadline_error_has_no_deadline() {
+    let mut world = start(); 
+
+    let fees = &world.fees;
+
+    world.account.new(
+        fees, 
+        mint_for_testing<Meme>(TOTAL_MEME_AMOUNT, world.scenario.ctx()), 
+        ALICE,
+        500, 
+        option::none(),
+        option::none(),
+        world.scenario.ctx()
+    );
+
+    world.scenario.next_tx(ADMIN); 
+
+    let mut otc = world.scenario.take_shared<MemezOTC<Meme>>();
+
+    let meme_coin = otc.buy_vested_with_deadline(
+        &world.clock,
+        mint_for_testing<SUI>(100, world.scenario.ctx()), 
+        world.scenario.ctx()
+    );
+
+    destroy(meme_coin);
+    destroy(otc);
+    world.end();
+}
+
+#[test]
+#[expected_failure(abort_code = otc::EDeadlinePassed)]
+fun test_buy_vested_with_deadline_error_deadline_passed() {
+    let mut world = start(); 
+
+    let fees = &world.fees;
+
+    world.account.new(
+        fees, 
+        mint_for_testing<Meme>(TOTAL_MEME_AMOUNT, world.scenario.ctx()), 
+        ALICE,
+        500, 
+        option::some(120),
+        option::some(10),
+        world.scenario.ctx()
+    );
+
+    world.scenario.next_tx(ADMIN); 
+
+    world.clock.increment_for_testing(11);
+
+    let mut otc = world.scenario.take_shared<MemezOTC<Meme>>();
+
+    let meme_coin = otc.buy_vested_with_deadline(
+        &world.clock,
+        mint_for_testing<SUI>(100, world.scenario.ctx()), 
+        world.scenario.ctx()
+    );
+
+    destroy(meme_coin);
+    destroy(otc);
+    world.end();
+}
 
 fun start(): World {
     let mut scenario = test_scenario::begin(ADMIN);

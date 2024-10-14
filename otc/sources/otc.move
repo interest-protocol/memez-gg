@@ -190,6 +190,12 @@ public fun destroy<CoinType>(self: MemezOTC<CoinType>, account: &MemezOTCAccount
     balance.into_coin(ctx)
 }
 
+public fun destroy_account(self: MemezOTCAccount) {
+    let MemezOTCAccount { id } = self; 
+
+    id.delete();
+}
+
 // === Public View Functions === 
 
 public fun calculate_amount_in<CoinType>(self: &MemezOTC<CoinType>, amount_out: u64): u64 {

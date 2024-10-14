@@ -280,6 +280,36 @@ fun test_new_with_zero_price() {
 }
 
 #[test]
+fun test_destroy() {
+    let mut world = start(); 
+
+    let fees = &world.fees; 
+
+    world.account.new(
+        fees, 
+        mint_for_testing<Meme>(TOTAL_MEME_AMOUNT, world.scenario.ctx()), 
+        ALICE,
+        500, 
+        option::none(),
+        option::some(100),
+        world.scenario.ctx()
+    ); 
+
+    world.scenario.next_tx(ADMIN);
+
+    let otc = world.scenario.take_shared<MemezOTC<Meme>>();
+
+    world.scenario.next_tx(ALICE);
+
+    let meme_coin = otc.destroy(&world.account, world.scenario.ctx());
+
+    assert_eq(meme_coin.value(), TOTAL_MEME_AMOUNT);
+    
+    destroy(meme_coin);
+    world.end();
+}
+
+#[test]
 #[expected_failure(abort_code = otc::EZeroCoin)]
 fun test_buy_after_deadline() {
     let mut world = start(); 
@@ -523,6 +553,134 @@ fun test_buy_vested_with_deadline_error_deadline_passed() {
     world.end();
 }
 
+#[test]
+#[expected_failure(abort_code = otc::EInvalidBuyAmount)]
+fun test_buy_error_invalid_buy_amount() {
+    let mut world = start(); 
+
+    let fees = &world.fees;
+
+    world.account.new(
+        fees, 
+        mint_for_testing<Meme>(TOTAL_MEME_AMOUNT, world.scenario.ctx()), 
+        ALICE,
+        500, 
+        option::none(),
+        option::none(),
+        world.scenario.ctx()
+    );
+
+    world.scenario.next_tx(ALICE);  
+
+    let mut otc = world.scenario.take_shared<MemezOTC<Meme>>();
+
+    let meme_coin = otc.buy(
+        mint_for_testing<SUI>(0, world.scenario.ctx()), 
+        world.scenario.ctx()
+    );
+
+    destroy(meme_coin);
+    destroy(otc);
+    world.end();
+}
+
+#[test]
+#[expected_failure(abort_code = otc::ENotEnoughBalance)]
+fun test_buy_error_not_enough_balance() {
+    let mut world = start(); 
+
+    let fees = &world.fees;
+
+    world.account.new(
+        fees, 
+        mint_for_testing<Meme>(TOTAL_MEME_AMOUNT, world.scenario.ctx()), 
+        ALICE,
+        500, 
+        option::none(),
+        option::none(),
+        world.scenario.ctx()
+    );
+
+    world.scenario.next_tx(ALICE);  
+
+    let mut otc = world.scenario.take_shared<MemezOTC<Meme>>();
+
+    let meme_coin = otc.buy(
+        mint_for_testing<SUI>(500 + 1, world.scenario.ctx()), 
+        world.scenario.ctx()
+    );
+
+    destroy(meme_coin);
+    destroy(otc);
+    world.end();
+}
+
+#[test]
+#[expected_failure(abort_code = otc::EWrongOwner)]
+fun test_update_deadline_error_wrong_owner() {
+    let mut world = start(); 
+
+    let fees = &world.fees; 
+
+    world.account.new(
+        fees, 
+        mint_for_testing<Meme>(TOTAL_MEME_AMOUNT, world.scenario.ctx()), 
+        ALICE,
+        500, 
+        option::none(),
+        option::some(100),
+        world.scenario.ctx()
+    ); 
+
+    world.scenario.next_tx(ADMIN);
+
+    let otc = world.scenario.take_shared<MemezOTC<Meme>>();
+
+    world.scenario.next_tx(ALICE);
+
+    let wrong_account = otc::new_account(world.scenario.ctx());
+
+    let meme_coin = otc.destroy(&wrong_account, world.scenario.ctx());
+
+    wrong_account.destroy_account();
+    
+    destroy(meme_coin);
+    world.end();
+}
+
+#[test]
+#[expected_failure(abort_code = otc::EWrongOwner)]
+fun test_destroy_error_wrong_owner() {
+    let mut world = start(); 
+
+    let fees = &world.fees; 
+
+    world.account.new(
+        fees, 
+        mint_for_testing<Meme>(TOTAL_MEME_AMOUNT, world.scenario.ctx()), 
+        ALICE,
+        500, 
+        option::none(),
+        option::some(100),
+        world.scenario.ctx()
+    ); 
+
+    world.scenario.next_tx(ADMIN);
+
+    let mut otc = world.scenario.take_shared<MemezOTC<Meme>>();
+
+    world.scenario.next_tx(ALICE);
+
+    let wrong_account = otc::new_account(world.scenario.ctx());
+
+    otc.update_deadline(&wrong_account, 100);
+
+    wrong_account.destroy_account();
+    
+    destroy(otc);
+    world.end();
+}
+    
 fun start(): World {
     let mut scenario = test_scenario::begin(ADMIN);
 

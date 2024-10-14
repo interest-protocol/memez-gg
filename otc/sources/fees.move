@@ -87,3 +87,8 @@ public fun set_treasury(fees: &mut Fees, _: &AuthWitness, treasury: address) {
 public fun init_for_testing(ctx: &mut TxContext) {
     init(ctx);
 }
+
+#[test_only]
+public(package) fun rate_value(rate: &Rate): u64 {
+    rate.value
+}

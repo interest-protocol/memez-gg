@@ -74,9 +74,9 @@ public fun new_account(ctx: &mut TxContext): MemezOTCAccount {
     }
 }
 
-public fun new_otc<CoinType>(
-    fees: &Fees,
+public fun new<CoinType>(
     account: &mut MemezOTCAccount, 
+    fees: &Fees,
     coin_in:Coin<CoinType>, 
     recipient: address,
     price: u64, 
@@ -213,27 +213,81 @@ fun calculate_amount_out_internal(
 }
 
 fun buy_internal<CoinType>(self: &mut MemezOTC<CoinType>, mut coin_in: Coin<SUI>, ctx: &mut TxContext): Balance<CoinType> {
-    let amount_out = calculate_amount_out_internal(coin_in.value(), self.price, self.deposited_amount);
+    let coin_in_value = coin_in.value();
+
+    let amount_out = calculate_amount_out_internal(coin_in_value, self.price, self.deposited_amount);
 
     assert!(amount_out != 0, EInvalidBuyAmount);
     assert!(self.balance.value() >= amount_out, ENotEnoughBalance);
 
-    let coin_in_value = coin_in.value();
+    let fee_in = self.rate.calculate_fee(coin_in_value);
 
     transfer::public_transfer(
-        coin_in.split(self.rate.calculate_fee(coin_in_value), ctx), 
+        coin_in.split(fee_in, ctx), 
         self.recipient
     );
 
     transfer::public_transfer(coin_in, self.recipient);
 
-    let fee_value = self.rate.calculate_fee(amount_out);
+    let fee_out = self.rate.calculate_fee(amount_out);
 
-    transfer::public_transfer(self.balance.split(fee_value).into_coin(ctx), self.owner);
+    transfer::public_transfer(self.balance.split(fee_out).into_coin(ctx), self.owner);
 
-    let balance_out = self.balance.split(amount_out - fee_value);
+    let balance_out = self.balance.split(amount_out - fee_out);
 
-    events::buy<CoinType>(self.id.to_address(), coin_in_value, balance_out.value(), self.vesting_duration);
+    events::buy<CoinType>(
+        self.id.to_address(), 
+        coin_in_value, 
+        amount_out, 
+        fee_in, 
+        fee_out,
+        self.vesting_duration
+    );
 
     balance_out
 }
+
+#[test_only]
+public fun addy(account: &MemezOTCAccount): address {
+    account.id.to_address()
+}
+
+#[test_only] 
+public fun balance<T>(otc: &MemezOTC<T>): u64 {
+    otc.balance.value()
+}
+
+#[test_only]
+public fun owner<T>(otc: &MemezOTC<T>): address {
+    otc.owner
+}
+
+#[test_only]
+public fun recipient<T>(otc: &MemezOTC<T>): address {
+    otc.recipient
+}
+
+#[test_only]
+public fun deposited_amount<T>(otc: &MemezOTC<T>): u64 {
+    otc.deposited_amount
+}
+
+#[test_only]
+public fun price<T>(otc: &MemezOTC<T>): u64 {
+    otc.price
+}
+
+#[test_only]
+public fun fee_rate<T>(otc: &MemezOTC<T>): u64 {
+    otc.rate.rate_value()
+}
+
+#[test_only]
+public fun vesting_duration<T>(otc: &MemezOTC<T>): Option<u64> {
+    otc.vesting_duration
+}
+
+#[test_only]
+public fun deadline<T>(otc: &MemezOTC<T>): Option<u64> {
+    otc.deadline
+}   

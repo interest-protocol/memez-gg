@@ -75,3 +75,25 @@ fun linear_vesting_amount(
     if (timestamp > start + duration) return total_allocation;
     (total_allocation * (timestamp - start)) / duration
 }
+
+// === Tests === 
+
+#[test_only]
+public fun balance<T>(self: &VestingWallet<T>): u64 {
+    self.balance.value()
+} 
+
+#[test_only]
+public fun start<T>(self: &VestingWallet<T>): u64 {
+    self.start
+}
+
+#[test_only]
+public fun released<T>(self: &VestingWallet<T>): u64 {
+    self.released
+}
+
+#[test_only]
+public fun duration<T>(self: &VestingWallet<T>): u64 {
+    self.duration
+}

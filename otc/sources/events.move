@@ -23,6 +23,8 @@ public struct OTCBuy has copy, drop {
     coin: TypeName,
     amount_in: u64,
     amount_out: u64,
+    fee_in: u64,
+    fee_out: u64,
     vesting_duration: Option<u64>
 }
 
@@ -53,7 +55,17 @@ public(package) fun buy<CoinType>(
     otc: address,
     amount_in: u64,
     amount_out: u64,
+    fee_in: u64,
+    fee_out: u64,
     vesting_duration: Option<u64>
 ) {
-    emit(OTCBuy { otc, coin: type_name::get<CoinType>(), amount_in, amount_out, vesting_duration });
+    emit(OTCBuy { 
+        otc, 
+        coin: type_name::get<CoinType>(), 
+        amount_in, 
+        amount_out, 
+        fee_in, 
+        fee_out, 
+        vesting_duration 
+    });
 }

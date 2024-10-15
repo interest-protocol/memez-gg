@@ -5,7 +5,7 @@ use std::u64;
 
 use sui::vec_set::{Self, VecSet};
 
-use memez_acl::acl_events as events;
+use memez_acl::events;
 
 // === Constants === 
 

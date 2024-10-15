@@ -5,9 +5,10 @@ edition = "2024.beta" # edition = "legacy" to use legacy (pre-2024) Move
 # authors = ["..."]      # e.g., ["Joe Smith (joesmith@noemail.com)", "John Snow (johnsnow@noemail.com)"]
 
 [dependencies]
-Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet" }
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet", override = true }
 InterestMath = { git = "https://github.com/interest-protocol/interest-math.git", rev = "main" }
 MemezACL = { local = "../acl" }
+TurbosCLMM = { local = "../dependencies/turbos" }
 
 [addresses]
 memez_launch = "0x0"

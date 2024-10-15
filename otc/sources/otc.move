@@ -1,4 +1,4 @@
-module memez_otc::otc;
+module memez_otc::memez_otc;
 // === Imports === 
 
 use sui::{
@@ -10,9 +10,12 @@ use sui::{
 
 use interest_math::u64;
 
+use memez_acl::acl::AuthWitness;
+
+use memez_fees::memez_fees::{MemezFees, Rate};
+
 use memez_otc::{
-    fees::{Fees, Rate},
-    otc_events as events,
+    events,
     vesting_wallet::{Self, VestingWallet},
 };
 
@@ -50,6 +53,8 @@ const EHasDeadline: vector<u8> = b"This OTC has a deadline";
 
 // === Structs === 
 
+public struct FeeKey has copy, store, drop()
+
 public struct MemezOTCAccount has key, store {
     id: UID,
 }
@@ -76,7 +81,7 @@ public fun new_account(ctx: &mut TxContext): MemezOTCAccount {
 
 public fun new<CoinType>(
     account: &mut MemezOTCAccount, 
-    fees: &Fees,
+    fees: &MemezFees,
     coin_in:Coin<CoinType>, 
     recipient: address,
     price: u64, 
@@ -97,7 +102,7 @@ public fun new<CoinType>(
         recipient,
         deposited_amount: coin_in_value,
         price,
-        rate: fees.rate(),
+        rate: fees.rate(FeeKey()),
         vesting_duration,
         deadline
    };
@@ -108,7 +113,7 @@ public fun new<CoinType>(
         recipient, 
         coin_in_value, 
         price, 
-        fees.value(),
+        fees.value(FeeKey()),
         vesting_duration
     );
 
@@ -206,6 +211,12 @@ public fun calculate_amount_out<CoinType>(self: &MemezOTC<CoinType>, amount_in: 
     let amount = calculate_amount_out_internal(amount_in, self.price, self.deposited_amount);
 
     amount - self.rate.calculate_fee(amount)
+}
+
+// === Admin Functions ===  
+
+public fun set_fee(fees: &mut MemezFees, witness: &AuthWitness, rate: u64) {
+    fees.add(witness, FeeKey(), rate);
 }
 
 // === Private Functions === 

@@ -8,5 +8,5 @@ authors = ["Jose Cerqueira (jose@interestprotocol.com)"]
 Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet" }
 
 [addresses]
-memez_acl = "0x0"
+memez_acl = "0x12345"
 sui = "0x2"

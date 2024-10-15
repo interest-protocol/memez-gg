@@ -1,4 +1,4 @@
-module memez_acl::acl_events;
+module memez_acl::events;
 // === Imports === 
 
 use sui::event::emit; 

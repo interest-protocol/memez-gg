@@ -1,4 +1,4 @@
-module memez_otc::otc_events;
+module memez_otc::events;
 // === Imports === 
 
 use std::type_name::{Self, TypeName};

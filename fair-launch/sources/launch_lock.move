@@ -118,7 +118,6 @@ public(package) fun position_borrow<T: key + store>(self: &LaunchLock, position_
     dof::borrow(&self.id, PositionKey(position_address))
 }
 
-
 public(package) fun position_borrow_mut<T: key + store>(self: &mut LaunchLock, position_address: address): &mut T {
     dof::borrow_mut(&mut self.id, PositionKey(position_address))
 }

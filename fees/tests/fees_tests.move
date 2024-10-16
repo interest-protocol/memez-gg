@@ -114,11 +114,8 @@ fun test_admin_functions() {
     assert_eq(world.fees.value(Rate1Key()), INITIAL_RATE);
     assert_eq(world.fees.treasury(), @treasury);
 
-    let witness = &world.witness;
-
     world.fees.add(witness, Rate1Key(), INITIAL_RATE * 3);
     world.fees.set_treasury(witness, ADMIN);
-
 
     assert_eq(world.fees.value(Rate1Key()), INITIAL_RATE * 3);
     assert_eq(world.fees.treasury(), ADMIN);
@@ -129,7 +126,7 @@ fun test_admin_functions() {
 
     assert_eq(world.fees.has(Rate1Key()), false); 
 
-    end(world);
+    world.end();
 }
 
 #[test]

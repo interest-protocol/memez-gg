@@ -34,15 +34,9 @@ public struct MemezLock has key, store {
     total_admin_fees_b: u64,
 }
 
-// === Admin Functions ===  
+// === Public Mutative Functions ===   
 
-public fun set_fee(fees: &mut MemezFees, witness: &AuthWitness, rate: u64) {
-    fees.add(witness, FeeKey(), rate);
-}
-
-// === Public Package Functions ===  
-
-public(package) fun new<T: key + store>( 
+public fun new<T: key + store>( 
     fees: &MemezFees,
     position: T, 
     unlock_epoch: u64,
@@ -68,7 +62,7 @@ public(package) fun new<T: key + store>(
     memez_lock
 }
 
-public(package) fun destroy<T: key + store>(self: MemezLock, ctx: &TxContext): T {
+public fun destroy<T: key + store>(self: MemezLock, ctx: &TxContext): T {
     assert!(ctx.epoch() > self.unlock_epoch, EPositionLocked);
 
     let MemezLock {
@@ -83,6 +77,14 @@ public(package) fun destroy<T: key + store>(self: MemezLock, ctx: &TxContext): T
 
     position
 }
+
+// === Admin Functions ===  
+
+public fun set_fee(fees: &mut MemezFees, witness: &AuthWitness, rate: u64) {
+    fees.add(witness, FeeKey(), rate);
+}
+
+// === Public Package Functions ===  
 
 public(package) fun add_amounts(self: &mut MemezLock, amount_a: u64, amount_b: u64) {
     self.amount_a = self.amount_a + amount_a;

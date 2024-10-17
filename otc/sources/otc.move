@@ -14,7 +14,7 @@ use memez_acl::acl::AuthWitness;
 
 use memez_fees::memez_fees::{MemezFees, Rate};
 
-use memez_vesting::vesting_wallet::{Self, VestingWallet};
+use memez_vesting::memez_vesting::{Self, MemezVesting};
 
 use memez_otc::events;
 
@@ -143,16 +143,19 @@ public fun buy_vested<CoinType>(
     clock: &Clock, 
     coin_in: Coin<SUI>, 
     ctx: &mut TxContext
-): VestingWallet<CoinType> {
+): MemezVesting<CoinType> {
     assert!(self.vesting_duration.is_some(), ENormalOTC);
     assert!(self.deadline.is_none(), EHasDeadline);
 
     let balance_out = buy_internal(self, coin_in, ctx);
 
-    vesting_wallet::new(
+    let now = clock.timestamp_ms();
+
+    memez_vesting::new(
+        clock,
         balance_out.into_coin(ctx), 
-        clock, 
-        self.vesting_duration.destroy_some(), 
+        now,
+        self.vesting_duration.destroy_some(),
         ctx
     )
 }
@@ -162,16 +165,19 @@ public fun buy_vested_with_deadline<CoinType>(
     clock: &Clock,
     coin_in: Coin<SUI>,
     ctx: &mut TxContext
-): VestingWallet<CoinType> {
+): MemezVesting<CoinType> {
     assert!(self.deadline.is_some(), EHasNoDeadline);
     assert!(*self.deadline.borrow() >= clock.timestamp_ms(), EDeadlinePassed);
 
     let balance_out = buy_internal(self, coin_in, ctx);
 
-    vesting_wallet::new(
-        balance_out.into_coin(ctx), 
+    let now = clock.timestamp_ms();
+
+    memez_vesting::new(
         clock, 
-        self.vesting_duration.destroy_some(), 
+        balance_out.into_coin(ctx), 
+        now,
+        self.vesting_duration.destroy_some(),
         ctx
     )
 }

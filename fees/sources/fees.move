@@ -62,7 +62,7 @@ public fun treasury(self: &MemezFees): address {
 }
 
 public fun rate<Key: copy + store + drop>(self: &MemezFees, key: Key): Rate {
-    *self.borrow(key)
+    *df::borrow<Key, Rate>(&self.id, key)
 }
 
 public fun value<Key: copy + store + drop>(self: &MemezFees, key: Key): u64 {
@@ -87,7 +87,7 @@ public fun add<Key: copy + store + drop>(self: &mut MemezFees, _: &AuthWitness, 
     assert!(MAX_RATE >= value, EFeeIsTooHigh);
 
     if (df::exists_with_type<Key, Rate>(&self.id, key)) {
-        let rate = self.borrow_mut(key);
+        let rate = df::borrow_mut<Key, Rate>(&mut self.id, key);
         rate.value = value;
     } else {
         df::add(&mut self.id, key, Rate { value });
@@ -106,15 +106,6 @@ public fun set_treasury(self: &mut MemezFees, _: &AuthWitness, treasury: address
     self.treasury = treasury;
 }
 
-// === Private Functions ===   
-
-fun borrow<Key: copy + store + drop>(self: &MemezFees, key: Key): &Rate {
-    df::borrow<Key, Rate>(&self.id, key)
-}
-
-fun borrow_mut<Key: copy + store + drop>(self: &mut MemezFees, key: Key): &mut Rate {
-    df::borrow_mut<Key, Rate>(&mut self.id, key)
-}
 // === Tests ===  
 
 #[test_only]

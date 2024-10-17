@@ -14,10 +14,9 @@ use memez_acl::acl::AuthWitness;
 
 use memez_fees::memez_fees::{MemezFees, Rate};
 
-use memez_otc::{
-    events,
-    vesting_wallet::{Self, VestingWallet},
-};
+use memez_vesting::vesting_wallet::{Self, VestingWallet};
+
+use memez_otc::events;
 
 // === Errors === 
 
@@ -151,7 +150,7 @@ public fun buy_vested<CoinType>(
     let balance_out = buy_internal(self, coin_in, ctx);
 
     vesting_wallet::new(
-        balance_out, 
+        balance_out.into_coin(ctx), 
         clock, 
         self.vesting_duration.destroy_some(), 
         ctx
@@ -170,7 +169,7 @@ public fun buy_vested_with_deadline<CoinType>(
     let balance_out = buy_internal(self, coin_in, ctx);
 
     vesting_wallet::new(
-        balance_out, 
+        balance_out.into_coin(ctx), 
         clock, 
         self.vesting_duration.destroy_some(), 
         ctx

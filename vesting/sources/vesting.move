@@ -1,4 +1,4 @@
-module memez_otc::vesting_wallet;
+module memez_vesting::vesting_wallet;
 // === Imports === 
 
 use sui::{
@@ -16,6 +16,21 @@ public struct VestingWallet<phantom T> has key, store {
 }
 
 // === Public Mutative Functions ===
+
+public fun new<T>(
+    coin: Coin<T>,
+    clock: &Clock,
+    duration: u64,
+    ctx: &mut TxContext,
+): VestingWallet<T> {
+    VestingWallet {
+        id: object::new(ctx),
+        balance: coin.into_balance(),
+        released: 0,
+        start: clock.timestamp_ms(),
+        duration,
+    }
+}
 
 public fun claim<T>(self: &mut VestingWallet<T>, clock: &Clock, ctx: &mut TxContext): Coin<T> {
     let releasable = vesting_status(self, clock);
@@ -44,23 +59,6 @@ public fun vesting_status<T>(self: &VestingWallet<T>, clock: &Clock): u64 {
     );
 
     vested - self.released
-}
-
-// === Public Package Functions ===
-
-public(package) fun new<T>(
-    balance: Balance<T>,
-    clock: &Clock,
-    duration: u64,
-    ctx: &mut TxContext,
-): VestingWallet<T> {
-    VestingWallet {
-        id: object::new(ctx),
-        balance,
-        released: 0,
-        start: clock.timestamp_ms(),
-        duration,
-    }
 }
 
 // === Private Functions ===

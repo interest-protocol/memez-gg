@@ -1,5 +1,5 @@
 #[test_only]
-module memez_otc::vesting_wallet_tests;
+module memez_vesting::vesting_wallet_tests;
 
 use sui::{
     coin,
@@ -8,7 +8,7 @@ use sui::{
     test_utils::assert_eq
 };
 
-use memez_otc::vesting_wallet;
+use memez_vesting::vesting_wallet;
 
 #[test]
 fun test_end_to_end() {
@@ -23,7 +23,7 @@ fun test_end_to_end() {
 
     clock.increment_for_testing(start);
     
-    let mut wallet = vesting_wallet::new(total_coin.into_balance(), &clock, duration, &mut ctx);
+    let mut wallet = vesting_wallet::new(total_coin, &clock, duration, &mut ctx);
 
     assert_eq(wallet.balance(), coin_amount);
     assert_eq(wallet.start(), start);
@@ -72,7 +72,7 @@ fun test_destroy_non_zero_wallet() {
     let total_coin = coin::mint_for_testing<SUI>(coin_amount, &mut ctx);
     let clock = clock::create_for_testing(&mut ctx);
 
-    let wallet = vesting_wallet::new(total_coin.into_balance(), &clock, end, &mut ctx);
+    let wallet = vesting_wallet::new(total_coin, &clock, end, &mut ctx);
 
     wallet.destroy_zero();
     clock::destroy_for_testing(clock);

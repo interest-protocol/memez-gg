@@ -41,7 +41,7 @@ fun test_end_to_end() {
         world.scenario.ctx()
     );
 
-    assert_eq(lock.rate().rate_value(), FEE);
+    assert_eq(lock.fee().fee_value(), FEE);
     assert_eq(lock.unlock_epoch(), 10); 
     assert_eq(lock.treasury(), world.fees.treasury()); 
 

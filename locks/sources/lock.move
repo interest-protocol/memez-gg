@@ -5,7 +5,7 @@ use sui::dynamic_object_field as dof;
 
 use memez_acl::acl::AuthWitness;
 
-use memez_fees::memez_fees::{Rate, MemezFees};
+use memez_fees::memez_fees::{Fee, MemezFees};
 
 // === Errors === 
 
@@ -23,7 +23,7 @@ public struct PositionKey has store, copy, drop()
 
 public struct MemezLock has key, store {
     id: UID,
-    rate: Rate,
+    fee: Fee,
     treasury: address,
     unlock_epoch: u64,
     amount_a: u64,
@@ -47,7 +47,7 @@ public fun new<T: key + store>(
     let mut memez_lock = MemezLock {
         id: object::new(ctx),
         treasury: fees.treasury(),
-        rate: fees.rate(FeeKey()),
+        fee: fees.get(FeeKey()),
         unlock_epoch,
         amount_a: 0,
         amount_b: 0, 
@@ -113,8 +113,8 @@ public(package) fun treasury(self: &MemezLock): address {
     self.treasury
 }
 
-public(package) fun rate(self: &MemezLock): Rate {
-    self.rate
+public(package) fun fee(self: &MemezLock): Fee {
+    self.fee
 }
 
 // === Test Only Functions ===  

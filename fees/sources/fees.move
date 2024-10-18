@@ -25,7 +25,7 @@ const EFeeIsTooHigh: vector<u8> = b"The fee is too high";
 
 // === Structs ===  
 
-public struct Rate has store, copy, drop {
+public struct Fee has store, copy, drop {
     value: u64,
 }
 
@@ -55,30 +55,30 @@ fun init(ctx: &mut TxContext) {
 
 public fun precision(): u64 {
     PRECISION
-}
+}   
 
 public fun treasury(self: &MemezFees): address {
     self.treasury
 }
 
-public fun rate<Key: copy + store + drop>(self: &MemezFees, key: Key): Rate {
-    *df::borrow<Key, Rate>(&self.id, key)
+public fun get<Key: copy + store + drop>(self: &MemezFees, key: Key): Fee {
+    *df::borrow<Key, Fee>(&self.id, key)
 }
 
 public fun value<Key: copy + store + drop>(self: &MemezFees, key: Key): u64 {
-    self.rate(key).value
+    self.get(key).value
 }
 
 public fun has<Key: copy + store + drop>(self: &MemezFees, key: Key): bool {
-    df::exists_with_type<Key, Rate>(&self.id, key)
+    df::exists_with_type<Key, Fee>(&self.id, key)
 }
 
-public fun calculate_fee(rate: Rate, amount: u64): u64 {
-    u64::mul_div_up(amount, rate.value, PRECISION)
+public fun calculate_fee(fee: Fee, amount: u64): u64 {
+    u64::mul_div_up(amount, fee.value, PRECISION)
 }
 
-public fun calculate_amount_in(rate: Rate, amount: u64): u64 {
-    u64::mul_div_up(amount, PRECISION, PRECISION - rate.value)
+public fun calculate_amount_in(fee: Fee, amount: u64): u64 {
+    u64::mul_div_up(amount, PRECISION, PRECISION - fee.value)
 }
 
 // === Admin Functions ===  
@@ -86,20 +86,20 @@ public fun calculate_amount_in(rate: Rate, amount: u64): u64 {
 public fun add<Key: copy + store + drop>(self: &mut MemezFees, _: &AuthWitness, key: Key, value: u64) {
     assert!(MAX_RATE >= value, EFeeIsTooHigh);
 
-    if (df::exists_with_type<Key, Rate>(&self.id, key)) {
-        let rate = df::borrow_mut<Key, Rate>(&mut self.id, key);
-        rate.value = value;
+    if (df::exists_with_type<Key, Fee>(&self.id, key)) {
+        let fee = df::borrow_mut<Key, Fee>(&mut self.id, key);
+        fee.value = value;
     } else {
-        df::add(&mut self.id, key, Rate { value });
+        df::add(&mut self.id, key, Fee { value });
     };
 
     emit(FeeSet (key, value));
 }
 
-public fun remove<Key: copy + store + drop>(self: &mut MemezFees, _: &AuthWitness, key: Key): Rate {
+public fun remove<Key: copy + store + drop>(self: &mut MemezFees, _: &AuthWitness, key: Key): Fee {
     emit(RemoveFee(key));
     
-    df::remove<Key, Rate>(&mut self.id, key)
+    df::remove<Key, Fee>(&mut self.id, key)
 }
 
 public fun set_treasury(self: &mut MemezFees, _: &AuthWitness, treasury: address) {
@@ -114,6 +114,6 @@ public fun init_for_testing(ctx: &mut TxContext) {
 }
 
 #[test_only]
-public fun rate_value(rate: &Rate): u64 {
-    rate.value
+public fun fee_value(fee: &Fee): u64 {
+    fee.value
 }

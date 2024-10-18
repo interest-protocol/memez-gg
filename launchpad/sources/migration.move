@@ -32,12 +32,12 @@ fun init(ctx: &mut TxContext) {
 
 // === Public Package Functions === 
 
-public(package) fun is_whitelisted<Witness: drop>(self: &Migration): bool {
-    self.whitelisted.contains(&type_name::get<Witness>())
+public(package) fun is_whitelisted(self: &Migration, witness: TypeName): bool {
+    self.whitelisted.contains(&witness)
 }
 
-public(package) fun asset_is_whitelisted<Witness: drop>(self: &Migration) {
-    assert!(self.is_whitelisted<Witness>(), InvalidWitness);
+public(package) fun assert_is_whitelisted(self: &Migration, witness: TypeName) {
+    assert!(self.is_whitelisted(witness), InvalidWitness);
 }
 
 // === Admin Functions === 

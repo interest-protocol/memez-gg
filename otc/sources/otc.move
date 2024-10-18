@@ -12,7 +12,7 @@ use interest_math::u64;
 
 use memez_acl::acl::AuthWitness;
 
-use memez_fees::memez_fees::{MemezFees, Rate};
+use memez_fees::memez_fees::{MemezFees, Fee};
 
 use memez_vesting::memez_vesting::{Self, MemezVesting};
 
@@ -64,8 +64,9 @@ public struct MemezOTC<phantom CoinType> has key {
     owner: address, 
     recipient: address,
     deposited_amount: u64,
+    // @dev Total amount of sui to collect for all deposited amount
     price: u64,
-    rate: Rate,
+    fee: Fee,
     vesting_duration: Option<u64>,
     deadline: Option<u64>
 }
@@ -101,7 +102,7 @@ public fun new<CoinType>(
         recipient,
         deposited_amount: coin_in_value,
         price,
-        rate: fees.rate(FeeKey()),
+        fee: fees.get(FeeKey()),
         vesting_duration,
         deadline
    };
@@ -209,13 +210,13 @@ public fun destroy_account(self: MemezOTCAccount) {
 // === Public View Functions === 
 
 public fun calculate_amount_in<CoinType>(self: &MemezOTC<CoinType>, amount_out: u64): u64 {
-    self.rate.calculate_amount_in(u64::mul_div_up(amount_out, self.price, self.deposited_amount))
+    self.fee.calculate_amount_in(u64::mul_div_up(amount_out, self.price, self.deposited_amount))
 }
 
 public fun calculate_amount_out<CoinType>(self: &MemezOTC<CoinType>, amount_in: u64): u64 {
     let amount = calculate_amount_out_internal(amount_in, self.price, self.deposited_amount);
 
-    amount - self.rate.calculate_fee(amount)
+    amount - self.fee.calculate_fee(amount)
 }
 
 // === Admin Functions ===  
@@ -242,7 +243,7 @@ fun buy_internal<CoinType>(self: &mut MemezOTC<CoinType>, mut coin_in: Coin<SUI>
     assert!(amount_out != 0, EInvalidBuyAmount);
     assert!(self.balance.value() >= amount_out, ENotEnoughBalance);
 
-    let fee_in = self.rate.calculate_fee(coin_in_value);
+    let fee_in = self.fee.calculate_fee(coin_in_value);
 
     transfer::public_transfer(
         coin_in.split(fee_in, ctx), 
@@ -251,7 +252,7 @@ fun buy_internal<CoinType>(self: &mut MemezOTC<CoinType>, mut coin_in: Coin<SUI>
 
     transfer::public_transfer(coin_in, self.recipient);
 
-    let fee_out = self.rate.calculate_fee(amount_out);
+    let fee_out = self.fee.calculate_fee(amount_out);
 
     transfer::public_transfer(self.balance.split(fee_out).into_coin(ctx), self.owner);
 
@@ -300,8 +301,8 @@ public fun price<T>(otc: &MemezOTC<T>): u64 {
 }
 
 #[test_only]
-public fun fee_rate<T>(otc: &MemezOTC<T>): u64 {
-    otc.rate.rate_value()
+public fun fee<T>(otc: &MemezOTC<T>): Fee {
+    otc.fee
 }
 
 #[test_only]

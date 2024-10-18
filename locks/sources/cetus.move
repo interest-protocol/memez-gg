@@ -62,10 +62,10 @@ public fun collect<CoinTypeA, CoinTypeB>(
     let coin_a_value = coin_a.value();
     let coin_b_value = coin_b.value();
 
-    let rate = lock.rate();
+    let fee = lock.fee();
     
-    let coin_admin_a = coin_a.split(rate.calculate_fee(coin_a_value), ctx);
-    let coin_admin_b = coin_b.split(rate.calculate_fee(coin_b_value), ctx);
+    let coin_admin_a = coin_a.split(fee.calculate_fee(coin_a_value), ctx);
+    let coin_admin_b = coin_b.split(fee.calculate_fee(coin_b_value), ctx);
 
     let coin_a_admin_value = coin_admin_a.value();
     let coin_b_admin_value = coin_admin_b.value();

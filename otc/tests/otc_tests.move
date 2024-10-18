@@ -63,6 +63,7 @@ fun initiates_correctly() {
     assert_eq(memez_otc.price(), 500);
     assert_eq(memez_otc.vesting_duration(), option::some(100));
     assert_eq(memez_otc.deadline(), option::some(170));
+    assert_eq(memez_otc.fee().fee_value(), INITIAL_FEE);
     
     destroy(memez_otc);
     world.end();

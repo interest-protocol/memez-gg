@@ -20,7 +20,7 @@ const EInvalidTreasuryCap: vector<u8> = b"Invalid treasury cap";
 
 // === Structs ===  
 
-public struct CoinInfo has store, copy {
+public struct CoinInfo has store, copy, drop {
     treasury_cap_v2: address,
     metadata: address,
     mint_cap: address,
@@ -52,7 +52,7 @@ public fun add<T>(
     metadata: &CoinMetadata<T>, 
     witness: CapWitness
 ) {
-    assert!(type_name::get<T>() == cap.name(), EInvalidCoinType);
+    assert!(type_name::get<T>() == witness.name(), EInvalidCoinType);
 
     let cap_address = object::id(cap).to_address();
 
@@ -76,4 +76,36 @@ public fun get<T>(self: &MemezCoinRegistry): Option<CoinInfo> {
         option::some(*self.coins.borrow(type_name::get<T>()))
     else 
         option::none()
+}
+
+// === Test Only Functions ===   
+
+#[test_only]
+public fun init_for_testing(ctx: &mut TxContext) {
+    init(ctx);
+}
+
+#[test_only]
+public fun treasury_cap_v2(coin_info: CoinInfo): address {
+    coin_info.treasury_cap_v2
+}
+
+#[test_only]
+public fun metadata(coin_info: CoinInfo): address {
+    coin_info.metadata
+}
+
+#[test_only]
+public fun mint_cap(coin_info: CoinInfo): address {
+    coin_info.mint_cap
+}
+
+#[test_only]
+public fun burn_cap(coin_info: CoinInfo): address {
+    coin_info.burn_cap
+}
+
+#[test_only]    
+public fun metadata_cap(coin_info: CoinInfo): address {
+    coin_info.metadata_cap
 }

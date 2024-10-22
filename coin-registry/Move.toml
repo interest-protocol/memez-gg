@@ -3,12 +3,13 @@ name = "MemezCoinRegistry"
 edition = "2024.beta"
 license = "MIT"           
 authors = ["Jose Cerqueira (jose@interestprotocol.com)"]    
+published-at = "0x25831b73abbab47d18663b073c5cce6e946a874538dd00bce713c3e259c6a21f"
 
 [dependencies]
 Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet" }
 CoinV2 = { git = "https://github.com/interest-protocol/coin-v2.git", rev = "main" }
 
 [addresses]
-memez_coin_registry = "0x0993829"
+memez_coin_registry = "0x25831b73abbab47d18663b073c5cce6e946a874538dd00bce713c3e259c6a21f"
 sui = "0x2"
 coin_v2 = "0x465c6e49d81922f4fbb3ad9071b04aa0e08c6ba11ee147fd6c3b43a76a6d2b34"

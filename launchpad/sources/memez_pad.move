@@ -9,7 +9,7 @@ use sui::{
     coin::{Self, Coin, TreasuryCap},
 };
 
-use treasury_cap_v2::treasury_cap::{Self, MetadataCap, BurnCap};
+use coin_v2::coin_v2::{Self, MetadataCap, BurnCap};
 
 use memez_acl::acl::AuthWitness;
 
@@ -57,13 +57,12 @@ public struct FeeKey has copy, drop, store()
 
 public struct Allocation has store {
     amount: u64,
-    vesting_period: u64, 
     vesting_start: u64,
     vesting_duration: u64,
 }
 
 public struct Migrating {
-    witness: TypeName,
+    inner: TypeName,
 }
 
 public struct MemezSale<phantom Meme> has key {
@@ -85,6 +84,7 @@ public struct MemezSale<phantom Meme> has key {
 
 // === Public Mutative Functions === 
 
+#[allow(lint(share_owned))]
 public fun new<Meme, Witness: drop>(
     migration: &Migration,
     fees: &MemezFees,
@@ -96,7 +96,7 @@ public fun new<Meme, Witness: drop>(
     sui_allocation: vector<u64>,
     meme_allocation: vector<u64>,
     ctx: &mut TxContext,
-): (BurnCap, MetadataCap) {
+): MetadataCap {
     assert!(settings.length() == 6, EInvalidSettings);
     assert!(meme_treasury.total_supply() == 0, EInvalidTreasury);
 
@@ -118,7 +118,7 @@ public fun new<Meme, Witness: drop>(
     assert!(minimum_raise > 0, EInvalidMinimumRaise);
     assert!(target_raise > minimum_raise, EInvalidTargetRaise);
     assert!(liquidity_amount > 0, EInvalidLiquidityAmount);
-    assert!(meme_allocation.length() == 4 && sui_allocation.length() == 4, EInvalidAllocation);
+    assert!(meme_allocation.length() == 3 && sui_allocation.length() == 3, EInvalidAllocation);
 
     let meme_allocation_amount = meme_allocation[0];
     let sui_allocation_amount = sui_allocation[0];
@@ -131,11 +131,13 @@ public fun new<Meme, Witness: drop>(
 
     let meme = meme_treasury.mint(total_supply, ctx).into_balance();
 
-    let (treasury_v2, mint_cap, burn_cap, metadata_cap) = treasury_cap::new(meme_treasury, ctx);
+    let (treasury_cap_v2, mut cap_witness) = coin_v2::new(meme_treasury, ctx);
 
-    mint_cap.destroy();
+    let burn_cap = cap_witness.create_burn_cap(ctx);
+    let metadata_cap = cap_witness.create_metadata_cap(ctx);
 
-    transfer::public_share_object(treasury_v2);
+    transfer::public_share_object(burn_cap);
+    transfer::public_share_object(treasury_cap_v2);
 
     let sale = MemezSale {
         id: object::new(ctx),
@@ -147,15 +149,13 @@ public fun new<Meme, Witness: drop>(
         burn_amount,
         team_meme_allocation: Allocation {
             amount: meme_allocation_amount,
-            vesting_period: meme_allocation[1],
-            vesting_start: meme_allocation[2],
-            vesting_duration: meme_allocation[3],
+            vesting_start: meme_allocation[1],
+            vesting_duration: meme_allocation[2],
         },
         team_sui_allocation: Allocation {
             amount: sui_allocation_amount,
-            vesting_period: sui_allocation[1],
-            vesting_start: sui_allocation[2],
-            vesting_duration: sui_allocation[3],
+            vesting_start: sui_allocation[1],
+            vesting_duration: sui_allocation[2],
         },
         minimum_raise,
         target_raise,
@@ -165,7 +165,7 @@ public fun new<Meme, Witness: drop>(
 
     transfer::share_object(sale);
 
-    (burn_cap, metadata_cap)
+    metadata_cap
 }
 
 // === Admin Functions ===  

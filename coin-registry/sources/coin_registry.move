@@ -46,7 +46,7 @@ fun init(ctx: &mut TxContext) {
 
 // === Public Mutative Functions ===  
 
-public fun add_coin<T>(
+public fun add<T>(
     self: &mut MemezCoinRegistry, 
     cap: &TreasuryCapV2, 
     metadata: &CoinMetadata<T>, 
@@ -71,7 +71,7 @@ public fun add_coin<T>(
 
 // === Public View Functions ===  
 
-public fun get_coin_info<T>(self: &MemezCoinRegistry): Option<CoinInfo> {
+public fun get<T>(self: &MemezCoinRegistry): Option<CoinInfo> {
     if (self.coins.contains(type_name::get<T>())) 
         option::some(*self.coins.borrow(type_name::get<T>()))
     else 

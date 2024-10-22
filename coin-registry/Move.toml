@@ -11,4 +11,4 @@ CoinV2 = { git = "https://github.com/interest-protocol/coin-v2.git", rev = "main
 [addresses]
 memez_coin_registry = "0x0993829"
 sui = "0x2"
-coin_v2 = "0x32e4701cb8f3f13a63c654b390d9f60707df2548e37d95ab5af1a32491d9356a"
+coin_v2 = "0x465c6e49d81922f4fbb3ad9071b04aa0e08c6ba11ee147fd6c3b43a76a6d2b34"

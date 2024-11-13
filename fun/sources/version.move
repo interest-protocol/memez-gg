@@ -1,7 +1,7 @@
-module memez_dex::version;
+module memez_fun::version;
 // === Imports === 
 
-use memez_dex::acl::AuthWitness;
+use memez_acl::acl::AuthWitness;
 
 // === Constants ===
 

@@ -1,4 +1,4 @@
-module memez_pad::migration;
+module memez_fun::migration;
 // === Imports === 
 
 use std::type_name::{Self, TypeName};

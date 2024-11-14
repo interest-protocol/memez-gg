@@ -1,17 +1,11 @@
 module memez_fun::memez_fun;
 // === Imports === 
 
-use std::{
-    u64::pow,
-    type_name::{Self, TypeName}
-};
-
 use sui::{
     sui::SUI,
     clock::Clock,
-    table::{Self, Table},
     balance::{Self, Balance},
-    coin::{Self, Coin, TreasuryCap, CoinMetadata},
+    coin::{Coin, TreasuryCap, CoinMetadata},
 };
 
 use interest_math::u64;
@@ -20,16 +14,14 @@ use ipx_coin_standard::ipx_coin_standard::{Self, IPXTreasuryStandard, MetadataCa
 
 use memez_invariant::memez_invariant::get_amount_out;
 
-use memez_acl::acl::AuthWitness;
-
 use memez_fun::{
-    migration::Migration,
-    memez_config::MemezConfig
+    memez_config::MemezConfig,
+    memez_burn::calculate_burn_tax
 };
 
 // === Constants ===
 
-const SUI_DECIMALS_SCALAR: u64 = 1_000_000_000;
+const POW_9: u64 = 1_000_000_000;
 
 const TOTAL_MEME_SUPPLY: u64 = 1_000_000_000_000_000_000;
 
@@ -228,23 +220,42 @@ public fun ape<Meme>(self: &mut MemezFun<Meme>, sell: Coin<SUI>, ctx: &mut TxCon
     ).into_coin(ctx)
 }
 
-public fun jeet<Meme>(self: &mut MemezFun<Meme>, treasury_cap: &mut IPXTreasuryStandard, sell: Coin<Meme>, ctx: &mut TxContext): Coin<SUI> {
+public fun jeet<Meme>(self: &mut MemezFun<Meme>, treasury_cap: &mut IPXTreasuryStandard, mut sell: Coin<Meme>, ctx: &mut TxContext): Coin<SUI> {
     assert!(self.bonding_start_virtual_liquidity != 0, EAuctionDidNotSucceed);
     assert!(!self.is_migrating, EIsMigrating);
 
-    let meme_amount = sell.value(); 
-
-    let total_meme_balance = self.meme_balance.join(sell.into_balance()); 
+    let total_meme_balance = self.meme_balance.value();
 
     let total_sui_balance = self.sui_balance.value(); 
 
-    self.sui_balance.split(
-        get_amount_out(
-            meme_amount, 
-            total_meme_balance + self.total_redeemed_bid_amount - self.total_meme_bid_amount, 
-            self.bonding_start_virtual_liquidity + total_sui_balance
-        )
-    ).into_coin(ctx)
+    let meme_amount = sell.value();
+
+    let sui_full_out_amount = get_amount_out(
+        meme_amount, 
+        total_meme_balance + self.total_redeemed_bid_amount - self.total_meme_bid_amount, 
+        self.bonding_start_virtual_liquidity + total_sui_balance
+    ); 
+
+    let burn_tax = calculate_burn_tax(
+        self.bonding_start_virtual_liquidity, 
+        self.bonding_target_sui_liquidity, 
+        self.bonding_start_virtual_liquidity + total_sui_balance - sui_full_out_amount, 
+        self.burn_tax
+    );
+
+    let fee_amount = u64::mul_div_up(meme_amount, burn_tax, POW_9);
+
+    treasury_cap.burn(sell.split(fee_amount, ctx));
+
+    let sui_amount_after_burn = get_amount_out(
+        meme_amount - fee_amount, 
+        total_meme_balance + self.total_redeemed_bid_amount - self.total_meme_bid_amount, 
+        self.bonding_start_virtual_liquidity + total_sui_balance
+    );
+
+    self.meme_balance.join(sell.into_balance()); 
+
+    self.sui_balance.split(sui_amount_after_burn).into_coin(ctx)
 }
 
 // === Public View Functions ===  
@@ -255,10 +266,10 @@ public fun meme_price<Meme>(self: &MemezFun<Meme>, clock: &Clock): u64 {
 
         if (self.auction_floor_virtual_liquidity > virtual_liquidity) return 0; 
 
-        return virtual_liquidity * SUI_DECIMALS_SCALAR / TOTAL_MEME_SUPPLY
+        return virtual_liquidity * POW_9 / TOTAL_MEME_SUPPLY
     }; 
 
-    (self.bonding_start_virtual_liquidity + self.sui_balance.value()) * SUI_DECIMALS_SCALAR / (self.meme_balance.value() + self.total_redeemed_bid_amount - self.total_meme_bid_amount)
+    (self.bonding_start_virtual_liquidity + self.sui_balance.value()) * POW_9 / (self.meme_balance.value() + self.total_redeemed_bid_amount - self.total_meme_bid_amount)
 }
 
 public fun auction_virtual_liquidity<Meme>(self: &MemezFun<Meme>, clock: &Clock): u64 {

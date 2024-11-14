@@ -275,38 +275,38 @@ public fun jeet<Meme>(
 
     let meme_balance_value = self.meme_balance.value();
 
-    let total_sui_balance = self.sui_balance.value(); 
+    let sui_balance_value = self.sui_balance.value(); 
 
-    let meme_amount = meme_coin.value();
+    let meme_coin_value = meme_coin.value();
 
-    let total_meme_balance = meme_balance_value + self.total_redeemed_bid_amount - self.total_meme_bid_amount;
+    let real_meme_balance_value = meme_balance_value + self.total_redeemed_bid_amount - self.total_meme_bid_amount;
 
-    let pre_tax_sui_amount_out = get_amount_out(
-        meme_amount, 
-        total_meme_balance, 
-        self.bonding_start_virtual_liquidity + total_sui_balance
+    let pre_tax_sui_value_out = get_amount_out(
+        meme_coin_value, 
+        real_meme_balance_value, 
+        self.bonding_start_virtual_liquidity + sui_balance_value
     ); 
 
     let burn_tax = calculate_burn_tax(
         self.bonding_start_virtual_liquidity, 
         self.bonding_target_sui_liquidity, 
-        self.bonding_start_virtual_liquidity + total_sui_balance - pre_tax_sui_amount_out, 
+        self.bonding_start_virtual_liquidity + sui_balance_value - pre_tax_sui_value_out, 
         self.burn_tax
     );
 
-    let meme_fee_amount = u64::mul_div_up(meme_amount, burn_tax, POW_9);
+    let meme_fee_value = u64::mul_div_up(meme_coin_value, burn_tax, POW_9);
 
-    treasury_cap.burn(meme_coin.split(meme_fee_amount, ctx));
+    treasury_cap.burn(meme_coin.split(meme_fee_value, ctx));
 
-    let post_tax_sui_amount_out = get_amount_out(
-        meme_amount - meme_fee_amount, 
-        total_meme_balance, 
-        self.bonding_start_virtual_liquidity + total_sui_balance
+    let post_tax_sui_value_out = get_amount_out(
+        meme_coin_value - meme_fee_value, 
+        real_meme_balance_value, 
+        self.bonding_start_virtual_liquidity + sui_balance_value
     );
 
     self.meme_balance.join(meme_coin.into_balance()); 
 
-    self.sui_balance.split(post_tax_sui_amount_out).into_coin(ctx)
+    self.sui_balance.split(post_tax_sui_value_out).into_coin(ctx)
 }
 
 // === Public View Functions ===  

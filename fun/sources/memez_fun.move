@@ -289,12 +289,7 @@ public fun jeet<Meme>(
         sui_virtual_liquidity
     ); 
 
-    let dynamic_burn_tax = calculate_dynamic_burn_tax(
-        self.bonding_start_virtual_liquidity, 
-        self.bonding_target_sui_liquidity, 
-        sui_virtual_liquidity - pre_tax_sui_value_out, 
-        self.burn_tax
-    );
+    let dynamic_burn_tax = self.get_dynamic_burn_tax(sui_virtual_liquidity - pre_tax_sui_value_out);
 
     let meme_fee_value = u64::mul_div_up(meme_coin_value, dynamic_burn_tax, POW_9);
 
@@ -343,24 +338,21 @@ public fun bonding_virtual_liquidity<Meme>(self: &MemezFun<Meme>): u64 {
 
 // === Private Functions === 
 
-fun calculate_dynamic_burn_tax(
-    start_virtual_liquidity: u64,  
-    target_liquidity: u64,
-    current_liquidity: u64,
-    burn_tax: u64
+fun get_dynamic_burn_tax<Meme>(
+    self: &MemezFun<Meme>, 
+    current_liquidity: u64
 ): u64 {
+    if (current_liquidity >= self.bonding_target_sui_liquidity) return 0; 
 
-    if (current_liquidity >= target_liquidity) return 0; 
+    if (self.bonding_start_virtual_liquidity >= current_liquidity) return self.burn_tax; 
 
-    if (start_virtual_liquidity >= target_liquidity) return burn_tax; 
+    let total_range = self.bonding_target_sui_liquidity - self.bonding_start_virtual_liquidity;  
 
-    let total_range = target_liquidity - start_virtual_liquidity;  
-
-    let progress = current_liquidity - start_virtual_liquidity;  
+    let progress = current_liquidity - self.bonding_start_virtual_liquidity;  
 
     let remaining_percentage = u64::mul_div_down(total_range - progress, POW_9, total_range);    
 
-    u64::mul_div_up(burn_tax, remaining_percentage, POW_9)
+    u64::mul_div_up(self.burn_tax, remaining_percentage, POW_9)
 }
 
 fun assert_can_trade<Meme>(self: &MemezFun<Meme>) {

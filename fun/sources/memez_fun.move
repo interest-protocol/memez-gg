@@ -287,14 +287,14 @@ public fun jeet<Meme>(
         self.bonding_start_virtual_liquidity + sui_balance_value
     ); 
 
-    let burn_tax = calculate_burn_tax(
+    let dynamic_burn_tax = calculate_dynamic_burn_tax(
         self.bonding_start_virtual_liquidity, 
         self.bonding_target_sui_liquidity, 
         self.bonding_start_virtual_liquidity + sui_balance_value - pre_tax_sui_value_out, 
         self.burn_tax
     );
 
-    let meme_fee_value = u64::mul_div_up(meme_coin_value, burn_tax, POW_9);
+    let meme_fee_value = u64::mul_div_up(meme_coin_value, dynamic_burn_tax, POW_9);
 
     treasury_cap.burn(meme_coin.split(meme_fee_value, ctx));
 
@@ -341,7 +341,7 @@ public fun bonding_virtual_liquidity<Meme>(self: &MemezFun<Meme>): u64 {
 
 // === Private Functions === 
 
-fun calculate_burn_tax(
+fun calculate_dynamic_burn_tax(
     start_virtual_liquidity: u64,  
     target_liquidity: u64,
     current_liquidity: u64,

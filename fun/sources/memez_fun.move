@@ -15,8 +15,8 @@ use ipx_coin_standard::ipx_coin_standard::{Self, IPXTreasuryStandard, MetadataCa
 use memez_invariant::memez_invariant::get_amount_out;
 
 use memez_fun::{
+    version::CurrentVersion,
     memez_config::MemezConfig,
-    memez_burn::calculate_burn_tax
 };
 
 // === Constants ===
@@ -72,7 +72,8 @@ public struct MemezFun<phantom Meme> has key {
     meme_balance: Balance<Meme>, 
     sui_decay_amount: u64, 
     round_duration: u64, 
-    dev_allocation: u64, 
+    dev_allocation: Balance<Meme>, 
+    dev_vesting_duration: u64, 
     burn_tax: u64, 
     is_migrating: bool,
 }
@@ -91,10 +92,20 @@ public fun new<Meme>(
     clock: &Clock, 
     meme_metadata: &CoinMetadata<Meme>,
     mut meme_treasury_cap: TreasuryCap<Meme>,
+    creation_fee: Coin<SUI>,
+    dev_allocation: u64, 
+    dev_vesting_duration: u64, 
+    version: CurrentVersion,
     ctx: &mut TxContext
 ): MetadataCap {
+    version.assert_is_valid();
+    config.take_creation_fee(creation_fee);
+
     assert!(meme_metadata.get_decimals() == 9, EWrongDecimals); 
     assert!(meme_treasury_cap.total_supply() == 0, EPreMint); 
+
+    config.assert_dev_allocation_within_bounds(dev_allocation);
+    config.assert_dev_vesting_duration_is_valid(dev_vesting_duration);
 
     let (
         auction_start_virtual_liquidity, 
@@ -102,10 +113,13 @@ public fun new<Meme>(
         auction_target_sui_liquidity, 
         sui_decay_amount, 
         round_duration, 
-        dev_allocation, 
         bonding_target_sui_liquidity, 
         burn_tax
     ) = config.get();
+
+    let mut meme_balance = meme_treasury_cap.mint(TOTAL_MEME_SUPPLY, ctx).into_balance(); 
+
+    let dev_allocation = meme_balance.split(dev_allocation);
 
     let memez_fun = MemezFun<Meme> {
         id: object::new(ctx),
@@ -120,10 +134,11 @@ public fun new<Meme>(
         total_redeemed_bid_amount: 0,
         sui_decay_amount, 
         round_duration, 
+        dev_allocation, 
+        dev_vesting_duration, 
         burn_tax, 
         sui_balance: balance::zero(), 
-        meme_balance: meme_treasury_cap.mint(TOTAL_MEME_SUPPLY, ctx).into_balance(), 
-        dev_allocation, 
+        meme_balance, 
         is_migrating: false,
     };
 
@@ -137,7 +152,15 @@ public fun new<Meme>(
     cap_witness.create_metadata_cap(ctx)
 }
 
-public fun bid<Meme>(self: &mut MemezFun<Meme>, clock: &Clock, bid: Coin<SUI>, ctx: &mut TxContext): Bid<Meme> {
+public fun bid<Meme>(
+    self: &mut MemezFun<Meme>, 
+    clock: &Clock, 
+    bid: Coin<SUI>, 
+    version: CurrentVersion, 
+    ctx: &mut TxContext
+): Bid<Meme> {
+    version.assert_is_valid();
+
     assert!(self.bonding_start_virtual_liquidity == 0, EAuctionEnded);
 
     let bid_value = bid.value();  
@@ -168,7 +191,15 @@ public fun bid<Meme>(self: &mut MemezFun<Meme>, clock: &Clock, bid: Coin<SUI>, c
     }   
 }
 
-public fun fail_redeem<Meme>(self: &mut MemezFun<Meme>, clock: &Clock, bid: Bid<SUI>, ctx: &mut TxContext): Coin<SUI> {
+public fun fail_redeem<Meme>(
+    self: &mut MemezFun<Meme>, 
+    clock: &Clock, 
+    bid: Bid<SUI>, 
+    version: CurrentVersion, 
+    ctx: &mut TxContext
+): Coin<SUI> {
+    version.assert_is_valid();
+
     let virtual_liquidity = self.auction_virtual_liquidity(clock);  
 
     assert!(self.bonding_start_virtual_liquidity == 0 && self.auction_floor_virtual_liquidity > virtual_liquidity, EAuctionDidNotFail); 
@@ -180,7 +211,14 @@ public fun fail_redeem<Meme>(self: &mut MemezFun<Meme>, clock: &Clock, bid: Bid<
     self.sui_balance.split(sui_amount).into_coin(ctx)
 }
 
-public fun success_redeem<Meme>(self: &mut MemezFun<Meme>, bid: Bid<Meme>, ctx: &mut TxContext): Coin<Meme> {
+public fun success_redeem<Meme>(
+    self: &mut MemezFun<Meme>, 
+    bid: Bid<Meme>, 
+    version: CurrentVersion, 
+    ctx: &mut TxContext
+): Coin<Meme> {
+    version.assert_is_valid();
+
     assert!(self.bonding_start_virtual_liquidity != 0, EAuctionDidNotSucceed);  
 
     let Bid { id, sui_amount, .. } = bid; 
@@ -198,7 +236,14 @@ public fun success_redeem<Meme>(self: &mut MemezFun<Meme>, bid: Bid<Meme>, ctx: 
     self.meme_balance.split(meme_amount).into_coin(ctx)
 }
 
-public fun ape<Meme>(self: &mut MemezFun<Meme>, sell: Coin<SUI>, ctx: &mut TxContext): Coin<Meme> {
+public fun ape<Meme>(
+    self: &mut MemezFun<Meme>, 
+    sell: Coin<SUI>, 
+    version: CurrentVersion, 
+    ctx: &mut TxContext
+): Coin<Meme> {
+    version.assert_is_valid();
+
     assert!(self.bonding_start_virtual_liquidity != 0, EAuctionDidNotSucceed);
     assert!(!self.is_migrating, EIsMigrating);
 
@@ -220,7 +265,15 @@ public fun ape<Meme>(self: &mut MemezFun<Meme>, sell: Coin<SUI>, ctx: &mut TxCon
     ).into_coin(ctx)
 }
 
-public fun jeet<Meme>(self: &mut MemezFun<Meme>, treasury_cap: &mut IPXTreasuryStandard, mut sell: Coin<Meme>, ctx: &mut TxContext): Coin<SUI> {
+public fun jeet<Meme>(
+    self: &mut MemezFun<Meme>, 
+    treasury_cap: &mut IPXTreasuryStandard, 
+    mut sell: Coin<Meme>, 
+    version: CurrentVersion, 
+    ctx: &mut TxContext
+): Coin<SUI> {
+    version.assert_is_valid();
+
     assert!(self.bonding_start_virtual_liquidity != 0, EAuctionDidNotSucceed);
     assert!(!self.is_migrating, EIsMigrating);
 
@@ -290,4 +343,22 @@ public fun bonding_virtual_liquidity<Meme>(self: &MemezFun<Meme>): u64 {
 
 // === Private Functions === 
 
+fun calculate_burn_tax(
+    start_virtual_liquidity: u64,  
+    target_liquidity: u64,
+    current_liquidity: u64,
+    burn_tax: u64
+): u64 {
 
+    if (current_liquidity >= target_liquidity) return 0; 
+
+    if (start_virtual_liquidity >= target_liquidity) return burn_tax; 
+
+    let total_range = target_liquidity - start_virtual_liquidity;  
+
+    let progress = current_liquidity - start_virtual_liquidity;  
+
+    let remaining_percentage = u64::mul_div_down(total_range - progress, POW_9, total_range);    
+
+    u64::mul_div_up(burn_tax, remaining_percentage, POW_9)
+}

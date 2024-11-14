@@ -243,9 +243,7 @@ public fun ape<Meme>(
     ctx: &mut TxContext
 ): Coin<Meme> {
     version.assert_is_valid();
-
-    assert!(self.bonding_start_virtual_liquidity != 0, EAuctionDidNotSucceed);
-    assert!(!self.is_migrating, EIsMigrating);
+    self.assert_can_trade();
 
     let sui_amount = sell.value(); 
 
@@ -268,47 +266,47 @@ public fun ape<Meme>(
 public fun jeet<Meme>(
     self: &mut MemezFun<Meme>, 
     treasury_cap: &mut IPXTreasuryStandard, 
-    mut sell: Coin<Meme>, 
+    mut meme_coin: Coin<Meme>, 
     version: CurrentVersion, 
     ctx: &mut TxContext
 ): Coin<SUI> {
     version.assert_is_valid();
+    self.assert_can_trade();
 
-    assert!(self.bonding_start_virtual_liquidity != 0, EAuctionDidNotSucceed);
-    assert!(!self.is_migrating, EIsMigrating);
-
-    let total_meme_balance = self.meme_balance.value();
+    let meme_balance_value = self.meme_balance.value();
 
     let total_sui_balance = self.sui_balance.value(); 
 
-    let meme_amount = sell.value();
+    let meme_amount = meme_coin.value();
 
-    let sui_full_out_amount = get_amount_out(
+    let total_meme_balance = meme_balance_value + self.total_redeemed_bid_amount - self.total_meme_bid_amount;
+
+    let pre_tax_sui_amount_out = get_amount_out(
         meme_amount, 
-        total_meme_balance + self.total_redeemed_bid_amount - self.total_meme_bid_amount, 
+        total_meme_balance, 
         self.bonding_start_virtual_liquidity + total_sui_balance
     ); 
 
     let burn_tax = calculate_burn_tax(
         self.bonding_start_virtual_liquidity, 
         self.bonding_target_sui_liquidity, 
-        self.bonding_start_virtual_liquidity + total_sui_balance - sui_full_out_amount, 
+        self.bonding_start_virtual_liquidity + total_sui_balance - pre_tax_sui_amount_out, 
         self.burn_tax
     );
 
-    let fee_amount = u64::mul_div_up(meme_amount, burn_tax, POW_9);
+    let meme_fee_amount = u64::mul_div_up(meme_amount, burn_tax, POW_9);
 
-    treasury_cap.burn(sell.split(fee_amount, ctx));
+    treasury_cap.burn(meme_coin.split(meme_fee_amount, ctx));
 
-    let sui_amount_after_burn = get_amount_out(
-        meme_amount - fee_amount, 
-        total_meme_balance + self.total_redeemed_bid_amount - self.total_meme_bid_amount, 
+    let post_tax_sui_amount_out = get_amount_out(
+        meme_amount - meme_fee_amount, 
+        total_meme_balance, 
         self.bonding_start_virtual_liquidity + total_sui_balance
     );
 
-    self.meme_balance.join(sell.into_balance()); 
+    self.meme_balance.join(meme_coin.into_balance()); 
 
-    self.sui_balance.split(sui_amount_after_burn).into_coin(ctx)
+    self.sui_balance.split(post_tax_sui_amount_out).into_coin(ctx)
 }
 
 // === Public View Functions ===  
@@ -361,4 +359,9 @@ fun calculate_burn_tax(
     let remaining_percentage = u64::mul_div_down(total_range - progress, POW_9, total_range);    
 
     u64::mul_div_up(burn_tax, remaining_percentage, POW_9)
+}
+
+fun assert_can_trade<Meme>(self: &MemezFun<Meme>) {
+    assert!(self.bonding_start_virtual_liquidity != 0, EAuctionDidNotSucceed);
+    assert!(!self.is_migrating, EIsMigrating);
 }

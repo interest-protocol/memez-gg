@@ -281,16 +281,18 @@ public fun jeet<Meme>(
 
     let real_meme_balance_value = meme_balance_value + self.total_redeemed_bid_amount - self.total_meme_bid_amount;
 
+    let sui_virtual_liquidity = self.bonding_start_virtual_liquidity + sui_balance_value;
+
     let pre_tax_sui_value_out = get_amount_out(
         meme_coin_value, 
         real_meme_balance_value, 
-        self.bonding_start_virtual_liquidity + sui_balance_value
+        sui_virtual_liquidity
     ); 
 
     let dynamic_burn_tax = calculate_dynamic_burn_tax(
         self.bonding_start_virtual_liquidity, 
         self.bonding_target_sui_liquidity, 
-        self.bonding_start_virtual_liquidity + sui_balance_value - pre_tax_sui_value_out, 
+        sui_virtual_liquidity - pre_tax_sui_value_out, 
         self.burn_tax
     );
 
@@ -301,7 +303,7 @@ public fun jeet<Meme>(
     let post_tax_sui_value_out = get_amount_out(
         meme_coin_value - meme_fee_value, 
         real_meme_balance_value, 
-        self.bonding_start_virtual_liquidity + sui_balance_value
+        sui_virtual_liquidity
     );
 
     self.meme_balance.join(meme_coin.into_balance()); 

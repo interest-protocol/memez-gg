@@ -250,7 +250,7 @@ public fun dump<Meme>(
 
     self.meme_balance.join(meme_coin.into_balance()); 
 
-    self.sui_balance.split(post_tax_sui_value_out).into_coin(ctx)
+    self.sui_balance.split(u64::min(post_tax_sui_value_out, sui_balance_value)).into_coin(ctx)
 }
 
 public fun migrate<Meme>(

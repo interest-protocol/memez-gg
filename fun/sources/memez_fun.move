@@ -55,6 +55,12 @@ const ENotMigrating: vector<u8> = b"Pool is not migrating";
 #[error]
 const EInvalidWitness: vector<u8> = b"Invalid witness";
 
+#[error]
+const EInvalidDev: vector<u8> = b"Invalid dev";
+
+#[error]
+const EInvalidDevClaim: vector<u8> = b"Invalid dev claim";
+
 // === Structs ===
 
 public struct MemezMigrator<phantom Meme> {
@@ -78,7 +84,7 @@ public struct MemezFun<phantom Meme> has key {
     dev_allocation: Balance<Meme>, 
     liquidity_provision: Balance<Meme>, 
     metadata: VecMap<String, String>,
-    deployer: address,
+    dev: address,
     is_migrating: bool,
     migration_witness: TypeName,
 }
@@ -140,7 +146,7 @@ public fun new<Meme, MigrationWitness>(
         liquidity_provision, 
         metadata: vec_map::from_keys_values(metadata_names, metadata_values),
         is_migrating: false,
-        deployer: ctx.sender(),
+        dev: ctx.sender(),
         migration_witness,
     };
 
@@ -166,7 +172,7 @@ public fun pump<Meme>(
     version.assert_is_valid();
 
     assert!(!self.is_migrating, EMigrating);
-    
+
     self.provide_liquidity(clock);
 
     let sui_coin_value = sui_coin.value(); 
@@ -283,6 +289,15 @@ public fun destroy<Meme, Witness: drop>(migrator: MemezMigrator<Meme>, _: Witnes
     memez_events::migrated(memez_fun, witness, sui_balance.value(), meme_balance.value());
 
     (sui_balance, meme_balance)
+}
+
+public fun dev_claim<Meme>(self: &mut MemezFun<Meme>, version: CurrentVersion, ctx: &mut TxContext): Coin<Meme> {
+    assert!(ctx.sender() == self.dev, EInvalidDev); 
+    assert!(self.is_migrating, EInvalidDevClaim);
+    
+    version.assert_is_valid();
+
+    self.dev_allocation.withdraw_all().into_coin(ctx)
 }
 
 // === Public View Functions ===  

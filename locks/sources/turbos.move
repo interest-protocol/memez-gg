@@ -14,14 +14,11 @@ use turbos_clmm::{
     position_manager::{Self, Positions},
 }; 
 
-use memez_fees::memez_fees::MemezFees;
-
 use memez_locks::lock::{Self, MemezLock};
 
 // === Public Mutative Functions ===  
 
 public fun lock(
-    fees: &MemezFees,
     positions: &Positions,
     position: TurbosPositionNFT, 
     unlock_epoch: u64,
@@ -30,7 +27,6 @@ public fun lock(
     let (amount_a, amount_b, _) = positions.get_position_info(position.position_id().to_address());
     
     let mut memez_lock = lock::new(
-        fees,
         position, 
         unlock_epoch, 
         ctx
@@ -59,7 +55,7 @@ public fun collect<CoinTypeA, CoinTypeB, FeeType>(
 
     let max_u64 = u64::max_value!();
 
-    let (mut coin_a, mut coin_b) = position_manager::collect_with_return_(
+    let (coin_a, coin_b) = position_manager::collect_with_return_(
         pool, 
         positions, 
         lock.borrow_mut(), 
@@ -71,25 +67,6 @@ public fun collect<CoinTypeA, CoinTypeB, FeeType>(
         versioned, 
         ctx
     );
-
-    let coin_a_value = coin_a.value();
-    let coin_b_value = coin_b.value();
-
-    let fee = lock.fee();
-    
-    let coin_admin_a = coin_a.split(fee.calculate_fee(coin_a_value), ctx);
-    let coin_admin_b = coin_b.split(fee.calculate_fee(coin_b_value), ctx);
-
-    let coin_a_admin_value = coin_admin_a.value();
-    let coin_b_admin_value = coin_admin_b.value();
-
-    let treasury = lock.treasury();
-
-    transfer::public_transfer(coin_admin_a, treasury);
-    transfer::public_transfer(coin_admin_b, treasury);
-
-    lock.add_fees(coin_a_value - coin_a_admin_value, coin_b_value - coin_b_admin_value);
-    lock.add_admin_fees(coin_a_admin_value, coin_b_admin_value);
 
     (coin_a, coin_b)
 }

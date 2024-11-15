@@ -10,8 +10,6 @@ InterestMath = { git = "https://github.com/interest-protocol/interest-math.git",
 IPXCoinStandard = { git = "https://github.com/interest-protocol/ipx-coin-standard.git", rev = "main" }
 MemezInvariant = { git  = "https://github.com/interest-protocol/memez-invariant.git", rev = "main" }
 MemezACL = { local = "../acl" }
-MemezLocks = { local = "../locks" }
-MemezVesting = { local = "../vesting" }
 
 [addresses]
 memez_fun = "0x0123456789abcdef"

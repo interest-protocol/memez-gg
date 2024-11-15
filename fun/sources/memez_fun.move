@@ -342,7 +342,7 @@ public fun dump_amount<Meme>(self: &MemezFun<Meme>, amount_in: u64, clock: &Cloc
         sui_virtual_liquidity
     );
 
-    (post_tax_sui_value_out, meme_fee_value)
+    (u64::min(post_tax_sui_value_out, sui_balance_value), meme_fee_value)
 }
 
 // === Private Functions === 

@@ -31,6 +31,8 @@ const VIRTUAL_LIQUIDITY: u64 = 1_000__000_000_000;
 
 const TARGET_SUI_LIQUIDITY: u64 = 10_000__000_000_000;
 
+const SEED_LIQUIDITY: u64 = 1__000_000_000;
+
 // === Errors === 
 
 #[error]
@@ -58,6 +60,7 @@ public struct MemezConfig has key {
     liquidity_provision: u64,
     creation_fee: u64,
     migration_fee: u64,
+    seed_liquidity: u64,
 }
 
 // === Initializer === 
@@ -74,6 +77,7 @@ fun init(ctx: &mut TxContext) {
         liquidity_provision: LIQUIDITY_PROVISION,
         creation_fee: CREATION_FEE,
         migration_fee: MIGRATION_FEE,
+        seed_liquidity: SEED_LIQUIDITY,
     };
 
     transfer::share_object(config);
@@ -121,6 +125,10 @@ public fun set_dev_allocation(self: &mut MemezConfig, _: &AuthWitness, amount: u
     self.dev_allocation = amount;
 } 
 
+public fun set_seed_liquidity(self: &mut MemezConfig, _: &AuthWitness, amount: u64) {
+    self.seed_liquidity = amount;
+} 
+
 // === Public Package Functions ===  
 
 public(package) fun migration_fee(self: &MemezConfig): u64 {
@@ -139,7 +147,7 @@ public(package) fun take_migration_fee(self: &MemezConfig, migration_fee: Coin<S
     transfer::public_transfer(migration_fee, self.treasury);
 }
  
-public(package) fun get(self: &MemezConfig): (u64, u64, u64, u64, u64, u64) {
+public(package) fun get(self: &MemezConfig): (u64, u64, u64, u64, u64, u64, u64) {
     (
         self.auction_duration,
         self.dev_allocation,
@@ -147,5 +155,6 @@ public(package) fun get(self: &MemezConfig): (u64, u64, u64, u64, u64, u64) {
         self.virtual_liquidity,
         self.target_sui_liquidity,
         self.liquidity_provision,
+        self.seed_liquidity,
     )
 }

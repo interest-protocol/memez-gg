@@ -120,7 +120,8 @@ public fun new<Meme, MigrationWitness>(
         burn_tax,
         virtual_liquidity,
         target_sui_liquidity,
-        liquidity_provision,
+        liquidity_provision,    
+        seed_liquidity,
     ) = config.get();
 
     let mut meme_reserve = meme_treasury_cap.mint(TOTAL_MEME_SUPPLY, ctx).into_balance(); 
@@ -129,7 +130,7 @@ public fun new<Meme, MigrationWitness>(
 
     let liquidity_provision = meme_reserve.split(liquidity_provision);
 
-    let meme_balance = meme_reserve.split(POW_9 * 10);
+    let meme_balance = meme_reserve.split(seed_liquidity);
 
     let memez_fun = MemezFun<Meme> {
         id: object::new(ctx),
@@ -294,7 +295,7 @@ public fun destroy<Meme, Witness: drop>(migrator: MemezMigrator<Meme>, _: Witnes
 public fun dev_claim<Meme>(self: &mut MemezFun<Meme>, version: CurrentVersion, ctx: &mut TxContext): Coin<Meme> {
     assert!(ctx.sender() == self.dev, EInvalidDev); 
     assert!(self.is_migrating, EInvalidDevClaim);
-    
+
     version.assert_is_valid();
 
     self.dev_allocation.withdraw_all().into_coin(ctx)

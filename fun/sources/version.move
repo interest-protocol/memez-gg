@@ -1,4 +1,4 @@
-module memez_fun::version;
+module memez_fun::memez_version;
 // === Imports === 
 
 use memez_acl::acl::AuthWitness;

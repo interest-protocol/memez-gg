@@ -5,12 +5,10 @@ use sui::event::emit;
 
 // === Structs ===  
 
-public struct Event<T: copy + drop> has copy, drop {
-    content: T,
-}
+public struct Event<T: copy + drop> has copy, drop(T)
 
 // === Public Package Functions ===  
 
 public(package) fun emit_event<T: copy + drop>(event: T) {
-    emit(Event { content: event });
+    emit(Event(event));
 }

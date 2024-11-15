@@ -165,7 +165,8 @@ public fun pump<Meme>(
 ): Coin<Meme> {
     version.assert_is_valid();
 
-    self.assert_can_trade();
+    assert!(!self.is_migrating, EMigrating);
+    
     self.provide_liquidity(clock);
 
     let sui_coin_value = sui_coin.value(); 
@@ -206,7 +207,8 @@ public fun dump<Meme>(
 ): Coin<SUI> {
     version.assert_is_valid();
 
-    self.assert_can_trade();
+    assert!(!self.is_migrating, EMigrating);
+
     self.provide_liquidity(clock);
 
     let meme_coin_value = meme_coin.value();
@@ -285,24 +287,24 @@ public fun destroy<Meme, Witness: drop>(migrator: MemezMigrator<Meme>, _: Witnes
 
 // === Public View Functions ===  
 
-public fun meme_price<Meme>(self: &MemezFun<Meme>): u64 {
-    get_amount_out(
-        POW_9, 
-        self.virtual_liquidity + self.sui_balance.value(), 
-        self.meme_balance.value()
-    )
+public fun meme_price<Meme>(self: &MemezFun<Meme>, clock: &Clock): u64 {
+    self.pump_amount( POW_9, clock)
 }
 
-public fun pump_amount<Meme>(self: &MemezFun<Meme>, amount_in: u64): u64 {
+public fun pump_amount<Meme>(self: &MemezFun<Meme>, amount_in: u64, clock: &Clock): u64 {
+    let amount = self.new_liquidity_amount(clock); 
+
     get_amount_out(
         amount_in, 
         self.virtual_liquidity + self.sui_balance.value(), 
-        self.meme_balance.value()
+        self.meme_balance.value() + amount
     )
 }
 
-public fun dump_amount<Meme>(self: &MemezFun<Meme>, amount_in: u64): (u64, u64) {
-    let meme_balance_value = self.meme_balance.value();
+public fun dump_amount<Meme>(self: &MemezFun<Meme>, amount_in: u64, clock: &Clock): (u64, u64) {
+    let amount = self.new_liquidity_amount(clock); 
+
+    let meme_balance_value = self.meme_balance.value() + amount;
 
     let sui_balance_value = self.sui_balance.value(); 
 
@@ -329,10 +331,10 @@ public fun dump_amount<Meme>(self: &MemezFun<Meme>, amount_in: u64): (u64, u64) 
 
 // === Private Functions === 
 
-fun provide_liquidity<Meme>(self: &mut MemezFun<Meme>, clock: &Clock) {
+fun new_liquidity_amount<Meme>(self: &MemezFun<Meme>, clock: &Clock): u64 {
     let current_time = clock.timestamp_ms(); 
 
-    if (current_time - self.start_time > self.auction_duration) return;
+    if (current_time - self.start_time > self.auction_duration) return 0;
 
     let progress = current_time - self.start_time; 
 
@@ -342,15 +344,21 @@ fun provide_liquidity<Meme>(self: &mut MemezFun<Meme>, clock: &Clock) {
 
     let meme_balance_value = self.meme_balance.value();  
 
-    if (expected_meme_balance <= meme_balance_value) return; 
+    if (expected_meme_balance <= meme_balance_value) return 0; 
 
     let meme_delta = expected_meme_balance - meme_balance_value; 
 
-    if (meme_delta == 0) return; 
+    if (meme_delta == 0) return 0; 
 
     let current_meme_reserve = self.meme_reserve.value(); 
 
-    self.meme_balance.join(self.meme_reserve.split(u64::min(meme_delta, current_meme_reserve))); 
+    u64::min(meme_delta, current_meme_reserve)
+}
+
+fun provide_liquidity<Meme>(self: &mut MemezFun<Meme>, clock: &Clock) {
+    let amount = self.new_liquidity_amount( clock); 
+
+    self.meme_balance.join(self.meme_reserve.split(amount)); 
 }
 
 fun get_dynamic_burn_tax<Meme>(
@@ -371,13 +379,8 @@ fun get_dynamic_burn_tax<Meme>(
 }
 
 fun destroy_or_burn<Meme>(coin: Coin<Meme>) {
-    if (coin.value() == 0) {
-        coin.destroy_zero();
-    } else {
+    if (coin.value() == 0)
+        coin.destroy_zero()
+    else 
         transfer::public_transfer(coin, DEAD_ADDRESS);
-    }
-}
-
-fun assert_can_trade<Meme>(self: &MemezFun<Meme>) {
-    assert!(!self.is_migrating, EMigrating);
 }

@@ -1,0 +1,12 @@
+[package]
+name = "MemezTemplates"
+edition = "2024.beta" 
+license = "MIT"           
+authors = ["Jose Cerqueira (jose@interestprotocol.com)"]   
+
+[dependencies]
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet"}
+
+[addresses]
+memez_templates = "0x0"
+sui = "0x2"

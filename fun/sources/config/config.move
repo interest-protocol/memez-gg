@@ -76,7 +76,7 @@ public(package) fun set_up_treasury<Meme>(
     meme_metadata: &CoinMetadata<Meme>, 
     mut meme_treasury_cap: TreasuryCap<Meme>, 
     ctx: &mut TxContext
-): (MetadataCap, Balance<Meme>) {
+): (address, MetadataCap, Balance<Meme>) {
     assert!(meme_metadata.get_decimals() == 9, EWrongDecimals); 
     assert!(meme_treasury_cap.total_supply() == 0, EPreMint); 
 
@@ -86,9 +86,11 @@ public(package) fun set_up_treasury<Meme>(
 
     cap_witness.add_burn_capability(&mut ipx_treasury_standard);
 
+    let treasury_address = object::id(&ipx_treasury_standard).to_address();
+
     transfer::public_share_object(ipx_treasury_standard);
 
-    (cap_witness.create_metadata_cap(ctx), meme_balance)
+    (treasury_address, cap_witness.create_metadata_cap(ctx), meme_balance)
 }
 
 public(package) fun uid(self: &MemezConfig): &UID {

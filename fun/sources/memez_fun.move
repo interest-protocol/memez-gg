@@ -75,6 +75,7 @@ public(package) fun new<Curve, MigrationWitness, Meme>(
     state: Versioned,
     metadata_names: vector<String>,
     metadata_values: vector<String>,
+    ipx_meme_coin_treasury: address,
     ctx: &mut TxContext
 ): MemezFun<Curve, Meme> {
     let migration_witness = type_name::get<MigrationWitness>(); 
@@ -83,7 +84,11 @@ public(package) fun new<Curve, MigrationWitness, Meme>(
 
     let id = object::new(ctx);
 
-    memez_events::new<Curve, Meme>(id.to_address(), migration_witness);
+    memez_events::new<Curve, Meme>(
+        id.to_address(), 
+        migration_witness, 
+        ipx_meme_coin_treasury
+    );
 
     MemezFun {
         id,

@@ -12,6 +12,7 @@ public struct New has copy, drop {
     meme: TypeName, 
     curve: TypeName,
     migration_witness: TypeName,
+    ipx_meme_coin_treasury: address,
 }
 
 public struct Pump has copy, drop {
@@ -43,8 +44,14 @@ public struct Migrated has copy, drop {
 
 // === Public Package Functions ===  
 
-public(package) fun new<Curve, Meme>(memez_fun: address, migration_witness: TypeName) {
-    emit_event(New { memez_fun, meme: type_name::get<Meme>(), curve: type_name::get<Curve>(),   migration_witness });
+public(package) fun new<Curve, Meme>(memez_fun: address, migration_witness: TypeName, ipx_meme_coin_treasury: address) {
+    emit_event(New { 
+        memez_fun, 
+        meme: type_name::get<Meme>(), 
+        curve: type_name::get<Curve>(),  
+        migration_witness, 
+        ipx_meme_coin_treasury 
+    });
 }
 
 public(package) fun pump<Meme>(memez_fun: address, sui_amount_in: u64, meme_amount_out: u64) {

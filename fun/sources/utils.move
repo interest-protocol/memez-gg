@@ -16,7 +16,15 @@ const POW_9: u64 = 1__000_000_000;
 #[error] 
 const ESlippage: vector<u8> = b"Slippage";
 
+#[error]
+const EZeroCoin: vector<u8> = b"Coin value must be greater than 0"; 
+
 // === Public Package Functions === 
+
+public(package) fun coin_value<T>(coin: &Coin<T>): u64 {
+    assert!(coin.value() > 0, EZeroCoin);
+    coin.value()
+}
 
 public(package) fun destroy_or_burn<Meme>(coin: Coin<Meme>) {
     if (coin.value() == 0)

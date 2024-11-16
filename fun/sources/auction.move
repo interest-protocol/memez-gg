@@ -24,7 +24,7 @@ use memez_fun::{
     memez_version::CurrentVersion,
     memez_config::{Self, MemezConfig},
     memez_fun::{Self, MemezFun, MemezMigrator},
-    memez_utils::{assert_slippage, destroy_or_burn, get_dynamic_burn_tax},
+    memez_utils::{assert_slippage, destroy_or_burn, get_dynamic_burn_tax, coin_value},
 };
 
 // === Constants ===
@@ -34,9 +34,6 @@ const STATE_VERSION_V1: u64 = 1;
 const POW_9: u64 = 1__000_000_000;
 
 // === Errors === 
-
-#[error]
-const EZeroCoin: vector<u8> = b"Coin value must be greater than 0"; 
 
 #[error]
 const EInvalidDev: vector<u8> = b"Invalid dev";
@@ -132,9 +129,7 @@ public fun pump<Meme>(
 
     state.provide_liquidity(clock);
 
-    let sui_coin_value = sui_coin.value(); 
-
-    assert!(sui_coin_value != 0, EZeroCoin);
+    let sui_coin_value = coin_value(&sui_coin); 
 
     let meme_balance_value = state.meme_balance.value();
 
@@ -174,9 +169,7 @@ public fun dump<Meme>(
 
     state.provide_liquidity(clock);
 
-    let meme_coin_value = meme_coin.value();
-
-    assert!(meme_coin_value != 0, EZeroCoin);
+    let meme_coin_value = coin_value(&meme_coin);
 
     let meme_balance_value = state.meme_balance.value();
 

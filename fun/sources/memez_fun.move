@@ -15,7 +15,24 @@ use sui::{
 
 use memez_fun::memez_migration::Migration;
 
+// === Errors ===
+
+#[error]
+const ENotBonding: vector<u8> = b"Memez is not bonding"; 
+
+#[error]
+const ENotMigrating: vector<u8> = b"Memez is not migrating"; 
+
+#[error]
+const ENotMigrated: vector<u8> = b"Memez is not migrated"; 
+
 // === Structs === 
+
+public enum Progress has store, drop, copy {
+    Bonding,
+    Migrating,
+    Migrated,
+}
 
 public struct MemezFun<phantom Curve, phantom Meme> has key {
     id: UID,
@@ -24,7 +41,8 @@ public struct MemezFun<phantom Curve, phantom Meme> has key {
     sui_balance: Balance<SUI>,
     meme_balance: Balance<Meme>,
     metadata: VecMap<String, String>,
-    migration_witness: TypeName
+    migration_witness: TypeName,
+    progress: Progress,
 }
 
 // === Public Package Functions === 
@@ -48,6 +66,7 @@ public(package) fun new<Curve, MigrationWitness, Meme>(
         meme_balance: balance::zero(),
         metadata: vec_map::from_keys_values(metadata_names, metadata_values),
         migration_witness,
+        progress: Progress::Bonding,
     }
 }
 
@@ -81,4 +100,24 @@ public(package) fun sui_balance_mut<Curve, Meme>(self: &mut MemezFun<Curve, Meme
 
 public(package) fun meme_balance_mut<Curve, Meme>(self: &mut MemezFun<Curve, Meme>): &mut Balance<Meme> {   
     &mut self.meme_balance
+}
+
+public(package) fun set_is_migrating<Curve, Meme>(self: &mut MemezFun<Curve, Meme>) {
+    self.progress = Progress::Migrating;
+}
+
+public(package) fun set_migrated<Curve, Meme>(self: &mut MemezFun<Curve, Meme>) {
+    self.progress = Progress::Migrated;
+}
+
+public(package) fun assert_is_bonding<Curve, Meme>(self: &MemezFun<Curve, Meme>) {
+    assert!(self.progress == Progress::Bonding, ENotBonding);
+}
+
+public(package) fun assert_is_migrating<Curve, Meme>(self: &MemezFun<Curve, Meme>) {
+    assert!(self.progress == Progress::Migrating, ENotMigrating);
+}
+
+public(package) fun assert_is_migrated<Curve, Meme>(self: &MemezFun<Curve, Meme>) {
+    assert!(self.progress == Progress::Migrated, ENotMigrated);
 }

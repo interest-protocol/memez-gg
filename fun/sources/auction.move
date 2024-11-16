@@ -1,92 +1,65 @@
 module memez_fun::memez_auction;
 // === Imports === 
 
-use std::{
-    string::String,
-    type_name::{Self, TypeName},
-};
+use std::string::String;
 
 use sui::{
     sui::SUI,
     clock::Clock,
-    vec_map::{Self, VecMap},
     balance::{Self, Balance},
+    versioned::{Self, Versioned},
     coin::{Coin, TreasuryCap, CoinMetadata},
 };
 
 use interest_math::u64;
 
-use ipx_coin_standard::ipx_coin_standard::{Self, IPXTreasuryStandard, MetadataCap};
+use ipx_coin_standard::ipx_coin_standard::{IPXTreasuryStandard, MetadataCap};
 
-use memez_invariant::memez_invariant::get_amount_out;
+use constant_product::constant_product::get_amount_out;
 
 use memez_fun::{
     memez_events,
-    memez_config::MemezConfig,
+    memez_auction_config,
     memez_migration::Migration,
     memez_version::CurrentVersion,
+    memez_config::{Self, MemezConfig},
+    memez_fun::{Self, MemezFun, MemezMigrator},
+    memez_utils::{assert_slippage, destroy_or_burn},
 };
 
 // === Constants ===
 
+const STATE_VERSION_V1: u64 = 1;
+
 const POW_9: u64 = 1__000_000_000;
 
-const TOTAL_MEME_SUPPLY: u64 = 1_000_000_000__000_000_000;
-
-const DEAD_ADDRESS: address = @0x0;
-
 // === Errors === 
-
-#[error]
-const EWrongDecimals: vector<u8> = b"Meme coins must have 9 decimals"; 
-
-#[error]
-const EPreMint: vector<u8> = b"Meme treasury cap must have no supply"; 
 
 #[error]
 const EZeroCoin: vector<u8> = b"Coin value must be greater than 0"; 
 
 #[error]
-const EMigrating: vector<u8> = b"Pool is migrating"; 
-
-#[error] 
-const ENotMigrating: vector<u8> = b"Pool is not migrating";
-
-#[error]
-const EInvalidWitness: vector<u8> = b"Invalid witness";
-
-#[error]
 const EInvalidDev: vector<u8> = b"Invalid dev";
 
 #[error]
-const EInvalidDevClaim: vector<u8> = b"Invalid dev claim";
+const EInvalidVersion: vector<u8> = b"Invalid version";
 
 // === Structs ===
 
-public struct MemezMigrator<phantom Meme> {
-    witness: TypeName, 
-    memez_fun: address,
-    sui_balance: Balance<SUI>,
-    meme_balance: Balance<Meme>,  
-}
+public struct Auction()
 
-public struct MemezFun<phantom Meme> has key {
-    id: UID,
+public struct AuctionState<phantom Meme> has store {
     start_time: u64, 
     auction_duration: u64, 
     burn_tax: u64,  
+    sui_balance: Balance<SUI>,
+    meme_balance: Balance<Meme>,
     virtual_liquidity: u64, 
     target_sui_liquidity: u64,  
     initial_reserve: u64,
-    sui_balance: Balance<SUI>,
     meme_reserve: Balance<Meme>,
-    meme_balance: Balance<Meme>, 
     dev_allocation: Balance<Meme>, 
     liquidity_provision: Balance<Meme>, 
-    metadata: VecMap<String, String>,
-    dev: address,
-    is_migrating: bool,
-    migration_witness: TypeName,
 }
 
 // === Public Mutative Functions === 
@@ -97,7 +70,7 @@ public fun new<Meme, MigrationWitness>(
     migration: &Migration,
     clock: &Clock, 
     meme_metadata: &CoinMetadata<Meme>,
-    mut meme_treasury_cap: TreasuryCap<Meme>,
+    meme_treasury_cap: TreasuryCap<Meme>,
     creation_fee: Coin<SUI>,
     metadata_names: vector<String>,
     metadata_values: vector<String>,
@@ -107,126 +80,109 @@ public fun new<Meme, MigrationWitness>(
     version.assert_is_valid();
     config.take_creation_fee(creation_fee);
 
-    assert!(meme_metadata.get_decimals() == 9, EWrongDecimals); 
-    assert!(meme_treasury_cap.total_supply() == 0, EPreMint); 
+    let auction_config = memez_auction_config::get(config);
 
-    let migration_witness = type_name::get<MigrationWitness>(); 
+    let (metadata_cap, mut meme_reserve) = memez_config::set_up_treasury(meme_metadata, meme_treasury_cap, ctx);
 
-    migration.assert_is_whitelisted(migration_witness);
+    let dev_allocation = meme_reserve.split(auction_config[1]);
 
-    let (
-        auction_duration,
-        dev_allocation,
-        burn_tax,
-        virtual_liquidity,
-        target_sui_liquidity,
-        liquidity_provision,    
-        seed_liquidity,
-    ) = config.get();
+    let liquidity_provision = meme_reserve.split(auction_config[5]);
 
-    let mut meme_reserve = meme_treasury_cap.mint(TOTAL_MEME_SUPPLY, ctx).into_balance(); 
+    let meme_balance = meme_reserve.split(auction_config[6]);
 
-    let dev_allocation = meme_reserve.split(dev_allocation);
-
-    let liquidity_provision = meme_reserve.split(liquidity_provision);
-
-    let meme_balance = meme_reserve.split(seed_liquidity);
-
-    let memez_fun = MemezFun<Meme> {
-        id: object::new(ctx),
+    let auction_state = AuctionState<Meme> {
         start_time: clock.timestamp_ms(), 
-        auction_duration, 
-        burn_tax,  
-        virtual_liquidity, 
-        target_sui_liquidity,  
+        auction_duration: auction_config[0], 
+        burn_tax: auction_config[2],  
+        virtual_liquidity: auction_config[3], 
+        target_sui_liquidity: auction_config[4],  
         initial_reserve: meme_reserve.value(),
-        sui_balance: balance::zero(),
         meme_reserve,
-        meme_balance, 
         dev_allocation, 
         liquidity_provision, 
-        metadata: vec_map::from_keys_values(metadata_names, metadata_values),
-        is_migrating: false,
-        dev: ctx.sender(),
-        migration_witness,
+        sui_balance: balance::zero(),
+        meme_balance,
     };
 
-    memez_events::new<Meme>(memez_fun.id.to_address(), migration_witness);
+    let memez_fun = memez_fun::new<Auction, MigrationWitness, Meme>(
+        migration, 
+        versioned::create(STATE_VERSION_V1, auction_state, ctx), 
+        metadata_names, 
+        metadata_values, 
+        ctx
+    );
 
-    let (mut ipx_treasury_standard, mut cap_witness) = ipx_coin_standard::new(meme_treasury_cap, ctx);
+    memez_fun.share();
 
-    cap_witness.add_burn_capability(&mut ipx_treasury_standard);
-
-    transfer::share_object(memez_fun);
-    transfer::public_share_object(ipx_treasury_standard);
-
-    cap_witness.create_metadata_cap(ctx)
+    metadata_cap
 }
 
 public fun pump<Meme>(
-    self: &mut MemezFun<Meme>, 
+    self: &mut MemezFun<Auction,Meme>, 
     clock: &Clock,
     sui_coin: Coin<SUI>, 
+    min_amount_out: u64,
     version: CurrentVersion, 
     ctx: &mut TxContext
 ): Coin<Meme> {
     version.assert_is_valid();
+    self.assert_is_bonding();
 
-    assert!(!self.is_migrating, EMigrating);
+    let state = state_mut<Meme>(self.versioned_mut());
 
-    self.provide_liquidity(clock);
+    state.provide_liquidity(clock);
 
     let sui_coin_value = sui_coin.value(); 
 
     assert!(sui_coin_value != 0, EZeroCoin);
 
-    let meme_balance_value = self.meme_balance.value();
+    let meme_balance_value = state.meme_balance.value();
 
     let meme_coin_value_out = get_amount_out(
         sui_coin_value, 
-        self.virtual_liquidity + self.sui_balance.value(), 
+        state.virtual_liquidity + state.sui_balance.value(), 
         meme_balance_value
     );
 
-    let meme_coin = self.meme_balance.split(meme_coin_value_out).into_coin(ctx);
+    assert_slippage(meme_coin_value_out, min_amount_out);
 
-    let total_sui_balance = self.sui_balance.join(sui_coin.into_balance());  
+    let meme_coin = state.meme_balance.split(meme_coin_value_out).into_coin(ctx);
 
-    let memez_fun_address = self.id.to_address();
+    let total_sui_balance = state.sui_balance.join(sui_coin.into_balance());  
 
-    if (total_sui_balance >= self.target_sui_liquidity) {
-        self.is_migrating = true; 
-        memez_events::can_migrate(memez_fun_address, self.migration_witness);
-    };
+    if (total_sui_balance >= state.target_sui_liquidity)
+        self.set_progress_to_migrating();
 
-    memez_events::pump<Meme>(memez_fun_address, sui_coin_value, meme_coin_value_out);
+    memez_events::pump<Meme>(self.addy(), sui_coin_value, meme_coin_value_out);
 
     meme_coin
 }
 
 public fun dump<Meme>(
-    self: &mut MemezFun<Meme>, 
+    self: &mut MemezFun<Auction, Meme>, 
     clock: &Clock,
     treasury_cap: &mut IPXTreasuryStandard, 
     mut meme_coin: Coin<Meme>, 
+    min_amount_out: u64,
     version: CurrentVersion, 
     ctx: &mut TxContext
 ): Coin<SUI> {
     version.assert_is_valid();
+    self.assert_is_bonding();
 
-    assert!(!self.is_migrating, EMigrating);
+    let state = state_mut<Meme>(self.versioned_mut());
 
-    self.provide_liquidity(clock);
+    state.provide_liquidity(clock);
 
     let meme_coin_value = meme_coin.value();
 
     assert!(meme_coin_value != 0, EZeroCoin);
 
-    let meme_balance_value = self.meme_balance.value();
+    let meme_balance_value = state.meme_balance.value();
 
-    let sui_balance_value = self.sui_balance.value(); 
+    let sui_balance_value = state.sui_balance.value(); 
 
-    let sui_virtual_liquidity = self.virtual_liquidity + sui_balance_value;
+    let sui_virtual_liquidity = state.virtual_liquidity + sui_balance_value;
 
     let pre_tax_sui_value_out = get_amount_out(
         meme_coin_value, 
@@ -234,7 +190,7 @@ public fun dump<Meme>(
         sui_virtual_liquidity
     ); 
 
-    let dynamic_burn_tax = self.get_dynamic_burn_tax(sui_virtual_liquidity - pre_tax_sui_value_out);
+    let dynamic_burn_tax = state.get_dynamic_burn_tax(sui_virtual_liquidity - pre_tax_sui_value_out);
 
     let meme_fee_value = u64::mul_div_up(meme_coin_value, dynamic_burn_tax, POW_9);
 
@@ -246,85 +202,86 @@ public fun dump<Meme>(
         sui_virtual_liquidity
     );
 
-    memez_events::dump<Meme>(self.id.to_address(), post_tax_sui_value_out, meme_coin_value, meme_fee_value);
+    state.meme_balance.join(meme_coin.into_balance()); 
 
-    self.meme_balance.join(meme_coin.into_balance()); 
+    let sui_coin_amount_out = u64::min(post_tax_sui_value_out, sui_balance_value);
 
-    self.sui_balance.split(u64::min(post_tax_sui_value_out, sui_balance_value)).into_coin(ctx)
+    assert_slippage(sui_coin_amount_out, min_amount_out);
+
+    let sui_coin = state.sui_balance.split(sui_coin_amount_out).into_coin(ctx);
+
+    memez_events::dump<Meme>(
+        self.addy(), 
+        post_tax_sui_value_out, 
+        meme_coin_value, 
+        meme_fee_value
+    );
+
+    sui_coin
 }
 
 public fun migrate<Meme>(
-    self: &mut MemezFun<Meme>, 
+    self: &mut MemezFun<Auction, Meme>, 
     config: &MemezConfig,
     version: CurrentVersion, 
     ctx: &mut TxContext
 ): MemezMigrator<Meme> {
     version.assert_is_valid();
+    self.assert_is_migrating();
 
-    assert!(self.is_migrating, ENotMigrating); 
+    let state = state_mut<Meme>(self.versioned_mut());
 
-    let mut sui_balance = self.sui_balance.withdraw_all();
+    let mut sui_balance = state.sui_balance.withdraw_all();
 
-    let liquidity_provision = self.liquidity_provision.withdraw_all();
+    let liquidity_provision = state.liquidity_provision.withdraw_all();
 
-    destroy_or_burn(self.meme_balance.withdraw_all().into_coin(ctx));
-    destroy_or_burn(self.meme_reserve.withdraw_all().into_coin(ctx));
+    destroy_or_burn(state.meme_balance.withdraw_all().into_coin(ctx));
+    destroy_or_burn(state.meme_reserve.withdraw_all().into_coin(ctx));
 
-    let migration_fee = config.migration_fee();
+    config.take_migration_fee(sui_balance.split(config.migration_fee()).into_coin(ctx));
 
-    config.take_migration_fee(sui_balance.split(migration_fee).into_coin(ctx));
-
-    MemezMigrator<Meme> { 
-        witness: self.migration_witness, 
-        memez_fun: self.id.to_address(), 
-        sui_balance, 
-        meme_balance: liquidity_provision 
-    }
+    self.new_migrator(sui_balance, liquidity_provision)
 }
 
-public fun destroy<Meme, Witness: drop>(migrator: MemezMigrator<Meme>, _: Witness): (Balance<SUI>, Balance<Meme>) {
-    let MemezMigrator { witness, memez_fun, sui_balance, meme_balance } = migrator;
-
-    assert!(type_name::get<Witness>() == witness, EInvalidWitness);
-
-    memez_events::migrated(memez_fun, witness, sui_balance.value(), meme_balance.value());
-
-    (sui_balance, meme_balance)
-}
-
-public fun dev_claim<Meme>(self: &mut MemezFun<Meme>, version: CurrentVersion, ctx: &mut TxContext): Coin<Meme> {
-    assert!(ctx.sender() == self.dev, EInvalidDev); 
-    assert!(self.is_migrating, EInvalidDevClaim);
+public fun dev_claim<Meme>(self: &mut MemezFun<Auction, Meme>, version: CurrentVersion, ctx: &mut TxContext): Coin<Meme> {
+    self.assert_migrated();
+    assert!(ctx.sender() == self.dev(), EInvalidDev); 
 
     version.assert_is_valid();
 
-    self.dev_allocation.withdraw_all().into_coin(ctx)
+    let state = state_mut<Meme>(self.versioned_mut());
+
+    state.dev_allocation.withdraw_all().into_coin(ctx)
 }
 
 // === Public View Functions ===  
 
-public fun meme_price<Meme>(self: &MemezFun<Meme>, clock: &Clock): u64 {
-    self.pump_amount( POW_9, clock)
+public fun meme_price<Meme>(self: &mut MemezFun<Auction, Meme>, clock: &Clock): u64 {
+    pump_amount(self, POW_9, clock)
 }
 
-public fun pump_amount<Meme>(self: &MemezFun<Meme>, amount_in: u64, clock: &Clock): u64 {
-    let amount = self.new_liquidity_amount(clock); 
+public fun pump_amount<Meme>(self: &mut MemezFun<Auction, Meme>, amount_in: u64, clock: &Clock): u64 {
+    let state = state<Meme>(self.versioned_mut());
+
+    let amount = new_liquidity_amount(state, clock, state.meme_balance.value()); 
 
     get_amount_out(
         amount_in, 
-        self.virtual_liquidity + self.sui_balance.value(), 
-        self.meme_balance.value() + amount
+        state.virtual_liquidity + state.sui_balance.value(), 
+        state.meme_balance.value() + amount
     )
 }
 
-public fun dump_amount<Meme>(self: &MemezFun<Meme>, amount_in: u64, clock: &Clock): (u64, u64) {
-    let amount = self.new_liquidity_amount(clock); 
+public fun dump_amount<Meme>(self: &mut MemezFun<Auction, Meme>, amount_in: u64, clock: &Clock): (u64, u64) {
+    let state = state_mut<Meme>(self.versioned_mut());
 
-    let meme_balance_value = self.meme_balance.value() + amount;
+    let amount = new_liquidity_amount(state, clock, state.meme_balance.value()); 
 
-    let sui_balance_value = self.sui_balance.value(); 
+    let meme_balance_value = state.meme_balance.value() + amount;
 
-    let sui_virtual_liquidity = self.virtual_liquidity + sui_balance_value;
+    let sui_balance_value = state.sui_balance.value(); 
+
+    let sui_virtual_liquidity = state.virtual_liquidity + sui_balance_value;
 
     let pre_tax_sui_value_out = get_amount_out(
         amount_in, 
@@ -332,7 +289,7 @@ public fun dump_amount<Meme>(self: &MemezFun<Meme>, amount_in: u64, clock: &Cloc
         sui_virtual_liquidity
     ); 
 
-    let dynamic_burn_tax = self.get_dynamic_burn_tax(sui_virtual_liquidity - pre_tax_sui_value_out);
+    let dynamic_burn_tax = state.get_dynamic_burn_tax(sui_virtual_liquidity - pre_tax_sui_value_out);
 
     let meme_fee_value = u64::mul_div_up(amount_in, dynamic_burn_tax, POW_9);
 
@@ -347,7 +304,7 @@ public fun dump_amount<Meme>(self: &MemezFun<Meme>, amount_in: u64, clock: &Cloc
 
 // === Private Functions === 
 
-fun new_liquidity_amount<Meme>(self: &MemezFun<Meme>, clock: &Clock): u64 {
+fun new_liquidity_amount<Meme>(self: &AuctionState<Meme>, clock: &Clock, meme_balance_value: u64): u64 {
     let current_time = clock.timestamp_ms(); 
 
     if (current_time - self.start_time > self.auction_duration) return 0;
@@ -357,8 +314,6 @@ fun new_liquidity_amount<Meme>(self: &MemezFun<Meme>, clock: &Clock): u64 {
     let percentage = u64::mul_div_up(progress, POW_9, self.auction_duration); 
 
     let expected_meme_balance = u64::mul_div_up(self.initial_reserve, percentage, POW_9); 
-
-    let meme_balance_value = self.meme_balance.value();  
 
     if (expected_meme_balance <= meme_balance_value) return 0; 
 
@@ -371,14 +326,14 @@ fun new_liquidity_amount<Meme>(self: &MemezFun<Meme>, clock: &Clock): u64 {
     u64::min(meme_delta, current_meme_reserve)
 }
 
-fun provide_liquidity<Meme>(self: &mut MemezFun<Meme>, clock: &Clock) {
-    let amount = self.new_liquidity_amount( clock); 
+fun provide_liquidity<Meme>(state: &mut AuctionState<Meme>, clock: &Clock) {
+    let amount = new_liquidity_amount(state, clock, state.meme_balance.value()); 
 
-    self.meme_balance.join(self.meme_reserve.split(amount)); 
+    state.meme_balance.join(state.meme_reserve.split(amount)); 
 }
 
 fun get_dynamic_burn_tax<Meme>(
-    self: &MemezFun<Meme>, 
+    self: &AuctionState<Meme>, 
     liquidity: u64
 ): u64 {
     if (liquidity >= self.target_sui_liquidity) return 0; 
@@ -394,9 +349,17 @@ fun get_dynamic_burn_tax<Meme>(
     u64::mul_div_up(self.burn_tax, remaining_percentage, POW_9)
 }
 
-fun destroy_or_burn<Meme>(coin: Coin<Meme>) {
-    if (coin.value() == 0)
-        coin.destroy_zero()
-    else 
-        transfer::public_transfer(coin, DEAD_ADDRESS);
+fun state<Meme>(versioned: &mut Versioned): &AuctionState<Meme> {
+    maybe_upgrade_state_to_latest(versioned);
+    versioned.load_value()
+}
+
+fun state_mut<Meme>(versioned: &mut Versioned): &mut AuctionState<Meme> {
+    maybe_upgrade_state_to_latest(versioned);
+    versioned.load_value_mut()
+}
+
+#[allow(unused_mut_parameter)]
+fun maybe_upgrade_state_to_latest(versioned: &mut Versioned) {
+    assert!(versioned.version() == STATE_VERSION_V1, EInvalidVersion);
 }

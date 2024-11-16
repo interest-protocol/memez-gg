@@ -10,6 +10,7 @@ use memez_fun::memez_events_wrapper::emit_event;
 public struct New has copy, drop {
     memez_fun: address, 
     meme: TypeName, 
+    curve: TypeName,
     migration_witness: TypeName,
 }
 
@@ -42,8 +43,8 @@ public struct Migrated has copy, drop {
 
 // === Public Package Functions ===  
 
-public(package) fun new<Meme>(memez_fun: address, migration_witness: TypeName) {
-    emit_event(New { memez_fun, meme: type_name::get<Meme>(), migration_witness });
+public(package) fun new<Curve, Meme>(memez_fun: address, migration_witness: TypeName) {
+    emit_event(New { memez_fun, meme: type_name::get<Meme>(), curve: type_name::get<Curve>(),   migration_witness });
 }
 
 public(package) fun pump<Meme>(memez_fun: address, sui_amount_in: u64, meme_amount_out: u64) {

@@ -10,10 +10,13 @@ use sui::{
     sui::SUI,
     versioned::Versioned,
     vec_map::{Self, VecMap},
-    balance::{Self, Balance},
+    balance::Balance,
 };
 
-use memez_fun::memez_migration::Migration;
+use memez_fun::{
+    memez_events,
+    memez_migration::Migration,
+};
 
 // === Errors ===
 
@@ -26,6 +29,9 @@ const ENotMigrating: vector<u8> = b"Memez is not migrating";
 #[error]
 const ENotMigrated: vector<u8> = b"Memez is not migrated"; 
 
+#[error]
+const EInvalidWitness: vector<u8> = b"Invalid witness";
+
 // === Structs === 
 
 public enum Progress has store, drop, copy {
@@ -34,15 +40,32 @@ public enum Progress has store, drop, copy {
     Migrated,
 }
 
+public struct MemezMigrator<phantom Meme> {
+    witness: TypeName, 
+    memez_fun: address,
+    sui_balance: Balance<SUI>,
+    meme_balance: Balance<Meme>,  
+}
+
 public struct MemezFun<phantom Curve, phantom Meme> has key {
     id: UID,
     dev: address,
     state: Versioned, 
-    sui_balance: Balance<SUI>,
-    meme_balance: Balance<Meme>,
     metadata: VecMap<String, String>,
     migration_witness: TypeName,
     progress: Progress,
+}
+
+// === Public Functions ===  
+
+public fun destroy<Meme, Witness: drop>(migrator: MemezMigrator<Meme>, _: Witness): (Balance<SUI>, Balance<Meme>) {
+    let MemezMigrator { witness, memez_fun, sui_balance, meme_balance } = migrator;
+
+    assert!(type_name::get<Witness>() == witness, EInvalidWitness);
+
+    memez_events::migrated(memez_fun, witness, sui_balance.value(), meme_balance.value());
+
+    (sui_balance, meme_balance)
 }
 
 // === Public Package Functions === 
@@ -56,18 +79,28 @@ public(package) fun new<Curve, MigrationWitness, Meme>(
 ): MemezFun<Curve, Meme> {
     let migration_witness = type_name::get<MigrationWitness>(); 
 
-    migration.assert_is_whitelisted(migration_witness);
+    migration.assert_is_whitelisted(migration_witness); 
+
+    let id = object::new(ctx);
+
+    memez_events::new<Curve, Meme>(id.to_address(), migration_witness);
 
     MemezFun {
-        id: object::new(ctx),
+        id,
         dev: ctx.sender(),
-        state,
-        sui_balance: balance::zero(),
-        meme_balance: balance::zero(),
         metadata: vec_map::from_keys_values(metadata_names, metadata_values),
         migration_witness,
         progress: Progress::Bonding,
+        state,
     }
+}
+
+public(package) fun share<Curve, Meme>(self: MemezFun<Curve, Meme>) {
+    transfer::share_object(self);
+}
+
+public(package) fun addy<Curve, Meme>(self: &MemezFun<Curve, Meme>): address {
+    self.id.to_address()
 }
 
 public(package) fun migration_witness<Curve, Meme>(self: &MemezFun<Curve, Meme>): TypeName {
@@ -78,36 +111,18 @@ public(package) fun dev<Curve, Meme>(self: &MemezFun<Curve, Meme>): address {
     self.dev
 } 
 
-public(package) fun state<Curve, Meme>(self: &MemezFun<Curve, Meme>): &Versioned {
+public(package) fun versioned<Curve, Meme>(self: &MemezFun<Curve, Meme>): &Versioned {
     &self.state
 }
 
-public(package) fun state_mut<Curve, Meme>(self: &mut MemezFun<Curve, Meme>): &mut Versioned {
+public(package) fun versioned_mut<Curve, Meme>(self: &mut MemezFun<Curve, Meme>): &mut Versioned {
     &mut self.state
 }
 
-public(package) fun sui_balance<Curve, Meme>(self: &MemezFun<Curve, Meme>): &Balance<SUI> {
-    &self.sui_balance
-}
-
-public(package) fun meme_balance<Curve, Meme>(self: &MemezFun<Curve, Meme>): &Balance<Meme> {
-    &self.meme_balance
-} 
-
-public(package) fun sui_balance_mut<Curve, Meme>(self: &mut MemezFun<Curve, Meme>): &mut Balance<SUI> {
-    &mut self.sui_balance
-}
-
-public(package) fun meme_balance_mut<Curve, Meme>(self: &mut MemezFun<Curve, Meme>): &mut Balance<Meme> {   
-    &mut self.meme_balance
-}
-
-public(package) fun set_is_migrating<Curve, Meme>(self: &mut MemezFun<Curve, Meme>) {
+public(package) fun set_progress_to_migrating<Curve, Meme>(self: &mut MemezFun<Curve, Meme>) {
     self.progress = Progress::Migrating;
-}
 
-public(package) fun set_migrated<Curve, Meme>(self: &mut MemezFun<Curve, Meme>) {
-    self.progress = Progress::Migrated;
+    memez_events::can_migrate(self.id.to_address(), self.migration_witness);
 }
 
 public(package) fun assert_is_bonding<Curve, Meme>(self: &MemezFun<Curve, Meme>) {
@@ -118,6 +133,23 @@ public(package) fun assert_is_migrating<Curve, Meme>(self: &MemezFun<Curve, Meme
     assert!(self.progress == Progress::Migrating, ENotMigrating);
 }
 
-public(package) fun assert_is_migrated<Curve, Meme>(self: &MemezFun<Curve, Meme>) {
+public(package) fun assert_migrated<Curve, Meme>(self: &MemezFun<Curve, Meme>) {
     assert!(self.progress == Progress::Migrated, ENotMigrated);
+}
+
+// === Public Package Migration Functions === 
+
+public(package) fun new_migrator<Curve, Meme>(
+    self: &mut MemezFun<Curve, Meme>,
+    sui_balance: Balance<SUI>, 
+    meme_balance: Balance<Meme>
+): MemezMigrator<Meme> {
+    self.progress = Progress::Migrated;
+
+    MemezMigrator {
+        witness: self.migration_witness,
+        memez_fun: self.id.to_address(),
+        sui_balance,
+        meme_balance,
+    }
 }

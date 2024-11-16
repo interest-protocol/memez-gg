@@ -24,7 +24,7 @@ use memez_fun::{
     memez_version::CurrentVersion,
     memez_config::{Self, MemezConfig},
     memez_fun::{Self, MemezFun, MemezMigrator},
-    memez_utils::{assert_slippage, destroy_or_burn, get_dynamic_burn_tax, coin_value},
+    memez_utils::{assert_slippage, destroy_or_burn, get_dynamic_burn_tax, assert_coin_has_value},
 };
 
 // === Constants ===
@@ -125,11 +125,11 @@ public fun pump<Meme>(
     version.assert_is_valid();
     self.assert_is_bonding();
 
+    let sui_coin_value = assert_coin_has_value(&sui_coin); 
+
     let state = state_mut<Meme>(self.versioned_mut());
 
     state.provide_liquidity(clock);
-
-    let sui_coin_value = coin_value(&sui_coin); 
 
     let meme_balance_value = state.meme_balance.value();
 
@@ -165,11 +165,11 @@ public fun dump<Meme>(
     version.assert_is_valid();
     self.assert_is_bonding();
 
+    let meme_coin_value = assert_coin_has_value(&meme_coin);
+
     let state = state_mut<Meme>(self.versioned_mut());
 
     state.provide_liquidity(clock);
-
-    let meme_coin_value = coin_value(&meme_coin);
 
     let meme_balance_value = state.meme_balance.value();
 

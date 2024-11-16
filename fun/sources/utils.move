@@ -21,7 +21,7 @@ const EZeroCoin: vector<u8> = b"Coin value must be greater than 0";
 
 // === Public Package Functions === 
 
-public(package) fun coin_value<T>(coin: &Coin<T>): u64 {
+public(package) fun assert_coin_has_value<T>(coin: &Coin<T>): u64 {
     assert!(coin.value() > 0, EZeroCoin);
     coin.value()
 }

@@ -24,7 +24,7 @@ use memez_fun::{
     memez_version::CurrentVersion,
     memez_config::{Self, MemezConfig},
     memez_fun::{Self, MemezFun, MemezMigrator},
-    memez_utils::{assert_slippage, destroy_or_burn},
+    memez_utils::{assert_slippage, destroy_or_burn, get_dynamic_burn_tax},
 };
 
 // === Constants ===
@@ -190,7 +190,12 @@ public fun dump<Meme>(
         sui_virtual_liquidity
     ); 
 
-    let dynamic_burn_tax = state.get_dynamic_burn_tax(sui_virtual_liquidity - pre_tax_sui_value_out);
+    let dynamic_burn_tax = get_dynamic_burn_tax(
+        state.virtual_liquidity, 
+        state.target_sui_liquidity, 
+        sui_virtual_liquidity - pre_tax_sui_value_out, 
+        state.burn_tax
+    );
 
     let meme_fee_value = u64::mul_div_up(meme_coin_value, dynamic_burn_tax, POW_9);
 
@@ -289,7 +294,12 @@ public fun dump_amount<Meme>(self: &mut MemezFun<Auction, Meme>, amount_in: u64,
         sui_virtual_liquidity
     ); 
 
-    let dynamic_burn_tax = state.get_dynamic_burn_tax(sui_virtual_liquidity - pre_tax_sui_value_out);
+    let dynamic_burn_tax = get_dynamic_burn_tax(
+        state.virtual_liquidity, 
+        state.target_sui_liquidity, 
+        sui_virtual_liquidity - pre_tax_sui_value_out, 
+        state.burn_tax
+    );
 
     let meme_fee_value = u64::mul_div_up(amount_in, dynamic_burn_tax, POW_9);
 
@@ -330,23 +340,6 @@ fun provide_liquidity<Meme>(state: &mut AuctionState<Meme>, clock: &Clock) {
     let amount = new_liquidity_amount(state, clock, state.meme_balance.value()); 
 
     state.meme_balance.join(state.meme_reserve.split(amount)); 
-}
-
-fun get_dynamic_burn_tax<Meme>(
-    self: &AuctionState<Meme>, 
-    liquidity: u64
-): u64 {
-    if (liquidity >= self.target_sui_liquidity) return 0; 
-
-    if (self.virtual_liquidity >= liquidity) return self.burn_tax; 
-
-    let total_range = self.target_sui_liquidity - self.virtual_liquidity;  
-
-    let progress = liquidity - self.virtual_liquidity;  
-
-    let remaining_percentage = u64::mul_div_down(total_range - progress, POW_9, total_range);    
-
-    u64::mul_div_up(self.burn_tax, remaining_percentage, POW_9)
 }
 
 fun state<Meme>(versioned: &mut Versioned): &AuctionState<Meme> {

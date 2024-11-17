@@ -3,9 +3,7 @@ module memez_fun::memez_burn_tax;
 
 use interest_math::u64;
 
-// === Constants === 
-
-const POW_9: u64 = 1__000_000_000;
+use memez_fun::memez_utils::pow_9;
 
 // === Structs === 
 
@@ -41,7 +39,9 @@ public(package) fun calculate(
 
     let progress = liquidity - self.start_liquidity;  
 
-    let remaining_percentage = u64::mul_div_down(total_range - progress, POW_9, total_range);    
+    let pow_9 = pow_9();
 
-    u64::mul_div_up(self.tax, remaining_percentage, POW_9)
+    let remaining_percentage = u64::mul_div_down(total_range - progress, pow_9, total_range);    
+
+    u64::mul_div_up(self.tax, remaining_percentage, pow_9)
 }

@@ -16,12 +16,9 @@ use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
 use memez_fun::{
     memez_events,
     memez_burn_tax::{Self, BurnTax},
-    memez_utils::{assert_slippage, assert_coin_has_value},
+    memez_utils::{assert_slippage, assert_coin_has_value, pow_9},
 };
 
-// === Constants === 
-
-const POW_9: u64 = 1__000_000_000;
 
 // === Structs === 
 
@@ -109,7 +106,7 @@ public(package) fun dump<Meme>(
 
     let dynamic_burn_tax = self.burn_tax.calculate(sui_virtual_liquidity - pre_tax_sui_value_out);
 
-    let meme_fee_value = u64::mul_div_up(meme_coin_value, dynamic_burn_tax, POW_9);
+    let meme_fee_value = u64::mul_div_up(meme_coin_value, dynamic_burn_tax, pow_9());
 
     treasury_cap.burn(meme_coin.split(meme_fee_value, ctx));
 
@@ -160,7 +157,7 @@ public(package) fun dump_amount<Meme>(self: &MemezConstantProduct<Meme>, amount_
 
     let dynamic_burn_tax = self.burn_tax.calculate(sui_virtual_liquidity - pre_tax_sui_value_out);
 
-    let meme_fee_value = u64::mul_div_up(amount_in, dynamic_burn_tax, POW_9);
+    let meme_fee_value = u64::mul_div_up(amount_in, dynamic_burn_tax, pow_9());
 
     let post_tax_sui_value_out = get_amount_out(
         amount_in - meme_fee_value, 

@@ -18,9 +18,9 @@ use ipx_coin_standard::ipx_coin_standard::{IPXTreasuryStandard, MetadataCap};
 use memez_fun::{
     memez_auction_config,
     memez_migration::Migration,
-    memez_utils::destroy_or_burn,
     memez_version::CurrentVersion,
     memez_config::{Self, MemezConfig},
+    memez_utils::{destroy_or_burn, pow_9},
     memez_fun::{Self, MemezFun, MemezMigrator},
     memez_constant_product::{Self, MemezConstantProduct},
 };
@@ -29,12 +29,7 @@ use memez_fun::{
 
 const AUCTION_STATE_VERSION_V1: u64 = 1;
 
-const POW_9: u64 = 1__000_000_000;
-
 // === Errors === 
-
-#[error]
-const EInvalidDev: vector<u8> = b"Invalid dev";
 
 #[error]
 const EInvalidVersion: vector<u8> = b"Invalid version";
@@ -192,7 +187,7 @@ public fun migrate<Meme>(
 
 public fun dev_claim<Meme>(self: &mut MemezFun<Auction, Meme>, version: CurrentVersion, ctx: &mut TxContext): Coin<Meme> {
     self.assert_migrated();
-    assert!(ctx.sender() == self.dev(), EInvalidDev); 
+    self.assert_is_dev(ctx); 
 
     version.assert_is_valid();
 
@@ -204,7 +199,7 @@ public fun dev_claim<Meme>(self: &mut MemezFun<Auction, Meme>, version: CurrentV
 // === Public View Functions ===  
 
 public fun meme_price<Meme>(self: &mut MemezFun<Auction, Meme>, clock: &Clock): u64 {
-    pump_amount(self, POW_9, clock)
+    pump_amount(self, pow_9(), clock)
 }
 
 public fun pump_amount<Meme>(self: &mut MemezFun<Auction, Meme>, amount_in: u64, clock: &Clock): u64 {
@@ -237,9 +232,11 @@ fun new_liquidity_amount<Meme>(self: &AuctionState<Meme>, clock: &Clock): u64 {
 
     let progress = current_time - self.start_time; 
 
-    let percentage = u64::mul_div_up(progress, POW_9, self.auction_duration); 
+    let pow_9 = pow_9();
 
-    let expected_meme_balance = u64::mul_div_up(self.initial_reserve, percentage, POW_9); 
+    let percentage = u64::mul_div_up(progress, pow_9, self.auction_duration); 
+
+    let expected_meme_balance = u64::mul_div_up(self.initial_reserve, percentage, pow_9); 
 
     if (expected_meme_balance <= meme_balance_value) return 0; 
 

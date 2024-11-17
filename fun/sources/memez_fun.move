@@ -32,6 +32,9 @@ const ENotMigrated: vector<u8> = b"Memez is not migrated";
 #[error]
 const EInvalidWitness: vector<u8> = b"Invalid witness";
 
+#[error]
+const EInvalidDev: vector<u8> = b"Invalid dev";
+
 // === Structs === 
 
 public enum Progress has store, drop, copy {
@@ -140,6 +143,10 @@ public(package) fun assert_is_migrating<Curve, Meme>(self: &MemezFun<Curve, Meme
 
 public(package) fun assert_migrated<Curve, Meme>(self: &MemezFun<Curve, Meme>) {
     assert!(self.progress == Progress::Migrated, ENotMigrated);
+}
+
+public(package) fun assert_is_dev<Curve, Meme>(self: &MemezFun<Curve, Meme>, ctx: &TxContext) {
+    assert!(self.dev == ctx.sender(), EInvalidDev);
 }
 
 // === Public Package Migration Functions === 

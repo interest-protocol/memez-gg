@@ -7,6 +7,8 @@ use sui::coin::Coin;
 
 const DEAD_ADDRESS: address = @0x0;
 
+const POW_9: u64 = 1__000_000_000;
+
 // === Errors === 
 
 #[error] 
@@ -16,6 +18,10 @@ const ESlippage: vector<u8> = b"Slippage";
 const EZeroCoin: vector<u8> = b"Coin value must be greater than 0"; 
 
 // === Public Package Functions === 
+
+public(package) fun pow_9(): u64 {
+    POW_9
+}
 
 public(package) fun assert_coin_has_value<T>(coin: &Coin<T>): u64 {
     let value = coin.value();

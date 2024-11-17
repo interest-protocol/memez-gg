@@ -24,7 +24,7 @@ const TARGET_SUI_LIQUIDITY: u64 = 10_000__000_000_000;
 // === Errors === 
 
 #[error]
-const EAlreadyInitialized: vector<u8> = b"Auction config already initialized";
+const EAlreadyInitialized: vector<u8> = b"Pump config already initialized";
 
 #[error]
 const EBurnTaxExceedsMax: vector<u8> = b"Burn tax exceeds max";

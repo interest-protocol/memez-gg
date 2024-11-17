@@ -19,7 +19,6 @@ use memez_fun::{
     memez_utils::{assert_slippage, assert_coin_has_value, pow_9},
 };
 
-
 // === Structs === 
 
 public struct MemezConstantProduct<phantom Meme> has store {

@@ -22,14 +22,15 @@ use memez_fun::{
     memez_auction_config,
     memez_migration::Migration,
     memez_version::CurrentVersion,
+    memez_burn_tax::{Self, BurnTax},
     memez_config::{Self, MemezConfig},
     memez_fun::{Self, MemezFun, MemezMigrator},
-    memez_utils::{assert_slippage, destroy_or_burn, get_dynamic_burn_tax, assert_coin_has_value},
+    memez_utils::{assert_slippage, destroy_or_burn, assert_coin_has_value},
 };
 
 // === Constants ===
 
-const STATE_VERSION_V1: u64 = 1;
+const AUCTION_STATE_VERSION_V1: u64 = 1;
 
 const POW_9: u64 = 1__000_000_000;
 
@@ -48,7 +49,7 @@ public struct Auction()
 public struct AuctionState<phantom Meme> has store {
     start_time: u64, 
     auction_duration: u64, 
-    burn_tax: u64,  
+    burn_tax: BurnTax,  
     sui_balance: Balance<SUI>,
     meme_balance: Balance<Meme>,
     virtual_liquidity: u64, 
@@ -90,7 +91,7 @@ public fun new<Meme, MigrationWitness>(
     let auction_state = AuctionState<Meme> {
         start_time: clock.timestamp_ms(), 
         auction_duration: auction_config[0], 
-        burn_tax: auction_config[2],  
+        burn_tax: memez_burn_tax::new(auction_config[2], auction_config[3], auction_config[4]),  
         virtual_liquidity: auction_config[3], 
         target_sui_liquidity: auction_config[4],  
         initial_reserve: meme_reserve.value(),
@@ -103,7 +104,7 @@ public fun new<Meme, MigrationWitness>(
 
     let memez_fun = memez_fun::new<Auction, MigrationWitness, Meme>(
         migration, 
-        versioned::create(STATE_VERSION_V1, auction_state, ctx), 
+        versioned::create(AUCTION_STATE_VERSION_V1, auction_state, ctx), 
         metadata_names, 
         metadata_values, 
         ipx_meme_coin_treasury,
@@ -184,12 +185,7 @@ public fun dump<Meme>(
         sui_virtual_liquidity
     ); 
 
-    let dynamic_burn_tax = get_dynamic_burn_tax(
-        state.virtual_liquidity, 
-        state.target_sui_liquidity, 
-        sui_virtual_liquidity - pre_tax_sui_value_out, 
-        state.burn_tax
-    );
+    let dynamic_burn_tax = state.burn_tax.calculate(sui_virtual_liquidity - pre_tax_sui_value_out);
 
     let meme_fee_value = u64::mul_div_up(meme_coin_value, dynamic_burn_tax, POW_9);
 
@@ -288,12 +284,7 @@ public fun dump_amount<Meme>(self: &mut MemezFun<Auction, Meme>, amount_in: u64,
         sui_virtual_liquidity
     ); 
 
-    let dynamic_burn_tax = get_dynamic_burn_tax(
-        state.virtual_liquidity, 
-        state.target_sui_liquidity, 
-        sui_virtual_liquidity - pre_tax_sui_value_out, 
-        state.burn_tax
-    );
+    let dynamic_burn_tax = state.burn_tax.calculate(sui_virtual_liquidity - pre_tax_sui_value_out);
 
     let meme_fee_value = u64::mul_div_up(amount_in, dynamic_burn_tax, POW_9);
 
@@ -348,5 +339,5 @@ fun state_mut<Meme>(versioned: &mut Versioned): &mut AuctionState<Meme> {
 
 #[allow(unused_mut_parameter)]
 fun maybe_upgrade_state_to_latest(versioned: &mut Versioned) {
-    assert!(versioned.version() == STATE_VERSION_V1, EInvalidVersion);
+    assert!(versioned.version() == AUCTION_STATE_VERSION_V1, EInvalidVersion);
 }

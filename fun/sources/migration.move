@@ -32,12 +32,8 @@ fun init(ctx: &mut TxContext) {
 
 // === Public Package Functions === 
 
-public(package) fun is_whitelisted(self: &Migration, witness: TypeName): bool {
-    self.whitelisted.contains(&witness)
-}
-
 public(package) fun assert_is_whitelisted(self: &Migration, witness: TypeName) {
-    assert!(self.is_whitelisted(witness), InvalidWitness);
+    assert!(self.whitelisted.contains(&witness), InvalidWitness);
 }
 
 // === Admin Functions === 

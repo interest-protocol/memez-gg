@@ -8,9 +8,9 @@ use std::{
 
 use sui::{
     sui::SUI,
+    balance::Balance,
     versioned::Versioned,
     vec_map::{Self, VecMap},
-    balance::Balance,
 };
 
 use memez_fun::{

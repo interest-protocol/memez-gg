@@ -19,6 +19,8 @@ const MIGRATION_FEE: u64 = 200__000_000_000;
 
 const TOTAL_MEME_SUPPLY: u64 = 1_000_000_000__000_000_000;
 
+const MEME_DECIMALS: u8 = 9;
+
 // === Errors === 
 
 #[error]
@@ -77,7 +79,7 @@ public(package) fun set_up_treasury<Meme>(
     mut meme_treasury_cap: TreasuryCap<Meme>, 
     ctx: &mut TxContext
 ): (address, MetadataCap, Balance<Meme>) {
-    assert!(meme_metadata.get_decimals() == 9, EWrongDecimals); 
+    assert!(meme_metadata.get_decimals() == MEME_DECIMALS, EWrongDecimals); 
     assert!(meme_treasury_cap.total_supply() == 0, EPreMint); 
 
     let meme_balance = meme_treasury_cap.mint_balance(TOTAL_MEME_SUPPLY);

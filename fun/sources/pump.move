@@ -85,10 +85,22 @@ public fun new<Meme, MigrationWitness>(
         ctx
     );
 
-    if (first_purchase.value() != 0) {
-        let meme_coin = pump(&mut memez_fun, first_purchase, 0, version, ctx);
+    let memez_fun_address = memez_fun.addy();
 
-        let state = state_mut<Meme>(memez_fun.versioned_mut());
+    let state = memez_fun.state_mut();
+
+    state.constant_product.set_memez_fun(memez_fun_address);
+
+    if (first_purchase.value() != 0) {
+        let meme_coin = pump(
+            &mut memez_fun, 
+            first_purchase, 
+            0, 
+            version, 
+            ctx
+        );
+
+        let state = memez_fun.state_mut();
 
         state.dev_purchase.join(meme_coin.into_balance());
     } else {
@@ -110,7 +122,7 @@ public fun pump<Meme>(
     version.assert_is_valid();
     self.assert_is_bonding();
 
-    let (start_migrating, meme_coin) = state_mut<Meme>(self.versioned_mut()).constant_product.pump(
+    let (start_migrating, meme_coin) = self.state_mut().constant_product.pump(
         sui_coin,
         min_amount_out,
         ctx
@@ -133,7 +145,7 @@ public fun dump<Meme>(
     version.assert_is_valid();
     self.assert_is_bonding();
 
-    state_mut<Meme>(self.versioned_mut()).constant_product.dump(
+    self.state_mut().constant_product.dump(
         treasury_cap,
         meme_coin,           
         min_amount_out,
@@ -150,13 +162,13 @@ public fun migrate<Meme>(
     version.assert_is_valid();
     self.assert_is_migrating();
 
-    let state = state_mut<Meme>(self.versioned_mut());
+    let state = self.state_mut();
 
     let mut sui_balance = state.constant_product.sui_balance_mut().withdraw_all();
 
     let liquidity_provision = state.liquidity_provision.withdraw_all();
 
-    destroy_or_burn(state.constant_product.meme_balance_mut().withdraw_all().into_coin(ctx));
+    state.constant_product.meme_balance_mut().destroy_or_burn(ctx);
 
     config.take_migration_fee(sui_balance.split(config.migration_fee()).into_coin(ctx));
 
@@ -169,7 +181,7 @@ public fun dev_claim<Meme>(self: &mut MemezFun<Pump, Meme>, version: CurrentVers
 
     version.assert_is_valid();
 
-    let state = state_mut<Meme>(self.versioned_mut());
+    let state = self.state_mut();
 
     state.dev_purchase.withdraw_all().into_coin(ctx)
 }
@@ -181,7 +193,7 @@ public fun meme_price<Meme>(self: &mut MemezFun<Pump, Meme>): u64 {
 }
 
 public fun pump_amount<Meme>(self: &mut MemezFun<Pump, Meme>, amount_in: u64): u64 {
-    let state = state<Meme>(self.versioned_mut());
+    let state = self.state();
 
     state.constant_product.pump_amount(
         amount_in, 
@@ -190,19 +202,21 @@ public fun pump_amount<Meme>(self: &mut MemezFun<Pump, Meme>, amount_in: u64): u
 }
 
 public fun dump_amount<Meme>(self: &mut MemezFun<Pump, Meme>, amount_in: u64): (u64, u64) {
-    let state = state_mut<Meme>(self.versioned_mut());
+    let state = self.state();
 
     state.constant_product.dump_amount(amount_in, 0)
 }
 
 // === Private Functions === 
 
-fun state<Meme>(versioned: &mut Versioned): &PumpState<Meme> {
+fun state<Meme>(memez_fun: &mut MemezFun<Pump, Meme>): &PumpState<Meme> {
+    let versioned = memez_fun.versioned_mut();
     maybe_upgrade_state_to_latest(versioned);
     versioned.load_value()
 }
 
-fun state_mut<Meme>(versioned: &mut Versioned): &mut PumpState<Meme> {
+fun state_mut<Meme>(memez_fun: &mut MemezFun<Pump, Meme>): &mut PumpState<Meme> {
+    let versioned = memez_fun.versioned_mut();
     maybe_upgrade_state_to_latest(versioned);
     versioned.load_value_mut()
 }
@@ -211,3 +225,9 @@ fun state_mut<Meme>(versioned: &mut Versioned): &mut PumpState<Meme> {
 fun maybe_upgrade_state_to_latest(versioned: &mut Versioned) {
     assert!(versioned.version() == PUMP_STATE_VERSION_V1, EInvalidVersion);
 }
+
+// === Aliases ===
+
+use fun state as MemezFun.state; 
+use fun state_mut as MemezFun.state_mut; 
+use fun destroy_or_burn as Balance.destroy_or_burn; 

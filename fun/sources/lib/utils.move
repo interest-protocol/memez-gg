@@ -1,7 +1,10 @@
 module memez_fun::memez_utils;
 // === Imports === 
 
-use sui::coin::Coin;
+use sui::{
+    coin::Coin, 
+    balance::Balance
+};
 
 // === Constants === 
 
@@ -29,11 +32,13 @@ public(package) fun assert_coin_has_value<T>(coin: &Coin<T>): u64 {
     value
 }
 
-public(package) fun destroy_or_burn<Meme>(coin: Coin<Meme>) {
-    if (coin.value() == 0)
-        coin.destroy_zero()
+public(package) fun destroy_or_burn<Meme>(balance: &mut Balance<Meme>, ctx: &mut TxContext) {
+    let bal = balance.withdraw_all();
+    
+    if (bal.value() == 0)
+        bal.destroy_zero()
     else 
-        transfer::public_transfer(coin, DEAD_ADDRESS);
+        transfer::public_transfer(bal.into_coin(ctx), DEAD_ADDRESS);
 }
 
 public(package) fun assert_slippage(amount: u64, minimum_expected: u64) {

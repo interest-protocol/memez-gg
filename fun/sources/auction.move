@@ -102,7 +102,7 @@ public fun new<Meme, MigrationWitness>(
 
     let memez_fun_address = memez_fun.addy();
 
-    let state = state_mut<Meme>(memez_fun.versioned_mut());
+    let state = memez_fun.state_mut();
 
     state.constant_product.set_memez_fun(memez_fun_address);
 
@@ -122,7 +122,7 @@ public fun pump<Meme>(
     version.assert_is_valid();
     self.assert_is_bonding();
 
-    let state = state_mut<Meme>(self.versioned_mut());
+    let state = self.state_mut();
 
     state.provide_liquidity(clock);
 
@@ -150,7 +150,7 @@ public fun dump<Meme>(
     version.assert_is_valid();
     self.assert_is_bonding();
 
-    let state = state_mut<Meme>(self.versioned_mut());
+    let state = self.state_mut();
 
     state.provide_liquidity(clock);
 
@@ -171,14 +171,14 @@ public fun migrate<Meme>(
     version.assert_is_valid();
     self.assert_is_migrating();
 
-    let state = state_mut<Meme>(self.versioned_mut());
+    let state = self.state_mut();
 
     let mut sui_balance = state.constant_product.sui_balance_mut().withdraw_all();
 
     let liquidity_provision = state.liquidity_provision.withdraw_all();
 
-    destroy_or_burn(state.constant_product.meme_balance_mut().withdraw_all().into_coin(ctx));
-    destroy_or_burn(state.meme_reserve.withdraw_all().into_coin(ctx));
+    state.constant_product.meme_balance_mut().destroy_or_burn(ctx);
+    state.meme_reserve.destroy_or_burn(ctx);
 
     config.take_migration_fee(sui_balance.split(config.migration_fee()).into_coin(ctx));
 
@@ -191,7 +191,7 @@ public fun dev_claim<Meme>(self: &mut MemezFun<Auction, Meme>, version: CurrentV
 
     version.assert_is_valid();
 
-    let state = state_mut<Meme>(self.versioned_mut());
+    let state = self.state_mut();
 
     state.dev_allocation.withdraw_all().into_coin(ctx)
 }
@@ -203,7 +203,7 @@ public fun meme_price<Meme>(self: &mut MemezFun<Auction, Meme>, clock: &Clock): 
 }
 
 public fun pump_amount<Meme>(self: &mut MemezFun<Auction, Meme>, amount_in: u64, clock: &Clock): u64 {
-    let state = state<Meme>(self.versioned_mut());
+    let state = self.state();
 
     let amount = new_liquidity_amount(state, clock); 
 
@@ -214,7 +214,7 @@ public fun pump_amount<Meme>(self: &mut MemezFun<Auction, Meme>, amount_in: u64,
 }
 
 public fun dump_amount<Meme>(self: &mut MemezFun<Auction, Meme>, amount_in: u64, clock: &Clock): (u64, u64) {
-    let state = state_mut<Meme>(self.versioned_mut());
+    let state = self.state();
 
     let amount = new_liquidity_amount(state, clock); 
 
@@ -255,12 +255,14 @@ fun provide_liquidity<Meme>(state: &mut AuctionState<Meme>, clock: &Clock) {
     state.constant_product.meme_balance_mut().join(state.meme_reserve.split(amount)); 
 }
 
-fun state<Meme>(versioned: &mut Versioned): &AuctionState<Meme> {
+fun state<Meme>(memez_fun: &mut MemezFun<Auction, Meme>): &AuctionState<Meme> {
+    let versioned = memez_fun.versioned_mut();
     maybe_upgrade_state_to_latest(versioned);
     versioned.load_value()
 }
 
-fun state_mut<Meme>(versioned: &mut Versioned): &mut AuctionState<Meme> {
+fun state_mut<Meme>(memez_fun: &mut MemezFun<Auction, Meme>): &mut AuctionState<Meme> {
+    let versioned = memez_fun.versioned_mut();
     maybe_upgrade_state_to_latest(versioned);
     versioned.load_value_mut()
 }
@@ -269,3 +271,9 @@ fun state_mut<Meme>(versioned: &mut Versioned): &mut AuctionState<Meme> {
 fun maybe_upgrade_state_to_latest(versioned: &mut Versioned) {
     assert!(versioned.version() == AUCTION_STATE_VERSION_V1, EInvalidVersion);
 }
+
+// === Aliases ===
+
+use fun state as MemezFun.state; 
+use fun state_mut as MemezFun.state_mut; 
+use fun destroy_or_burn as Balance.destroy_or_burn; 

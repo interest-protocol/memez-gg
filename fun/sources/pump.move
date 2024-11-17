@@ -103,9 +103,8 @@ public fun new<Meme, MigrationWitness>(
         let state = memez_fun.state_mut();
 
         state.dev_purchase.join(meme_coin.into_balance());
-    } else {
+    } else
         first_purchase.destroy_zero();
-    };
 
     memez_fun.share();
 

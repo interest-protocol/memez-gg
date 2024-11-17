@@ -6,7 +6,7 @@ use std::string::String;
 use sui::{
     sui::SUI,
     clock::Clock,
-    balance::{Self, Balance},
+    balance::Balance,
     versioned::{Self, Versioned},
     coin::{Coin, TreasuryCap, CoinMetadata},
 };
@@ -15,17 +15,14 @@ use interest_math::u64;
 
 use ipx_coin_standard::ipx_coin_standard::{IPXTreasuryStandard, MetadataCap};
 
-use constant_product::constant_product::get_amount_out;
-
 use memez_fun::{
-    memez_events,
     memez_auction_config,
     memez_migration::Migration,
+    memez_utils::destroy_or_burn,
     memez_version::CurrentVersion,
-    memez_burn_tax::{Self, BurnTax},
     memez_config::{Self, MemezConfig},
     memez_fun::{Self, MemezFun, MemezMigrator},
-    memez_utils::{assert_slippage, destroy_or_burn, assert_coin_has_value},
+    memez_constant_product::{Self, MemezConstantProduct},
 };
 
 // === Constants ===
@@ -48,16 +45,12 @@ public struct Auction()
 
 public struct AuctionState<phantom Meme> has store {
     start_time: u64, 
-    auction_duration: u64, 
-    burn_tax: BurnTax,  
-    sui_balance: Balance<SUI>,
-    meme_balance: Balance<Meme>,
-    virtual_liquidity: u64, 
-    target_sui_liquidity: u64,  
+    auction_duration: u64,  
     initial_reserve: u64,
     meme_reserve: Balance<Meme>,
     dev_allocation: Balance<Meme>, 
     liquidity_provision: Balance<Meme>, 
+    constant_product: MemezConstantProduct<Meme>,
 }
 
 // === Public Mutative Functions === 
@@ -91,18 +84,19 @@ public fun new<Meme, MigrationWitness>(
     let auction_state = AuctionState<Meme> {
         start_time: clock.timestamp_ms(), 
         auction_duration: auction_config[0], 
-        burn_tax: memez_burn_tax::new(auction_config[2], auction_config[3], auction_config[4]),  
-        virtual_liquidity: auction_config[3], 
-        target_sui_liquidity: auction_config[4],  
         initial_reserve: meme_reserve.value(),
         meme_reserve,
         dev_allocation, 
         liquidity_provision, 
-        sui_balance: balance::zero(),
-        meme_balance,
+        constant_product: memez_constant_product::new(
+            auction_config[3],
+            auction_config[4],
+            meme_balance,
+            auction_config[2]
+        ),
     };
 
-    let memez_fun = memez_fun::new<Auction, MigrationWitness, Meme>(
+    let mut memez_fun = memez_fun::new<Auction, MigrationWitness, Meme>(
         migration, 
         versioned::create(AUCTION_STATE_VERSION_V1, auction_state, ctx), 
         metadata_names, 
@@ -110,6 +104,12 @@ public fun new<Meme, MigrationWitness>(
         ipx_meme_coin_treasury,
         ctx
     );
+
+    let memez_fun_address = memez_fun.addy();
+
+    let state = state_mut<Meme>(memez_fun.versioned_mut());
+
+    state.constant_product.set_memez_fun(memez_fun_address);
 
     memez_fun.share();
 
@@ -127,30 +127,18 @@ public fun pump<Meme>(
     version.assert_is_valid();
     self.assert_is_bonding();
 
-    let sui_coin_value = assert_coin_has_value(&sui_coin); 
-
     let state = state_mut<Meme>(self.versioned_mut());
 
     state.provide_liquidity(clock);
 
-    let meme_balance_value = state.meme_balance.value();
-
-    let meme_coin_value_out = get_amount_out(
-        sui_coin_value, 
-        state.virtual_liquidity + state.sui_balance.value(), 
-        meme_balance_value
+    let (start_migrating, meme_coin) = state.constant_product.pump(
+        sui_coin,
+        min_amount_out,
+        ctx
     );
 
-    assert_slippage(meme_coin_value_out, min_amount_out);
-
-    let meme_coin = state.meme_balance.split(meme_coin_value_out).into_coin(ctx);
-
-    let total_sui_balance = state.sui_balance.join(sui_coin.into_balance());  
-
-    if (total_sui_balance >= state.target_sui_liquidity)
+    if (start_migrating)
         self.set_progress_to_migrating();
-
-    memez_events::pump<Meme>(self.addy(), sui_coin_value, meme_coin_value_out);
 
     meme_coin
 }
@@ -159,7 +147,7 @@ public fun dump<Meme>(
     self: &mut MemezFun<Auction, Meme>, 
     clock: &Clock,
     treasury_cap: &mut IPXTreasuryStandard, 
-    mut meme_coin: Coin<Meme>, 
+    meme_coin: Coin<Meme>, 
     min_amount_out: u64,
     version: CurrentVersion, 
     ctx: &mut TxContext
@@ -167,52 +155,16 @@ public fun dump<Meme>(
     version.assert_is_valid();
     self.assert_is_bonding();
 
-    let meme_coin_value = assert_coin_has_value(&meme_coin);
-
     let state = state_mut<Meme>(self.versioned_mut());
 
     state.provide_liquidity(clock);
 
-    let meme_balance_value = state.meme_balance.value();
-
-    let sui_balance_value = state.sui_balance.value(); 
-
-    let sui_virtual_liquidity = state.virtual_liquidity + sui_balance_value;
-
-    let pre_tax_sui_value_out = get_amount_out(
-        meme_coin_value, 
-        meme_balance_value, 
-        sui_virtual_liquidity
-    ); 
-
-    let dynamic_burn_tax = state.burn_tax.calculate(sui_virtual_liquidity - pre_tax_sui_value_out);
-
-    let meme_fee_value = u64::mul_div_up(meme_coin_value, dynamic_burn_tax, POW_9);
-
-    treasury_cap.burn(meme_coin.split(meme_fee_value, ctx));
-
-    let post_tax_sui_value_out = get_amount_out(
-        meme_coin_value - meme_fee_value, 
-        meme_balance_value, 
-        sui_virtual_liquidity
-    );
-
-    state.meme_balance.join(meme_coin.into_balance()); 
-
-    let sui_coin_amount_out = u64::min(post_tax_sui_value_out, sui_balance_value);
-
-    assert_slippage(sui_coin_amount_out, min_amount_out);
-
-    let sui_coin = state.sui_balance.split(sui_coin_amount_out).into_coin(ctx);
-
-    memez_events::dump<Meme>(
-        self.addy(), 
-        post_tax_sui_value_out, 
-        meme_coin_value, 
-        meme_fee_value
-    );
-
-    sui_coin
+    state.constant_product.dump(
+        treasury_cap,
+        meme_coin,           
+        min_amount_out,
+        ctx
+    )
 }
 
 public fun migrate<Meme>(
@@ -226,11 +178,11 @@ public fun migrate<Meme>(
 
     let state = state_mut<Meme>(self.versioned_mut());
 
-    let mut sui_balance = state.sui_balance.withdraw_all();
+    let mut sui_balance = state.constant_product.sui_balance_mut().withdraw_all();
 
     let liquidity_provision = state.liquidity_provision.withdraw_all();
 
-    destroy_or_burn(state.meme_balance.withdraw_all().into_coin(ctx));
+    destroy_or_burn(state.constant_product.meme_balance_mut().withdraw_all().into_coin(ctx));
     destroy_or_burn(state.meme_reserve.withdraw_all().into_coin(ctx));
 
     config.take_migration_fee(sui_balance.split(config.migration_fee()).into_coin(ctx));
@@ -258,49 +210,28 @@ public fun meme_price<Meme>(self: &mut MemezFun<Auction, Meme>, clock: &Clock): 
 public fun pump_amount<Meme>(self: &mut MemezFun<Auction, Meme>, amount_in: u64, clock: &Clock): u64 {
     let state = state<Meme>(self.versioned_mut());
 
-    let amount = new_liquidity_amount(state, clock, state.meme_balance.value()); 
+    let amount = new_liquidity_amount(state, clock); 
 
-    get_amount_out(
+    state.constant_product.pump_amount(
         amount_in, 
-        state.virtual_liquidity + state.sui_balance.value(), 
-        state.meme_balance.value() + amount
+        amount
     )
 }
 
 public fun dump_amount<Meme>(self: &mut MemezFun<Auction, Meme>, amount_in: u64, clock: &Clock): (u64, u64) {
     let state = state_mut<Meme>(self.versioned_mut());
 
-    let amount = new_liquidity_amount(state, clock, state.meme_balance.value()); 
+    let amount = new_liquidity_amount(state, clock); 
 
-    let meme_balance_value = state.meme_balance.value() + amount;
-
-    let sui_balance_value = state.sui_balance.value(); 
-
-    let sui_virtual_liquidity = state.virtual_liquidity + sui_balance_value;
-
-    let pre_tax_sui_value_out = get_amount_out(
-        amount_in, 
-        meme_balance_value, 
-        sui_virtual_liquidity
-    ); 
-
-    let dynamic_burn_tax = state.burn_tax.calculate(sui_virtual_liquidity - pre_tax_sui_value_out);
-
-    let meme_fee_value = u64::mul_div_up(amount_in, dynamic_burn_tax, POW_9);
-
-    let post_tax_sui_value_out = get_amount_out(
-        amount_in - meme_fee_value, 
-        meme_balance_value, 
-        sui_virtual_liquidity
-    );
-
-    (u64::min(post_tax_sui_value_out, sui_balance_value), meme_fee_value)
+    state.constant_product.dump_amount(amount_in, amount)
 }
 
 // === Private Functions === 
 
-fun new_liquidity_amount<Meme>(self: &AuctionState<Meme>, clock: &Clock, meme_balance_value: u64): u64 {
+fun new_liquidity_amount<Meme>(self: &AuctionState<Meme>, clock: &Clock): u64 {
     let current_time = clock.timestamp_ms(); 
+
+    let meme_balance_value = self.constant_product.meme_balance().value();
 
     if (current_time - self.start_time > self.auction_duration) return 0;
 
@@ -322,9 +253,9 @@ fun new_liquidity_amount<Meme>(self: &AuctionState<Meme>, clock: &Clock, meme_ba
 }
 
 fun provide_liquidity<Meme>(state: &mut AuctionState<Meme>, clock: &Clock) {
-    let amount = new_liquidity_amount(state, clock, state.meme_balance.value()); 
+    let amount = new_liquidity_amount(state, clock); 
 
-    state.meme_balance.join(state.meme_reserve.split(amount)); 
+    state.constant_product.meme_balance_mut().join(state.meme_reserve.split(amount)); 
 }
 
 fun state<Meme>(versioned: &mut Versioned): &AuctionState<Meme> {

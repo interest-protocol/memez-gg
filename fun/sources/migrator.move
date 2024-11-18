@@ -1,4 +1,4 @@
-module memez_fun::memez_migration;
+module memez_fun::memez_migrator;
 // === Imports === 
 
 use std::type_name::{Self, TypeName};
@@ -14,7 +14,7 @@ const InvalidWitness: vector<u8> = b"This witness is not whitelisted";
 
 // === Structs === 
 
-public struct Migration has key {
+public struct Migrator has key {
     id: UID, 
     whitelisted: VecSet<TypeName>, 
 }
@@ -22,7 +22,7 @@ public struct Migration has key {
 // === Initializer === 
 
 fun init(ctx: &mut TxContext) {
-    let migration = Migration {
+    let migration = Migrator {
         id: object::new(ctx),
         whitelisted: vec_set::empty(),
     };
@@ -32,16 +32,16 @@ fun init(ctx: &mut TxContext) {
 
 // === Public Package Functions === 
 
-public(package) fun assert_is_whitelisted(self: &Migration, witness: TypeName) {
+public(package) fun assert_is_whitelisted(self: &Migrator, witness: TypeName) {
     assert!(self.whitelisted.contains(&witness), InvalidWitness);
 }
 
 // === Admin Functions === 
 
-public fun add<Witness: drop>(self: &mut Migration, _: &AuthWitness) {
+public fun add<Witness: drop>(self: &mut Migrator, _: &AuthWitness) {
     self.whitelisted.insert(type_name::get<Witness>());
 }
 
-public fun remove<Witness: drop>(self: &mut Migration, _: &AuthWitness) {
+public fun remove<Witness: drop>(self: &mut Migrator, _: &AuthWitness) {
     self.whitelisted.remove(&type_name::get<Witness>());
 }

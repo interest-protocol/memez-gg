@@ -139,3 +139,40 @@ public(package) fun dump_amount<Meme>(
         u64::mul_div_down(meme_amount, self.sui_raise_amount, self.meme_sale_amount)
     )
 }
+
+
+public(package) fun sui_balance<Meme>(
+    self: &FixedRate<Meme>,
+): &Balance<SUI> {
+    &self.sui_balance
+}
+
+public(package) fun meme_balance<Meme>(
+    self: &FixedRate<Meme>,
+): &Balance<Meme> {
+    &self.meme_balance
+}
+
+public(package) fun sui_balance_mut<Meme>(
+    self: &mut FixedRate<Meme>,
+): &mut Balance<SUI> {
+    &mut self.sui_balance
+}
+
+public(package) fun meme_balance_mut<Meme>(
+    self: &mut FixedRate<Meme>,
+): &mut Balance<Meme> {
+    &mut self.meme_balance
+}
+
+public(package) fun sui_raise_amount<Meme>(
+    self: &FixedRate<Meme>,
+): u64 {
+    self.sui_raise_amount
+}
+
+public(package) fun meme_sale_amount<Meme>(
+    self: &FixedRate<Meme>,
+): u64 {
+    self.meme_sale_amount
+}

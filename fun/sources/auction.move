@@ -17,7 +17,7 @@ use ipx_coin_standard::ipx_coin_standard::{IPXTreasuryStandard, MetadataCap};
 
 use memez_fun::{
     memez_auction_config,
-    memez_migration::Migration,
+    memez_migrator::Migrator,
     memez_version::CurrentVersion,
     memez_config::{Self, MemezConfig},
     memez_utils::{destroy_or_burn, pow_9},
@@ -53,7 +53,7 @@ public struct AuctionState<phantom Meme> has store {
 #[allow(lint(share_owned))]
 public fun new<Meme, MigrationWitness>(
     config: &MemezConfig,
-    migration: &Migration,
+    migrator: &Migrator,
     clock: &Clock, 
     meme_metadata: &CoinMetadata<Meme>,
     meme_treasury_cap: TreasuryCap<Meme>,
@@ -92,7 +92,7 @@ public fun new<Meme, MigrationWitness>(
     };
 
     let mut memez_fun = memez_fun::new<Auction, MigrationWitness, Meme>(
-        migration, 
+        migrator, 
         versioned::create(AUCTION_STATE_VERSION_V1, auction_state, ctx), 
         metadata_names, 
         metadata_values, 

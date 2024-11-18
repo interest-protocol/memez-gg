@@ -15,7 +15,7 @@ use sui::{
 
 use memez_fun::{
     memez_events,
-    memez_migration::Migration,
+    memez_migrator::Migrator,
 };
 
 // === Errors ===
@@ -74,7 +74,7 @@ public fun destroy<Meme, Witness: drop>(migrator: MemezMigrator<Meme>, _: Witnes
 // === Public Package Functions === 
 
 public(package) fun new<Curve, MigrationWitness, Meme>(
-    migration: &Migration,
+    migrator: &Migrator,
     state: Versioned,
     metadata_names: vector<String>,
     metadata_values: vector<String>,
@@ -83,7 +83,7 @@ public(package) fun new<Curve, MigrationWitness, Meme>(
 ): MemezFun<Curve, Meme> {
     let migration_witness = type_name::get<MigrationWitness>(); 
 
-    migration.assert_is_whitelisted(migration_witness); 
+    migrator.assert_is_whitelisted(migration_witness); 
 
     let id = object::new(ctx);
 

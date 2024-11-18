@@ -15,9 +15,9 @@ use ipx_coin_standard::ipx_coin_standard::{IPXTreasuryStandard, MetadataCap};
 use memez_fun::{
     memez_pump_config,
     memez_migration::Migration,
+    memez_utils::destroy_or_burn,
     memez_version::CurrentVersion,
     memez_config::{Self, MemezConfig},
-    memez_utils::{destroy_or_burn, pow_9},
     memez_fun::{Self, MemezFun, MemezMigrator},
     memez_constant_product::{Self, MemezConstantProduct},
 };
@@ -186,10 +186,6 @@ public fun dev_claim<Meme>(self: &mut MemezFun<Pump, Meme>, version: CurrentVers
 }
 
 // === Public View Functions ===  
-
-public fun meme_price<Meme>(self: &mut MemezFun<Pump, Meme>): u64 {
-    pump_amount(self, pow_9())
-}
 
 public fun pump_amount<Meme>(self: &mut MemezFun<Pump, Meme>, amount_in: u64): u64 {
     let state = self.state();

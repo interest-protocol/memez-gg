@@ -198,10 +198,6 @@ public fun dev_claim<Meme>(self: &mut MemezFun<Auction, Meme>, version: CurrentV
 
 // === Public View Functions ===  
 
-public fun meme_price<Meme>(self: &mut MemezFun<Auction, Meme>, clock: &Clock): u64 {
-    pump_amount(self, pow_9(), clock)
-}
-
 public fun pump_amount<Meme>(self: &mut MemezFun<Auction, Meme>, amount_in: u64, clock: &Clock): u64 {
     let state = self.state();
 

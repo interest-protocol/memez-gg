@@ -45,3 +45,20 @@ public(package) fun calculate(
 
     u64::mul_div_up(self.tax, remaining_percentage, pow_9)
 }
+
+// === Test Only ===  
+
+#[test_only]
+public fun tax(self: BurnTax): u64 {
+    self.tax
+}
+
+#[test_only]
+public fun start_liquidity(self: BurnTax): u64 {
+    self.start_liquidity
+}
+
+#[test_only]
+public fun target_liquidity(self: BurnTax): u64 {
+    self.target_liquidity
+}

@@ -9,4 +9,3 @@ Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-fram
 
 [addresses]
 memez_acl = "0x12345"
-sui = "0x2"

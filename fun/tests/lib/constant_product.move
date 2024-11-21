@@ -235,6 +235,9 @@ fun test_pump_amount() {
    let expected_amount_out = cp.pump_amount(amount_in, 1200);
 
     assert_eq(expected_amount_out, amount_out);
+
+    assert_eq(cp.pump_amount(0, 1200), 0);
+
     destroy(cp);
 }
 
@@ -277,6 +280,11 @@ fun test_dump_amount() {
     let (expected_amount_out, _) = cp.dump_amount(amount_in, 1200);
 
     assert_eq(expected_amount_out, amount_out);
+
+    let (expected_amount_out, fee) = cp.dump_amount(0, 1200);
+
+    assert_eq(expected_amount_out, 0);
+    assert_eq(fee, 0);
 
     destroy(cp);
 }

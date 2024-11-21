@@ -113,6 +113,10 @@ public(package) fun pump_amount<Meme>(
     self: &FixedRate<Meme>,
     sui_amount: u64,
 ): (u64, u64) {
+    if (sui_amount == 0) return (0, 0); 
+
+    if (self.sui_balance.value() >= self.sui_raise_amount) return (sui_amount, 0); 
+
     let sui_amount_left = self.sui_raise_amount - self.sui_balance.value(); 
 
     let excess_sui_amount = if (sui_amount > sui_amount_left)
@@ -134,6 +138,7 @@ public(package) fun dump_amount<Meme>(
     self: &FixedRate<Meme>,
     meme_amount: u64,
 ): u64 {
+    if (meme_amount == 0) return 0; 
     u64::min(
         self.sui_balance.value(), 
         u64::mul_div_down(meme_amount, self.sui_raise_amount, self.meme_sale_amount)

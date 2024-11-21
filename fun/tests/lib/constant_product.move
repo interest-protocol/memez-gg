@@ -5,11 +5,13 @@ module memez_fun::memez_constant_product_tests;
 use sui::{
     balance,
     sui::SUI,
-    coin::mint_for_testing,
+    coin::{Self, mint_for_testing},
     test_utils::{assert_eq, destroy},
 };
 
 use constant_product::constant_product::get_amount_out;
+
+use ipx_coin_standard::ipx_coin_standard;
 
 use memez_fun::{
     memez_utils,
@@ -126,6 +128,40 @@ fun test_pump() {
     assert_eq(cp.virtual_liquidity(), virtual_liquidity); 
     assert_eq(cp.meme_balance().value(), meme_balance_value - amount_out); 
 
+    destroy(cp);
+}
+
+#[test]
+fun test_dump() {
+    let mut ctx = tx_context::dummy(); 
+
+    let virtual_liquidity = 100; 
+    let target_sui_liquidity = 1100; 
+    let meme_balance_value = 5000; 
+    let burn_tax = 20; 
+
+    let mut meme_treasury_cap = coin::create_treasury_cap_for_testing<Meme>(&mut ctx);
+
+    let mut cp = memez_constant_product::new(
+        virtual_liquidity, 
+        target_sui_liquidity, 
+        meme_treasury_cap.mint(meme_balance_value, &mut ctx).into_balance(), 
+        burn_tax
+    ); 
+
+    let (mut ipx_treasury, mut witness) = ipx_coin_standard::new(meme_treasury_cap, &mut ctx);
+
+    witness.add_burn_capability(&mut ipx_treasury);
+
+    let (_, coin_meme_out) = cp.pump(
+        mint_for_testing<SUI>(500, &mut ctx), 
+        0,
+        &mut ctx
+    );
+
+    coin_meme_out.burn_for_testing();
+
+    destroy(ipx_treasury);
     destroy(cp);
 }
 

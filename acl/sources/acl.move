@@ -142,6 +142,11 @@ public fun init_for_testing(ctx: &mut TxContext) {
 }
 
 #[test_only]
+public fun sign_in_for_testing(): AuthWitness {
+    AuthWitness()
+}
+
+#[test_only]
 public fun admins(acl: &ACL): &VecSet<address> {
     &acl.admins
 }

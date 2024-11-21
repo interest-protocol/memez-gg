@@ -9,16 +9,21 @@ use sui::{
     test_utils::{assert_eq, destroy},
 };
 
+use interest_math::u64;
+
 use constant_product::constant_product::get_amount_out;
 
 use ipx_coin_standard::ipx_coin_standard;
 
 use memez_fun::{
     memez_utils,
+    memez_burn_tax,
     memez_constant_product,
 };
 
 public struct Meme has drop()
+
+const POW_9: u64 = 1__000_000_000;
 
 #[test]
 fun test_new() {
@@ -149,24 +154,92 @@ fun test_dump() {
         burn_tax
     ); 
 
+    let burn_tax = memez_burn_tax::new(burn_tax, virtual_liquidity, target_sui_liquidity);
+
     let (mut ipx_treasury, mut witness) = ipx_coin_standard::new(meme_treasury_cap, &mut ctx);
 
     witness.add_burn_capability(&mut ipx_treasury);
 
+    let sui_amount_in = 500;
+
     let (_, coin_meme_out) = cp.pump(
-        mint_for_testing<SUI>(500, &mut ctx), 
+        mint_for_testing<SUI>(sui_amount_in, &mut ctx), 
         0,
         &mut ctx
     );
 
-    coin_meme_out.burn_for_testing();
+    let meme_coin_out_value = coin_meme_out.value();
+
+    let (expected_sui_coin_out, fee) = cp.dump_amount(meme_coin_out_value, 0);
+
+    let pre_tax_amount_out = get_amount_out(
+        meme_coin_out_value, 
+        cp.meme_balance().value(), 
+        cp.sui_balance().value() + virtual_liquidity
+    );
+
+    let fee_rate = burn_tax.calculate(
+        cp.sui_balance().value() + virtual_liquidity - pre_tax_amount_out
+    );
+
+    let amount_out = get_amount_out(
+        meme_coin_out_value - fee, 
+        cp.meme_balance().value(), 
+        cp.sui_balance().value() + virtual_liquidity
+    );
+
+    let meme_fee_value =  u64::mul_div_up(meme_coin_out_value, fee_rate, POW_9);
+
+    let sui_coin_out = cp.dump(
+        &mut ipx_treasury,
+        coin_meme_out,
+        expected_sui_coin_out,
+        &mut ctx
+    );
+
+    assert_eq(meme_fee_value, fee);
+    assert_eq(ipx_treasury.total_supply<Meme>(), meme_balance_value - fee);
+    assert_eq(amount_out, expected_sui_coin_out);
+
+    assert_eq(cp.sui_balance().value(), sui_amount_in - expected_sui_coin_out);
+    assert_eq(cp.meme_balance().value(), meme_balance_value - fee);
+
+    sui_coin_out.burn_for_testing();
 
     destroy(ipx_treasury);
     destroy(cp);
 }
 
 #[test]
- #[expected_failure(abort_code = memez_utils::ESlippage, location = memez_utils)]
+#[expected_failure(abort_code = memez_utils::EZeroCoin, location = memez_utils)]
+fun test_pump_zero_coin() {
+    let mut ctx = tx_context::dummy(); 
+
+    let virtual_liquidity = 100; 
+    let target_sui_liquidity = 1100; 
+    let meme_balance_value = 5000; 
+    let burn_tax = 20; 
+
+    let mut cp = memez_constant_product::new(
+        virtual_liquidity, 
+        target_sui_liquidity, 
+        balance::create_for_testing<Meme>(meme_balance_value), 
+        burn_tax
+    ); 
+
+    let (_, coin_meme_out) = cp.pump(
+        coin::zero(&mut ctx), 
+        0,
+        &mut ctx
+    ); 
+
+    coin_meme_out.burn_for_testing();
+
+    destroy(cp);
+}
+
+#[test]
+#[expected_failure(abort_code = memez_utils::ESlippage, location = memez_utils)]
 fun test_pump_slippage() {
     let mut ctx = tx_context::dummy(); 
 
@@ -194,5 +267,87 @@ fun test_pump_slippage() {
 
     coin_meme_out.burn_for_testing();
 
+    destroy(cp);
+}
+
+#[test]
+#[expected_failure(abort_code = memez_utils::EZeroCoin, location = memez_utils)]
+fun test_dump_zero_coin() {
+    let mut ctx = tx_context::dummy(); 
+
+    let virtual_liquidity = 100; 
+    let target_sui_liquidity = 1100; 
+    let meme_balance_value = 5000; 
+    let burn_tax = 20; 
+
+    let meme_treasury_cap = coin::create_treasury_cap_for_testing<Meme>(&mut ctx);
+
+    let (mut ipx_treasury, _) = ipx_coin_standard::new(meme_treasury_cap, &mut ctx);
+
+    let mut cp = memez_constant_product::new(
+        virtual_liquidity, 
+        target_sui_liquidity, 
+        balance::create_for_testing<Meme>(meme_balance_value), 
+        burn_tax
+    ); 
+
+    let sui_coin_out = cp.dump(
+        &mut ipx_treasury,
+        coin::zero(&mut ctx),
+        0,
+        &mut ctx
+    );
+
+    sui_coin_out.burn_for_testing();
+
+    destroy(ipx_treasury);
+    destroy(cp);
+}
+
+#[test]
+#[expected_failure(abort_code = memez_utils::ESlippage, location = memez_utils)]
+fun test_dump_slippage() {
+    let mut ctx = tx_context::dummy(); 
+
+    let virtual_liquidity = 100; 
+    let target_sui_liquidity = 1100; 
+    let meme_balance_value = 5000; 
+    let burn_tax = 20; 
+
+    let mut meme_treasury_cap = coin::create_treasury_cap_for_testing<Meme>(&mut ctx);
+
+    let mut cp = memez_constant_product::new(
+        virtual_liquidity, 
+        target_sui_liquidity, 
+        meme_treasury_cap.mint(meme_balance_value, &mut ctx).into_balance(), 
+        burn_tax
+    ); 
+
+    let (mut ipx_treasury, mut witness) = ipx_coin_standard::new(meme_treasury_cap, &mut ctx);
+
+    witness.add_burn_capability(&mut ipx_treasury);
+
+    let sui_amount_in = 500;
+
+    let (_, coin_meme_out) = cp.pump(
+        mint_for_testing<SUI>(sui_amount_in, &mut ctx), 
+        0,
+        &mut ctx
+    );
+
+    let meme_coin_out_value = coin_meme_out.value();
+
+    let (expected_sui_coin_out, _) = cp.dump_amount(meme_coin_out_value, 0);
+
+    let sui_coin_out = cp.dump(
+        &mut ipx_treasury,
+        coin_meme_out,
+        expected_sui_coin_out + 1,
+        &mut ctx
+    );
+
+    sui_coin_out.burn_for_testing();
+
+    destroy(ipx_treasury);
     destroy(cp);
 }

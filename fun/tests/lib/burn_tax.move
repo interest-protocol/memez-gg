@@ -32,4 +32,4 @@ fun test_end_to_end() {
     assert_eq(tax.calculate(1000), 2);
     assert_eq(tax.calculate(600), 10); 
     assert_eq(tax.calculate(200), 18); 
-}
+} 

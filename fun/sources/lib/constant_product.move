@@ -208,3 +208,12 @@ public(package) fun meme_balance_mut<Meme>(
 ): &mut Balance<Meme> {
     &mut self.meme_balance
 } 
+
+// === Test Only Functions ===  
+
+#[test_only]
+public fun memez_fun<Meme>(
+    self: &MemezConstantProduct<Meme>,
+): address {
+    self.memez_fun
+}

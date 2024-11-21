@@ -211,6 +211,77 @@ fun test_dump() {
 }
 
 #[test]
+fun test_pump_amount() {
+    let virtual_liquidity = 100; 
+    let target_sui_liquidity = 1100; 
+    let meme_balance_value = 5000; 
+    let burn_tax = 20; 
+
+    let cp = memez_constant_product::new(
+        virtual_liquidity, 
+        target_sui_liquidity, 
+        balance::create_for_testing<Meme>(meme_balance_value), 
+        burn_tax
+    ); 
+
+    let amount_in = 250;
+
+   let amount_out = get_amount_out(
+    amount_in, 
+    virtual_liquidity,
+    meme_balance_value + 1200
+   );
+
+   let expected_amount_out = cp.pump_amount(amount_in, 1200);
+
+    assert_eq(expected_amount_out, amount_out);
+    destroy(cp);
+}
+
+#[test]
+fun test_dump_amount() {
+    let virtual_liquidity = 100; 
+    let target_sui_liquidity = 1100; 
+    let meme_balance_value = 5000; 
+    let burn_tax = 20; 
+
+    let mut cp = memez_constant_product::new(
+        virtual_liquidity, 
+        target_sui_liquidity, 
+        balance::create_for_testing<Meme>(meme_balance_value), 
+        burn_tax
+    ); 
+
+    let amount_in = 1000;
+
+    let amount_out = get_amount_out(
+        amount_in, 
+        meme_balance_value + 1200,
+        virtual_liquidity
+    );
+
+    let (expected_amount_out, _) = cp.dump_amount(amount_in, 1200);
+
+    assert_eq(expected_amount_out, 0);
+    assert_eq(amount_out != 0, true);
+    assert_eq(expected_amount_out, 0);
+
+    cp.sui_balance_mut().join(balance::create_for_testing<SUI>(600));
+
+    let amount_out = get_amount_out(
+        amount_in, 
+        meme_balance_value + 1200,
+        virtual_liquidity + 600
+    );
+
+    let (expected_amount_out, _) = cp.dump_amount(amount_in, 1200);
+
+    assert_eq(expected_amount_out, amount_out);
+
+    destroy(cp);
+}
+
+#[test]
 #[expected_failure(abort_code = memez_utils::EZeroCoin, location = memez_utils)]
 fun test_pump_zero_coin() {
     let mut ctx = tx_context::dummy(); 

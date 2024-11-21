@@ -176,3 +176,12 @@ public(package) fun meme_sale_amount<Meme>(
 ): u64 {
     self.meme_sale_amount
 }
+
+// === Test Only Functions ===  
+
+#[test_only]
+public fun memez_fun<Meme>(
+    self: &FixedRate<Meme>,
+): address {
+    self.memez_fun
+}

@@ -1,18 +1,12 @@
 #[test_only]
 module memez_fun::memez_utils_tests;
 
-use sui::{
-    balance,
-    test_scenario as ts,
-    test_utils::assert_eq,
-    coin::{Coin, mint_for_testing}
-};
-
-use memez_fun::memez_utils; 
+use memez_fun::memez_utils;
+use sui::{balance, coin::{Coin, mint_for_testing}, test_scenario as ts, test_utils::assert_eq};
 
 public struct Meme()
 
-const DEAD_ADDRESS: address = @0x0; 
+const DEAD_ADDRESS: address = @0x0;
 
 #[test]
 fun test_pow_9() {
@@ -40,7 +34,7 @@ fun test_assert_coin_has_value_zero() {
     coin.destroy_zero();
 }
 
-#[test] 
+#[test]
 fun test_destroy_or_burn() {
     let mut scenario = ts::begin(DEAD_ADDRESS);
     let mut balance = balance::create_for_testing<Meme>(1000);

@@ -1,21 +1,13 @@
 #[test_only]
 module memez_fun::memez_auction_config_tests;
 
-use sui::{
-    test_utils::{assert_eq, destroy},
-    test_scenario::{Self as ts, Scenario},
-};
-
 use memez_acl::acl;
-
-use memez_fun::{
-    memez_auction_config,
-    memez_config::{Self, MemezConfig}
-};
+use memez_fun::{memez_auction_config, memez_config::{Self, MemezConfig}};
+use sui::{test_scenario::{Self as ts, Scenario}, test_utils::{assert_eq, destroy}};
 
 const ADMIN: address = @0x1;
 
-const BURN_TAX: u64 = 200_000_000;  
+const BURN_TAX: u64 = 200_000_000;
 
 const MAX_BURN_TAX: u64 = 500_000_000;
 
@@ -23,7 +15,7 @@ const DEV_ALLOCATION: u64 = 10_000_000__000_000_000;
 
 const LIQUIDITY_PROVISION: u64 = 50_000_000__000_000_000;
 
-const THIRTY_MINUTES_MS: u64 = 30 * 60 * 1_000; 
+const THIRTY_MINUTES_MS: u64 = 30 * 60 * 1_000;
 
 const VIRTUAL_LIQUIDITY: u64 = 1_000__000_000_000;
 
@@ -43,6 +35,8 @@ fun test_initialize() {
     assert_eq(memez_auction_config::is_initialized(&world.config), false);
 
     memez_auction_config::initialize(&mut world.config);
+
+    assert_eq(memez_auction_config::is_initialized(&world.config), true);
 
     let config = memez_auction_config::get(&world.config);
 
@@ -137,7 +131,7 @@ fun test_set_burn_tax_negative() {
 }
 
 fun start(): World {
-    let mut scenario = ts::begin(ADMIN); 
+    let mut scenario = ts::begin(ADMIN);
 
     memez_config::init_for_testing(scenario.ctx());
 

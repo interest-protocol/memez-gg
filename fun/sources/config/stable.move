@@ -78,3 +78,10 @@ fun state(config: &MemezConfig): &MemezStableConfig {
 fun state_mut(config: &mut MemezConfig): &mut MemezStableConfig {
     df::borrow_mut(config.uid_mut(), MemezStableConfigKey())
 }
+
+// === Test Only Functions ===
+
+#[test_only]
+public fun is_initialized(config: &MemezConfig): bool {
+    df::exists_(config.uid(), MemezStableConfigKey())
+}

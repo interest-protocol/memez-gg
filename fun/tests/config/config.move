@@ -1,26 +1,19 @@
 #[test_only]
 module memez_fun::memez_config_tests;
 
-use sui::{
-    sui::SUI,
-    test_utils::{assert_eq, destroy},
-    test_scenario::{Self as ts, Scenario},
-    coin::{TreasuryCap, CoinMetadata, Coin, mint_for_testing},
-};
-
 use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
-
 use memez_acl::acl;
-
-use memez_fun::{
-    gg::{Self, GG},
-    usdc::{Self, USDC},
-    memez_config::{Self, MemezConfig}
+use memez_fun::{gg::{Self, GG}, memez_config::{Self, MemezConfig}, usdc::{Self, USDC}};
+use sui::{
+    coin::{TreasuryCap, CoinMetadata, Coin, mint_for_testing},
+    sui::SUI,
+    test_scenario::{Self as ts, Scenario},
+    test_utils::{assert_eq, destroy}
 };
 
 const ADMIN: address = @0x1;
 
-const CREATION_FEE: u64 = 2__000_000_000; 
+const CREATION_FEE: u64 = 2__000_000_000;
 
 const MIGRATION_FEE: u64 = 200__000_000_000;
 
@@ -58,7 +51,7 @@ fun test_setters() {
 
     assert_eq(memez_config::creation_fee(&world.config), CREATION_FEE * 3);
     assert_eq(memez_config::migration_fee(&world.config), MIGRATION_FEE * 2);
-    assert_eq(memez_config::treasury(&world.config), @0x0); 
+    assert_eq(memez_config::treasury(&world.config), @0x0);
 
     world.end();
 }
@@ -118,7 +111,7 @@ fun test_take_fees() {
 
     world.config.take_creation_fee(mint_for_testing(CREATION_FEE, world.scenario.ctx()));
 
-    world.scenario.next_epoch(ADMIN); 
+    world.scenario.next_epoch(ADMIN);
 
     let creation_fee_coin = world.scenario.take_from_address<Coin<SUI>>(TREASURY);
 
@@ -126,7 +119,7 @@ fun test_take_fees() {
 
     world.config.take_migration_fee(mint_for_testing(MIGRATION_FEE, world.scenario.ctx()));
 
-    world.scenario.next_epoch(ADMIN); 
+    world.scenario.next_epoch(ADMIN);
 
     let migration_fee_coin = world.scenario.take_from_address<Coin<SUI>>(TREASURY);
 
@@ -136,7 +129,7 @@ fun test_take_fees() {
 }
 
 #[test]
-#[expected_failure(abort_code = memez_config::ENotEnoughSuiForCreationFee)] 
+#[expected_failure(abort_code = memez_config::ENotEnoughSuiForCreationFee)]
 fun test_take_creation_fee_wrong_value() {
     let mut world = start();
 
@@ -146,7 +139,7 @@ fun test_take_creation_fee_wrong_value() {
 }
 
 #[test]
-#[expected_failure(abort_code = memez_config::ENotEnoughSuiForMigrationFee)] 
+#[expected_failure(abort_code = memez_config::ENotEnoughSuiForMigrationFee)]
 fun test_take_migration_fee_wrong_value() {
     let mut world = start();
 
@@ -180,7 +173,7 @@ fun set_up_treasury_wrong_decimals() {
 }
 
 fun start(): World {
-    let mut scenario = ts::begin(ADMIN); 
+    let mut scenario = ts::begin(ADMIN);
 
     memez_config::init_for_testing(scenario.ctx());
     gg::init_for_testing(scenario.ctx());

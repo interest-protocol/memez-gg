@@ -1,24 +1,19 @@
 #[test_only]
 module memez_fun::gg;
 
-// === Imports ===
+use sui::{coin, url::new_unsafe_from_bytes};
 
-use sui::{
-    coin,
-    url::new_unsafe_from_bytes
-};
-
-public struct GG has drop()
+public struct GG has drop ()
 
 fun init(witness: GG, ctx: &mut TxContext) {
     let (treasury, metadata) = coin::create_currency(
-        witness, 
-        9, 
-        b"GG", 
-        b"GG", 
-        b"GG", 
-        option::some(new_unsafe_from_bytes(b"memz.gg")), 
-        ctx
+        witness,
+        9,
+        b"GG",
+        b"GG",
+        b"GG",
+        option::some(new_unsafe_from_bytes(b"memez.gg")),
+        ctx,
     );
 
     transfer::public_transfer(treasury, ctx.sender());

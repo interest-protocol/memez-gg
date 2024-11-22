@@ -277,8 +277,7 @@ fun test_dump_amount() {
     destroy(cp);
 }
 
-#[test]
-#[expected_failure(abort_code = memez_utils::EZeroCoin, location = memez_utils)]
+#[test, expected_failure(abort_code = memez_utils::EZeroCoin, location = memez_utils)]
 fun test_pump_zero_coin() {
     let mut ctx = tx_context::dummy();
 
@@ -305,8 +304,7 @@ fun test_pump_zero_coin() {
     destroy(cp);
 }
 
-#[test]
-#[expected_failure(abort_code = memez_utils::ESlippage, location = memez_utils)]
+#[test, expected_failure(abort_code = memez_utils::ESlippage, location = memez_utils)]
 fun test_pump_slippage() {
     let mut ctx = tx_context::dummy();
 
@@ -337,8 +335,7 @@ fun test_pump_slippage() {
     destroy(cp);
 }
 
-#[test]
-#[expected_failure(abort_code = memez_utils::EZeroCoin, location = memez_utils)]
+#[test, expected_failure(abort_code = memez_utils::EZeroCoin, location = memez_utils)]
 fun test_dump_zero_coin() {
     let mut ctx = tx_context::dummy();
 
@@ -371,8 +368,7 @@ fun test_dump_zero_coin() {
     destroy(cp);
 }
 
-#[test]
-#[expected_failure(abort_code = memez_utils::ESlippage, location = memez_utils)]
+#[test, expected_failure(abort_code = memez_utils::ESlippage, location = memez_utils)]
 fun test_dump_slippage() {
     let mut ctx = tx_context::dummy();
 

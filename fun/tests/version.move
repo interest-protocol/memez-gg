@@ -45,8 +45,7 @@ fun test_assert_is_valid() {
     end(world);
 }
 
-#[test]
-#[expected_failure(abort_code = memez_version::EInvalidVersion)]
+#[test, expected_failure(abort_code = memez_version::EInvalidVersion)]
 fun test_assert_is_invalid() {
     let mut world = start();
 

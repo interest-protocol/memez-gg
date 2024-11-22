@@ -23,8 +23,7 @@ fun test_assert_coin_has_value() {
     assert_eq(value, coin.burn_for_testing());
 }
 
-#[test]
-#[expected_failure(abort_code = memez_utils::EZeroCoin, location = memez_utils)]
+#[test, expected_failure(abort_code = memez_utils::EZeroCoin, location = memez_utils)]
 fun test_assert_coin_has_value_zero() {
     let mut ctx = tx_context::dummy();
     let coin = mint_for_testing<Meme>(0, &mut ctx);
@@ -64,8 +63,7 @@ fun test_slippage() {
     memez_utils::assert_slippage(100, 99);
 }
 
-#[test]
-#[expected_failure(abort_code = memez_utils::ESlippage, location = memez_utils)]
+#[test, expected_failure(abort_code = memez_utils::ESlippage, location = memez_utils)]
 fun test_slippage_error() {
     memez_utils::assert_slippage(100, 101);
     memez_utils::assert_slippage(100, 99);

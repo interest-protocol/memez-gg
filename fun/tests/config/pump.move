@@ -42,8 +42,7 @@ fun test_initialize() {
     world.end();
 }
 
-#[test]
-#[expected_failure(abort_code = memez_pump_config::EAlreadyInitialized)]
+#[test, expected_failure(abort_code = memez_pump_config::EAlreadyInitialized)]
 fun test_initialize_twice() {
     let mut world = start();
 
@@ -92,8 +91,7 @@ fun test_setters() {
     world.end();
 }
 
-#[test]
-#[expected_failure(abort_code = memez_pump_config::EBurnTaxExceedsMax)]
+#[test, expected_failure(abort_code = memez_pump_config::EBurnTaxExceedsMax)]
 fun test_set_burn_tax_exceeds_max() {
     let mut world = start();
 
@@ -106,8 +104,7 @@ fun test_set_burn_tax_exceeds_max() {
     world.end();
 }
 
-#[test]
-#[expected_failure(abort_code = memez_pump_config::EInvalidTargetSuiLiquidity)]
+#[test, expected_failure(abort_code = memez_pump_config::EInvalidTargetSuiLiquidity)]
 fun test_set_target_sui_liquidity_invalid() {
     let mut world = start();
 

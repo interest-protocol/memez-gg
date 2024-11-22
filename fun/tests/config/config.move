@@ -85,8 +85,7 @@ fun set_up_treasury() {
     world.end();
 }
 
-#[test]
-#[expected_failure(abort_code = memez_config::EPreMint)]
+#[test, expected_failure(abort_code = memez_config::EPreMint)]
 fun set_up_treasury_pre_mint() {
     let mut world = start();
 
@@ -128,8 +127,7 @@ fun test_take_fees() {
     world.end();
 }
 
-#[test]
-#[expected_failure(abort_code = memez_config::ENotEnoughSuiForCreationFee)]
+#[test, expected_failure(abort_code = memez_config::ENotEnoughSuiForCreationFee)]
 fun test_take_creation_fee_wrong_value() {
     let mut world = start();
 
@@ -138,8 +136,7 @@ fun test_take_creation_fee_wrong_value() {
     world.end();
 }
 
-#[test]
-#[expected_failure(abort_code = memez_config::ENotEnoughSuiForMigrationFee)]
+#[test, expected_failure(abort_code = memez_config::ENotEnoughSuiForMigrationFee)]
 fun test_take_migration_fee_wrong_value() {
     let mut world = start();
 
@@ -148,8 +145,7 @@ fun test_take_migration_fee_wrong_value() {
     world.end();
 }
 
-#[test]
-#[expected_failure(abort_code = memez_config::EWrongDecimals)]
+#[test, expected_failure(abort_code = memez_config::EWrongDecimals)]
 fun set_up_treasury_wrong_decimals() {
     let mut world = start();
 

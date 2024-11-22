@@ -78,8 +78,7 @@ fun test_setters() {
     world.end();
 }
 
-#[test]
-#[expected_failure(abort_code = memez_stable_config::EAlreadyInitialized)]
+#[test, expected_failure(abort_code = memez_stable_config::EAlreadyInitialized)]
 fun test_initialize_twice() {
     let mut world = start();
 

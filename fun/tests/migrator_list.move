@@ -1,4 +1,4 @@
-module memez_fun::memez_migrator_tests;
+module memez_fun::memez_fun_tests;
 
 use memez_acl::acl;
 use memez_fun::memez_migrator_list::{Self, MemezMigratorList};

@@ -191,3 +191,8 @@ public(package) fun new_migrator<Curve, Meme>(
         meme_balance,
     }
 }
+
+#[test_only]
+public fun metadata<Curve, Meme>(self: &MemezFun<Curve, Meme>): &VecMap<String, String> {
+    &self.metadata
+}

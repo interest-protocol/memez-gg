@@ -300,9 +300,11 @@ public fun to_coin<Meme>(
     self.state_mut().token_cap().to_coin(meme_token, ctx)
 }
 
-// === Public View Functions ===
 
-public fun pump_amount<Meme>(
+// === View Functions for FE ===
+
+#[allow(unused_function)]
+fun pump_amount<Meme>(
     self: &mut MemezFun<Auction, Meme>,
     amount_in: u64,
     clock: &Clock,
@@ -319,7 +321,8 @@ public fun pump_amount<Meme>(
         )
 }
 
-public fun dump_amount<Meme>(
+#[allow(unused_function)]
+fun dump_amount<Meme>(
     self: &mut MemezFun<Auction, Meme>,
     amount_in: u64,
     clock: &Clock,

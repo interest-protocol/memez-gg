@@ -145,3 +145,10 @@ fun state(config: &MemezConfig): &MemezAuctionConfig {
 fun state_mut(config: &mut MemezConfig): &mut MemezAuctionConfig {
     df::borrow_mut(config.uid_mut(), MemezAuctionConfigKey())
 }
+
+// === Test Only Functions ===  
+
+#[test_only]
+public fun is_initialized(config: &MemezConfig): bool {
+    df::exists_(config.uid(), MemezAuctionConfigKey())
+}

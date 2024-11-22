@@ -1,5 +1,6 @@
 module memez_fun::memez_utils;
 
+use interest_math::fixed_point_wad;
 use sui::{balance::Balance, coin::Coin};
 
 // === Constants ===
@@ -20,6 +21,10 @@ const EZeroCoin: vector<u8> = b"Coin value must be greater than 0";
 
 public(package) fun pow_9(): u64 {
     POW_9
+}
+
+public(package) fun calculate_wad_percentage(percentage: u64, total_supply: u64): u64 {
+    (fixed_point_wad::mul_down((percentage as u256), (total_supply as u256)) as u64)
 }
 
 public(package) fun assert_coin_has_value<T>(coin: &Coin<T>): u64 {

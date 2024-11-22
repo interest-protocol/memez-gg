@@ -1,13 +1,15 @@
 module memez_fun::memez_stable_config;
 
 use memez_acl::acl::AuthWitness;
-use memez_fun::memez_config::MemezConfig;
+use memez_fun::{memez_config::MemezConfig, memez_utils};
 use sui::dynamic_field as df;
 
 // === Constants ===
 
+const POW_18: u64 = 1__000_000_000_000_000_000;
+
 // @dev 50,000,000 = 5%
-const LIQUIDITY_PROVISION: u64 = 50_000_000__000_000_000;
+const LIQUIDITY_PROVISION: u64 = { POW_18 / 20 };
 
 const TARGET_SUI_LIQUIDITY: u64 = 10_000__000_000_000;
 
@@ -63,10 +65,15 @@ public fun set_meme_sale_amount(self: &mut MemezConfig, _: &AuthWitness, amount:
 
 // === Public Package Functions ===
 
-public(package) fun get(self: &MemezConfig): vector<u64> {
+public(package) fun get(self: &MemezConfig, total_supply: u64): vector<u64> {
     let state = state(self);
 
-    vector[state.target_sui_liquidity, state.liquidity_provision, state.meme_sale_amount]
+    let liquidity_provision = memez_utils::calculate_wad_percentage(
+        state.liquidity_provision,
+        total_supply,
+    );
+
+    vector[state.target_sui_liquidity, liquidity_provision, state.meme_sale_amount]
 }
 
 // === Private Functions ===

@@ -11,6 +11,8 @@ const TARGET_SUI_LIQUIDITY: u64 = 10_000__000_000_000;
 
 const MEME_SALE_AMOUNT: u64 = 400_000_000_000;
 
+const TOTAL_SUPPLY: u64 = 1_000_000_000__000_000_000;
+
 const ADMIN: address = @0x1;
 
 public struct World {
@@ -28,7 +30,7 @@ fun test_initialize() {
 
     assert_eq(memez_stable_config::is_initialized(&world.config), true);
 
-    let config = memez_stable_config::get(&world.config);
+    let config = memez_stable_config::get(&world.config, TOTAL_SUPPLY);
 
     assert_eq(config[0], TARGET_SUI_LIQUIDITY);
     assert_eq(config[1], LIQUIDITY_PROVISION);
@@ -45,7 +47,7 @@ fun test_setters() {
 
     let witness = acl::sign_in_for_testing();
 
-    let config = memez_stable_config::get(&world.config);
+    let config = memez_stable_config::get(&world.config, TOTAL_SUPPLY);
 
     assert_eq(config[0], TARGET_SUI_LIQUIDITY);
     assert_eq(config[1], LIQUIDITY_PROVISION);
@@ -69,11 +71,24 @@ fun test_setters() {
         MEME_SALE_AMOUNT + 3,
     );
 
-    let config = memez_stable_config::get(&world.config);
+    let config = memez_stable_config::get(&world.config, TOTAL_SUPPLY);
 
     assert_eq(config[0], TARGET_SUI_LIQUIDITY + 1);
     assert_eq(config[1], LIQUIDITY_PROVISION + 2);
     assert_eq(config[2], MEME_SALE_AMOUNT + 3);
+
+    world.end();
+}
+
+#[test]
+fun test_get_liquidity_provision() {
+    let mut world = start();
+
+    memez_stable_config::initialize(&mut world.config);
+
+    let config = memez_stable_config::get(&world.config, 100);
+
+    assert_eq(config[1], 5);
 
     world.end();
 }

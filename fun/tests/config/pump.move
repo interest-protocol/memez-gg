@@ -15,6 +15,8 @@ const VIRTUAL_LIQUIDITY: u64 = 1_000__000_000_000;
 
 const TARGET_SUI_LIQUIDITY: u64 = 10_000__000_000_000;
 
+const TOTAL_SUPPLY: u64 = 1_000_000_000__000_000_000;
+
 const ADMIN: address = @0x1;
 
 public struct World {
@@ -32,7 +34,7 @@ fun test_initialize() {
 
     assert_eq(memez_pump_config::is_initialized(&world.config), true);
 
-    let config = memez_pump_config::get(&world.config);
+    let config = memez_pump_config::get(&world.config, TOTAL_SUPPLY);
 
     assert_eq(config[0], BURN_TAX);
     assert_eq(config[1], VIRTUAL_LIQUIDITY);
@@ -61,7 +63,7 @@ fun test_setters() {
 
     let witness = acl::sign_in_for_testing();
 
-    let config = memez_pump_config::get(&world.config);
+    let config = memez_pump_config::get(&world.config, TOTAL_SUPPLY);
 
     assert_eq(config[0], BURN_TAX);
     assert_eq(config[1], VIRTUAL_LIQUIDITY);
@@ -81,12 +83,25 @@ fun test_setters() {
         LIQUIDITY_PROVISION + 6,
     );
 
-    let config = memez_pump_config::get(&world.config);
+    let config = memez_pump_config::get(&world.config, TOTAL_SUPPLY);
 
     assert_eq(config[0], BURN_TAX + 3);
     assert_eq(config[1], VIRTUAL_LIQUIDITY + 4);
     assert_eq(config[2], TARGET_SUI_LIQUIDITY + 5);
     assert_eq(config[3], LIQUIDITY_PROVISION + 6);
+
+    world.end();
+}
+
+#[test]
+fun test_get_liquidity_provision() {
+    let mut world = start();
+
+    memez_pump_config::initialize(&mut world.config);
+
+    let config = memez_pump_config::get(&world.config, 100);
+
+    assert_eq(config[3], 5);
 
     world.end();
 }

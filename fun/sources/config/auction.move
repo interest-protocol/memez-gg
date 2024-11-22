@@ -1,8 +1,8 @@
 module memez_fun::memez_auction_config;
 
-use interest_math::{fixed_point_wad, u64};
+use interest_math::u64;
 use memez_acl::acl::AuthWitness;
-use memez_fun::memez_config::MemezConfig;
+use memez_fun::{memez_config::MemezConfig, memez_utils};
 use sui::dynamic_field as df;
 
 // === Constants ===
@@ -137,10 +137,13 @@ public fun set_seed_liquidity(self: &mut MemezConfig, _: &AuthWitness, amount: u
 public(package) fun get(self: &MemezConfig, total_supply: u64): vector<u64> {
     let state = state(self);
 
-    let dev_allocation = calculate(state.dev_allocation, total_supply);
-    let liquidity_provision = calculate(state.liquidity_provision, total_supply);
+    let dev_allocation = memez_utils::calculate_wad_percentage(state.dev_allocation, total_supply);
+    let liquidity_provision = memez_utils::calculate_wad_percentage(
+        state.liquidity_provision,
+        total_supply,
+    );
     let seed_liquidity = u64::max(
-        calculate(state.seed_liquidity, total_supply),
+        memez_utils::calculate_wad_percentage(state.seed_liquidity, total_supply),
         MIN_SEED_LIQUIDITY,
     );
 
@@ -156,10 +159,6 @@ public(package) fun get(self: &MemezConfig, total_supply: u64): vector<u64> {
 }
 
 // === Private Functions ===
-
-fun calculate(percentage: u64, total_supply: u64): u64 {
-    (fixed_point_wad::mul_down((percentage as u256), (total_supply as u256)) as u64)
-}
 
 fun state(config: &MemezConfig): &MemezAuctionConfig {
     df::borrow(

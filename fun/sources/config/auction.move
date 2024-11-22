@@ -1,5 +1,6 @@
 module memez_fun::memez_auction_config;
 
+use interest_math::{fixed_point_wad, u64};
 use memez_acl::acl::AuthWitness;
 use memez_fun::memez_config::MemezConfig;
 use sui::dynamic_field as df;
@@ -11,11 +12,13 @@ const BURN_TAX: u64 = 200_000_000;
 
 const MAX_BURN_TAX: u64 = 500_000_000;
 
+const POW_18: u64 = 1__000_000_000_000_000_000;
+
 // @dev 10,000,000 = 1%
-const DEV_ALLOCATION: u64 = 10_000_000__000_000_000;
+const DEV_ALLOCATION: u64 = { POW_18 / 100 };
 
 // @dev 50,000,000 = 5%
-const LIQUIDITY_PROVISION: u64 = 50_000_000__000_000_000;
+const LIQUIDITY_PROVISION: u64 = { POW_18 / 20 };
 
 const THIRTY_MINUTES_MS: u64 = 30 * 60 * 1_000;
 
@@ -23,7 +26,9 @@ const VIRTUAL_LIQUIDITY: u64 = 1_000__000_000_000;
 
 const TARGET_SUI_LIQUIDITY: u64 = 10_000__000_000_000;
 
-const SEED_LIQUIDITY: u64 = 1__000_000_000;
+const SEED_LIQUIDITY: u64 = { POW_18 / 10_000 };
+
+const MIN_SEED_LIQUIDITY: u64 = 100;
 
 // === Errors ===
 
@@ -129,21 +134,32 @@ public fun set_seed_liquidity(self: &mut MemezConfig, _: &AuthWitness, amount: u
 
 // === Public Package Functions ===
 
-public(package) fun get(self: &MemezConfig): vector<u64> {
+public(package) fun get(self: &MemezConfig, total_supply: u64): vector<u64> {
     let state = state(self);
+
+    let dev_allocation = calculate(state.dev_allocation, total_supply);
+    let liquidity_provision = calculate(state.liquidity_provision, total_supply);
+    let seed_liquidity = u64::max(
+        calculate(state.seed_liquidity, total_supply),
+        MIN_SEED_LIQUIDITY,
+    );
 
     vector[
         state.auction_duration,
-        state.dev_allocation,
+        dev_allocation,
         state.burn_tax,
         state.virtual_liquidity,
         state.target_sui_liquidity,
-        state.liquidity_provision,
-        state.seed_liquidity,
+        liquidity_provision,
+        seed_liquidity,
     ]
 }
 
 // === Private Functions ===
+
+fun calculate(percentage: u64, total_supply: u64): u64 {
+    (fixed_point_wad::mul_down((percentage as u256), (total_supply as u256)) as u64)
+}
 
 fun state(config: &MemezConfig): &MemezAuctionConfig {
     df::borrow(

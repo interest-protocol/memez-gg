@@ -83,7 +83,7 @@ public fun new<Meme, MigrationWitness>(
     version.assert_is_valid();
     config.take_creation_fee(creation_fee);
 
-    let auction_config = memez_auction_config::get(config);
+    let auction_config = memez_auction_config::get(config, total_supply);
 
     let meme_token_cap = if (is_token) option::some(memez_token_cap::new(&meme_treasury_cap, ctx))
     else option::none();

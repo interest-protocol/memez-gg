@@ -11,9 +11,15 @@ const BURN_TAX: u64 = 200_000_000;
 
 const MAX_BURN_TAX: u64 = 500_000_000;
 
-const DEV_ALLOCATION: u64 = 10_000_000__000_000_000;
+const POW_18: u64 = 1__000_000_000_000_000_000;
 
-const LIQUIDITY_PROVISION: u64 = 50_000_000__000_000_000;
+const TOTAL_SUPPLY: u64 = 1_000_000_000__000_000_000;
+
+// @dev 10,000,000 = 1%
+const DEV_ALLOCATION: u64 = { POW_18 / 100 };
+
+// @dev 50,000,000 = 5%
+const LIQUIDITY_PROVISION: u64 = { POW_18 / 20 };
 
 const THIRTY_MINUTES_MS: u64 = 30 * 60 * 1_000;
 
@@ -21,7 +27,7 @@ const VIRTUAL_LIQUIDITY: u64 = 1_000__000_000_000;
 
 const TARGET_SUI_LIQUIDITY: u64 = 10_000__000_000_000;
 
-const SEED_LIQUIDITY: u64 = 1__000_000_000;
+const SEED_LIQUIDITY: u64 = { POW_18 / 10_000 };
 
 public struct World {
     scenario: Scenario,
@@ -38,7 +44,7 @@ fun test_initialize() {
 
     assert_eq(memez_auction_config::is_initialized(&world.config), true);
 
-    let config = memez_auction_config::get(&world.config);
+    let config = memez_auction_config::get(&world.config, TOTAL_SUPPLY);
 
     assert_eq(config[0], THIRTY_MINUTES_MS);
     assert_eq(config[1], DEV_ALLOCATION);
@@ -46,7 +52,7 @@ fun test_initialize() {
     assert_eq(config[3], VIRTUAL_LIQUIDITY);
     assert_eq(config[4], TARGET_SUI_LIQUIDITY);
     assert_eq(config[5], LIQUIDITY_PROVISION);
-    assert_eq(config[6], SEED_LIQUIDITY);
+    assert_eq(config[6], 100000000000000);
 
     world.end();
 }
@@ -68,7 +74,7 @@ fun test_setters() {
 
     memez_auction_config::initialize(&mut world.config);
 
-    let config = memez_auction_config::get(&world.config);
+    let config = memez_auction_config::get(&world.config, TOTAL_SUPPLY);
 
     assert_eq(config[0], THIRTY_MINUTES_MS);
     assert_eq(config[1], DEV_ALLOCATION);
@@ -88,7 +94,7 @@ fun test_setters() {
     memez_auction_config::set_auction_duration(&mut world.config, &witness, 5555);
     memez_auction_config::set_dev_allocation(&mut world.config, &witness, 6666);
 
-    let config = memez_auction_config::get(&world.config);
+    let config = memez_auction_config::get(&world.config, TOTAL_SUPPLY);
 
     assert_eq(config[0], 5555);
     assert_eq(config[1], 6666);
@@ -97,6 +103,27 @@ fun test_setters() {
     assert_eq(config[4], 2222);
     assert_eq(config[5], 3333);
     assert_eq(config[6], 4444);
+
+    world.end();
+}
+
+#[test]
+public fun test_percentage_calculation() {
+    let mut world = start();
+
+    memez_auction_config::initialize(&mut world.config);
+
+    let config = memez_auction_config::get(&world.config, 333);
+
+    assert_eq(config[1], 3);
+    assert_eq(config[5], 16);
+    assert_eq(config[6], 100);
+
+    let config = memez_auction_config::get(&world.config, 5_000_000);
+
+    assert_eq(config[1], 50_000);
+    assert_eq(config[5], 250_000);
+    assert_eq(config[6], 500);
 
     world.end();
 }

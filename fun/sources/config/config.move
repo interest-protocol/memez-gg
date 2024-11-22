@@ -51,7 +51,7 @@ fun init(ctx: &mut TxContext) {
         id: object::new(ctx),
         creation_fee: CREATION_FEE,
         migration_fee: MIGRATION_FEE,
-        treasury: ctx.sender(),
+        treasury: @treasury,
     };
 
     transfer::share_object(config);
@@ -74,7 +74,7 @@ public fun set_treasury(self: &mut MemezConfig, _: &AuthWitness, treasury: addre
 // === Public Package Functions ===  
 
 #[allow(lint(share_owned))]
-public(package) fun set_up_treasury<Meme>(
+public(package) fun set_up_meme_treasury<Meme>(
     meme_metadata: &CoinMetadata<Meme>, 
     mut meme_treasury_cap: TreasuryCap<Meme>, 
     ctx: &mut TxContext
@@ -119,6 +119,19 @@ public(package) fun take_migration_fee(self: &MemezConfig, migration_fee: Coin<S
     transfer::public_transfer(migration_fee, self.treasury);
 }
 
-public(package) fun fees(self: &MemezConfig): (u64, u64) {
-    (self.creation_fee, self.migration_fee)
+// === Tests Only Functions === 
+
+#[test_only]
+public fun init_for_testing(ctx: &mut TxContext) {
+    init(ctx);
+}
+
+#[test_only]
+public fun treasury(self: &MemezConfig): address {
+    self.treasury
+}
+
+#[test_only]
+public fun creation_fee(self: &MemezConfig): u64 {
+    self.creation_fee
 }

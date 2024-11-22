@@ -66,7 +66,7 @@ public fun new<Meme, MigrationWitness>(
 
     let stable_config = memez_stable_config::get(config); 
 
-    let (ipx_meme_coin_treasury, metadata_cap, mut meme_reserve) = memez_config::set_up_treasury(meme_metadata, meme_treasury_cap, ctx);
+    let (ipx_meme_coin_treasury, metadata_cap, mut meme_reserve) = memez_config::set_up_meme_treasury(meme_metadata, meme_treasury_cap, ctx);
 
     let dev_allocation = meme_reserve.split(dev_payload[0]); 
 

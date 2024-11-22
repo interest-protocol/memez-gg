@@ -61,7 +61,7 @@ public fun new<Meme, MigrationWitness>(
 
     let pump_config = memez_pump_config::get(config);
 
-    let (ipx_meme_coin_treasury, metadata_cap, mut meme_balance) = memez_config::set_up_treasury(meme_metadata, meme_treasury_cap, ctx);
+    let (ipx_meme_coin_treasury, metadata_cap, mut meme_balance) = memez_config::set_up_meme_treasury(meme_metadata, meme_treasury_cap, ctx);
 
     let liquidity_provision = meme_balance.split(pump_config[3]);
 

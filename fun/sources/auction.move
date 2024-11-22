@@ -1,3 +1,21 @@
+/*                                     
+        GGGGGGGGGGGGG        GGGGGGGGGGGGG     
+     GGG::::::::::::G     GGG::::::::::::G     
+   GG:::::::::::::::G   GG:::::::::::::::G     
+  G:::::GGGGGGGG::::G  G:::::GGGGGGGG::::G     
+ G:::::G       GGGGGG G:::::G       GGGGGG     
+G:::::G              G:::::G                   
+G:::::G              G:::::G                   
+G:::::G    GGGGGGGGGGG:::::G    GGGGGGGGGG     
+G:::::G    G::::::::GG:::::G    G::::::::G     
+G:::::G    GGGGG::::GG:::::G    GGGGG::::G     
+G:::::G        G::::GG:::::G        G::::G     
+ G:::::G       G::::G G:::::G       G::::G     
+  G:::::GGGGGGGG::::G  G:::::GGGGGGGG::::G     
+   GG:::::::::::::::G   GG:::::::::::::::G     
+     GGG::::::GGG:::G     GGG::::::GGG:::G     
+        GGGGGG   GGGG        GGGGGG   GGGG                                           
+*/
 module memez_fun::memez_auction;
 
 use interest_math::u64;

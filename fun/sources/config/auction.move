@@ -1,16 +1,13 @@
-module memez_fun::memez_auction_config; 
-// === Imports ===  
-
-use sui::dynamic_field as df;
+module memez_fun::memez_auction_config;
 
 use memez_acl::acl::AuthWitness;
-
 use memez_fun::memez_config::MemezConfig;
+use sui::dynamic_field as df;
 
-// === Constants ===  
+// === Constants ===
 
 // @dev 200,000,000 = 20%
-const BURN_TAX: u64 = 200_000_000;  
+const BURN_TAX: u64 = 200_000_000;
 
 const MAX_BURN_TAX: u64 = 500_000_000;
 
@@ -20,7 +17,7 @@ const DEV_ALLOCATION: u64 = 10_000_000__000_000_000;
 // @dev 50,000,000 = 5%
 const LIQUIDITY_PROVISION: u64 = 50_000_000__000_000_000;
 
-const THIRTY_MINUTES_MS: u64 = 30 * 60 * 1_000; 
+const THIRTY_MINUTES_MS: u64 = 30 * 60 * 1_000;
 
 const VIRTUAL_LIQUIDITY: u64 = 1_000__000_000_000;
 
@@ -28,7 +25,7 @@ const TARGET_SUI_LIQUIDITY: u64 = 10_000__000_000_000;
 
 const SEED_LIQUIDITY: u64 = 1__000_000_000;
 
-// === Errors === 
+// === Errors ===
 
 #[error]
 const EAlreadyInitialized: vector<u8> = b"Auction config already initialized";
@@ -39,9 +36,9 @@ const EBurnTaxExceedsMax: vector<u8> = b"Burn tax exceeds max";
 #[error]
 const EInvalidTargetSuiLiquidity: vector<u8> = b"Invalid target SUI liquidity";
 
-// === Structs ===  
+// === Structs ===
 
-public struct MemezAuctionConfigKey has copy, store, drop()
+public struct MemezAuctionConfigKey has copy, store, drop ()
 
 public struct MemezAuctionConfig has store {
     auction_duration: u64,
@@ -53,11 +50,17 @@ public struct MemezAuctionConfig has store {
     seed_liquidity: u64,
 }
 
-// === Initializer === 
+// === Initializer ===
 
 public fun initialize(config: &mut MemezConfig) {
     let uid_mut = config.uid_mut();
-    assert!(!df::exists_(uid_mut, MemezAuctionConfigKey()), EAlreadyInitialized);
+    assert!(
+        !df::exists_(
+            uid_mut,
+            MemezAuctionConfigKey(),
+        ),
+        EAlreadyInitialized,
+    );
 
     let memez_auction_config = MemezAuctionConfig {
         auction_duration: THIRTY_MINUTES_MS,
@@ -69,10 +72,14 @@ public fun initialize(config: &mut MemezConfig) {
         seed_liquidity: SEED_LIQUIDITY,
     };
 
-    df::add(uid_mut, MemezAuctionConfigKey(), memez_auction_config);
+    df::add(
+        uid_mut,
+        MemezAuctionConfigKey(),
+        memez_auction_config,
+    );
 }
 
-// === Public Admin Functions === 
+// === Public Admin Functions ===
 
 public fun set_burn_tax(self: &mut MemezConfig, _: &AuthWitness, amount: u64) {
     assert!(amount <= MAX_BURN_TAX, EBurnTaxExceedsMax);
@@ -94,61 +101,70 @@ public fun set_target_sui_liquidity(self: &mut MemezConfig, _: &AuthWitness, amo
     assert!(amount > state.virtual_liquidity, EInvalidTargetSuiLiquidity);
 
     state.target_sui_liquidity = amount;
-} 
+}
 
 public fun set_liquidity_provision(self: &mut MemezConfig, _: &AuthWitness, amount: u64) {
     let state = state_mut(self);
 
     state.liquidity_provision = amount;
-} 
+}
 
 public fun set_auction_duration(self: &mut MemezConfig, _: &AuthWitness, duration: u64) {
     let state = state_mut(self);
 
     state.auction_duration = duration;
-} 
+}
 
 public fun set_dev_allocation(self: &mut MemezConfig, _: &AuthWitness, amount: u64) {
     let state = state_mut(self);
 
     state.dev_allocation = amount;
-} 
+}
 
 public fun set_seed_liquidity(self: &mut MemezConfig, _: &AuthWitness, amount: u64) {
     let state = state_mut(self);
 
     state.seed_liquidity = amount;
-} 
-
-// === Public Package Functions === 
-
-public(package) fun get(self: &MemezConfig): vector<u64> {
-   let state = state(self);
-
-   vector[
-    state.auction_duration,
-    state.dev_allocation,
-    state.burn_tax,
-    state.virtual_liquidity,
-    state.target_sui_liquidity,
-    state.liquidity_provision,
-    state.seed_liquidity,
-   ]
 }
 
-// === Private Functions ===  
+// === Public Package Functions ===
+
+public(package) fun get(self: &MemezConfig): vector<u64> {
+    let state = state(self);
+
+    vector[
+        state.auction_duration,
+        state.dev_allocation,
+        state.burn_tax,
+        state.virtual_liquidity,
+        state.target_sui_liquidity,
+        state.liquidity_provision,
+        state.seed_liquidity,
+    ]
+}
+
+// === Private Functions ===
 
 fun state(config: &MemezConfig): &MemezAuctionConfig {
-    df::borrow(config.uid(), MemezAuctionConfigKey())
+    df::borrow(
+        config.uid(),
+        MemezAuctionConfigKey(),
+    )
 }
 
 fun state_mut(config: &mut MemezConfig): &mut MemezAuctionConfig {
-    df::borrow_mut(config.uid_mut(), MemezAuctionConfigKey())
+    df::borrow_mut(
+        config.uid_mut(),
+        MemezAuctionConfigKey(),
+    )
 }
 
-// === Test Only Functions ===  
+// === Test Only Functions ===
 
 #[test_only]
 public fun is_initialized(config: &MemezConfig): bool {
-    df::exists_(config.uid(), MemezAuctionConfigKey())
+    df::exists_(
+        config.uid(),
+        MemezAuctionConfigKey(),
+    )
 }

@@ -1,33 +1,19 @@
 module memez_fun::memez_fun;
-// === Imports === 
 
-use std::{
-    string::String,
-    type_name::{Self, TypeName},
-};
-
-use sui::{
-    sui::SUI,
-    balance::Balance,
-    versioned::Versioned,
-    vec_map::{Self, VecMap},
-};
-
-use memez_fun::{
-    memez_events,
-    memez_migrator::Migrator,
-};
+use memez_fun::{memez_events, memez_migrator::Migrator};
+use std::{string::String, type_name::{Self, TypeName}};
+use sui::{balance::Balance, sui::SUI, vec_map::{Self, VecMap}, versioned::Versioned};
 
 // === Errors ===
 
 #[error]
-const ENotBonding: vector<u8> = b"Memez is not bonding"; 
+const ENotBonding: vector<u8> = b"Memez is not bonding";
 
 #[error]
-const ENotMigrating: vector<u8> = b"Memez is not migrating"; 
+const ENotMigrating: vector<u8> = b"Memez is not migrating";
 
 #[error]
-const ENotMigrated: vector<u8> = b"Memez is not migrated"; 
+const ENotMigrated: vector<u8> = b"Memez is not migrated";
 
 #[error]
 const EInvalidWitness: vector<u8> = b"Invalid witness";
@@ -35,7 +21,7 @@ const EInvalidWitness: vector<u8> = b"Invalid witness";
 #[error]
 const EInvalidDev: vector<u8> = b"Invalid dev";
 
-// === Structs === 
+// === Structs ===
 
 public enum Progress has store, drop, copy {
     Bonding,
@@ -44,24 +30,27 @@ public enum Progress has store, drop, copy {
 }
 
 public struct MemezMigrator<phantom Meme> {
-    witness: TypeName, 
+    witness: TypeName,
     memez_fun: address,
     sui_balance: Balance<SUI>,
-    meme_balance: Balance<Meme>,  
+    meme_balance: Balance<Meme>,
 }
 
 public struct MemezFun<phantom Curve, phantom Meme> has key {
     id: UID,
     dev: address,
-    state: Versioned, 
+    state: Versioned,
     metadata: VecMap<String, String>,
     migration_witness: TypeName,
     progress: Progress,
 }
 
-// === Public Functions ===  
+// === Public Functions ===
 
-public fun destroy<Meme, Witness: drop>(migrator: MemezMigrator<Meme>, _: Witness): (Balance<SUI>, Balance<Meme>) {
+public fun destroy<Meme, Witness: drop>(
+    migrator: MemezMigrator<Meme>,
+    _: Witness,
+): (Balance<SUI>, Balance<Meme>) {
     let MemezMigrator { witness, memez_fun, sui_balance, meme_balance } = migrator;
 
     assert!(type_name::get<Witness>() == witness, EInvalidWitness);
@@ -71,7 +60,7 @@ public fun destroy<Meme, Witness: drop>(migrator: MemezMigrator<Meme>, _: Witnes
     (sui_balance, meme_balance)
 }
 
-// === Public Package Functions === 
+// === Public Package Functions ===
 
 public(package) fun new<Curve, MigrationWitness, Meme>(
     migrator: &Migrator,
@@ -79,18 +68,18 @@ public(package) fun new<Curve, MigrationWitness, Meme>(
     metadata_names: vector<String>,
     metadata_values: vector<String>,
     ipx_meme_coin_treasury: address,
-    ctx: &mut TxContext
+    ctx: &mut TxContext,
 ): MemezFun<Curve, Meme> {
-    let migration_witness = type_name::get<MigrationWitness>(); 
+    let migration_witness = type_name::get<MigrationWitness>();
 
-    migrator.assert_is_whitelisted(migration_witness); 
+    migrator.assert_is_whitelisted(migration_witness);
 
     let id = object::new(ctx);
 
     memez_events::new<Curve, Meme>(
-        id.to_address(), 
-        migration_witness, 
-        ipx_meme_coin_treasury
+        id.to_address(),
+        migration_witness,
+        ipx_meme_coin_treasury,
     );
 
     MemezFun {
@@ -117,7 +106,7 @@ public(package) fun migration_witness<Curve, Meme>(self: &MemezFun<Curve, Meme>)
 
 public(package) fun dev<Curve, Meme>(self: &MemezFun<Curve, Meme>): address {
     self.dev
-} 
+}
 
 public(package) fun versioned<Curve, Meme>(self: &MemezFun<Curve, Meme>): &Versioned {
     &self.state
@@ -149,12 +138,12 @@ public(package) fun assert_is_dev<Curve, Meme>(self: &MemezFun<Curve, Meme>, ctx
     assert!(self.dev == ctx.sender(), EInvalidDev);
 }
 
-// === Public Package Migration Functions === 
+// === Public Package Migration Functions ===
 
 public(package) fun new_migrator<Curve, Meme>(
     self: &mut MemezFun<Curve, Meme>,
-    sui_balance: Balance<SUI>, 
-    meme_balance: Balance<Meme>
+    sui_balance: Balance<SUI>,
+    meme_balance: Balance<Meme>,
 ): MemezMigrator<Meme> {
     self.progress = Progress::Migrated;
 

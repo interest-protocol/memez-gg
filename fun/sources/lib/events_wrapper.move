@@ -1,13 +1,12 @@
 module memez_fun::memez_events_wrapper;
-// === Imports === 
 
 use sui::event::emit;
 
-// === Structs ===  
+// === Structs ===
 
-public struct Event<T: copy + drop> has copy, drop(T)
+public struct Event<T: copy + drop> has copy, drop (T)
 
-// === Public Package Functions ===  
+// === Public Package Functions ===
 
 public(package) fun emit_event<T: copy + drop>(event: T) {
     emit(Event(event));

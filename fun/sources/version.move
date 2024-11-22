@@ -1,16 +1,16 @@
 module memez_fun::memez_version;
-// === Imports === 
 
 use memez_acl::acl::AuthWitness;
 
 // === Constants ===
 
-const VERSION: u64 = 1; 
+const VERSION: u64 = 1;
 
 // === Errors ===
 
 #[error]
-const InvalidVersion: vector<u8> = b"This package is out of date, please call the latest version of the package";
+const InvalidVersion: vector<u8> =
+    b"This package is out of date, please call the latest version of the package";
 
 // === Structs ===
 
@@ -26,13 +26,13 @@ public struct CurrentVersion(u64) has drop;
 fun init(ctx: &mut TxContext) {
     let version = Version {
         id: object::new(ctx),
-        version: VERSION
+        version: VERSION,
     };
 
     transfer::share_object(version);
 }
 
-// === Admin Functions === 
+// === Admin Functions ===
 
 public fun update_version(self: &mut Version, _: &AuthWitness) {
     self.version = self.version + 1;

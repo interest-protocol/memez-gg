@@ -1,16 +1,13 @@
-module memez_fun::memez_pump_config; 
-// === Imports ===  
-
-use sui::dynamic_field as df;
+module memez_fun::memez_pump_config;
 
 use memez_acl::acl::AuthWitness;
-
 use memez_fun::memez_config::MemezConfig;
+use sui::dynamic_field as df;
 
-// === Constants ===  
+// === Constants ===
 
 // @dev 200,000,000 = 20%
-const BURN_TAX: u64 = 200_000_000;  
+const BURN_TAX: u64 = 200_000_000;
 
 const MAX_BURN_TAX: u64 = 500_000_000;
 
@@ -21,7 +18,7 @@ const VIRTUAL_LIQUIDITY: u64 = 1_000__000_000_000;
 
 const TARGET_SUI_LIQUIDITY: u64 = 10_000__000_000_000;
 
-// === Errors === 
+// === Errors ===
 
 #[error]
 const EAlreadyInitialized: vector<u8> = b"Pump config already initialized";
@@ -32,9 +29,9 @@ const EBurnTaxExceedsMax: vector<u8> = b"Burn tax exceeds max";
 #[error]
 const EInvalidTargetSuiLiquidity: vector<u8> = b"Invalid target SUI liquidity";
 
-// === Structs ===  
+// === Structs ===
 
-public struct MemezPumpConfigKey has copy, store, drop()
+public struct MemezPumpConfigKey has copy, store, drop ()
 
 public struct MemezPumpConfig has store {
     burn_tax: u64,
@@ -43,7 +40,7 @@ public struct MemezPumpConfig has store {
     liquidity_provision: u64,
 }
 
-// === Initializer === 
+// === Initializer ===
 
 public fun initialize(config: &mut MemezConfig) {
     let uid_mut = config.uid_mut();
@@ -59,7 +56,7 @@ public fun initialize(config: &mut MemezConfig) {
     df::add(uid_mut, MemezPumpConfigKey(), memez_pump_config);
 }
 
-// === Public Admin Functions === 
+// === Public Admin Functions ===
 
 public fun set_burn_tax(self: &mut MemezConfig, _: &AuthWitness, amount: u64) {
     assert!(amount <= MAX_BURN_TAX, EBurnTaxExceedsMax);
@@ -81,28 +78,28 @@ public fun set_target_sui_liquidity(self: &mut MemezConfig, _: &AuthWitness, amo
     assert!(amount > state.virtual_liquidity, EInvalidTargetSuiLiquidity);
 
     state.target_sui_liquidity = amount;
-} 
+}
 
 public fun set_liquidity_provision(self: &mut MemezConfig, _: &AuthWitness, amount: u64) {
     let state = state_mut(self);
 
     state.liquidity_provision = amount;
-} 
-
-// === Public Package Functions === 
-
-public(package) fun get(self: &MemezConfig): vector<u64> {
-   let state = state(self);
-
-   vector[
-    state.burn_tax,
-    state.virtual_liquidity,
-    state.target_sui_liquidity,
-    state.liquidity_provision,
-   ]
 }
 
-// === Private Functions ===  
+// === Public Package Functions ===
+
+public(package) fun get(self: &MemezConfig): vector<u64> {
+    let state = state(self);
+
+    vector[
+        state.burn_tax,
+        state.virtual_liquidity,
+        state.target_sui_liquidity,
+        state.liquidity_provision,
+    ]
+}
+
+// === Private Functions ===
 
 fun state(config: &MemezConfig): &MemezPumpConfig {
     df::borrow(config.uid(), MemezPumpConfigKey())

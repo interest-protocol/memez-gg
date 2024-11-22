@@ -7,6 +7,7 @@ use memez_fun::{
     memez_fun::{Self, MemezFun, MemezMigrator},
     memez_migrator_list::MemezMigratorList,
     memez_stable_config,
+    memez_token_cap::{Self, MemezTokenCap},
     memez_utils::destroy_or_burn,
     memez_version::CurrentVersion
 };
@@ -15,8 +16,9 @@ use std::string::String;
 use sui::{
     balance::Balance,
     clock::Clock,
-    coin::{Coin, TreasuryCap, CoinMetadata},
+    coin::{Coin, TreasuryCap},
     sui::SUI,
+    token::Token,
     versioned::{Self, Versioned}
 };
 
@@ -39,6 +41,7 @@ public struct StableState<phantom Meme> has store {
     dev_allocation: Balance<Meme>,
     liquidity_provision: Balance<Meme>,
     fixed_rate: FixedRate<Meme>,
+    meme_token_cap: Option<MemezTokenCap<Meme>>,
 }
 
 // === Public Mutative Functions ===
@@ -47,9 +50,10 @@ public struct StableState<phantom Meme> has store {
 public fun new<Meme, MigrationWitness>(
     config: &MemezConfig,
     migrator_list: &MemezMigratorList,
-    meme_metadata: &CoinMetadata<Meme>,
     meme_treasury_cap: TreasuryCap<Meme>,
     creation_fee: Coin<SUI>,
+    total_supply: u64,
+    is_token: bool,
     metadata_names: vector<String>,
     metadata_values: vector<String>,
     dev_payload: vector<u64>,
@@ -61,11 +65,14 @@ public fun new<Meme, MigrationWitness>(
 
     let stable_config = memez_stable_config::get(config);
 
+    let meme_token_cap = if (is_token) option::some(memez_token_cap::new(&meme_treasury_cap, ctx))
+    else option::none();
+
     let (
         ipx_meme_coin_treasury,
         metadata_cap,
         mut meme_reserve,
-    ) = memez_config::set_up_meme_treasury(meme_metadata, meme_treasury_cap, ctx);
+    ) = memez_config::set_up_meme_treasury(meme_treasury_cap, total_supply, ctx);
 
     let dev_allocation = meme_reserve.split(dev_payload[0]);
 
@@ -82,11 +89,13 @@ public fun new<Meme, MigrationWitness>(
         dev_allocation,
         liquidity_provision,
         fixed_rate,
+        meme_token_cap,
     };
 
     let mut memez_fun = memez_fun::new<Stable, MigrationWitness, Meme>(
         migrator_list,
         versioned::create(STABLE_STATE_VERSION_V1, stable_state, ctx),
+        is_token,
         metadata_names,
         metadata_values,
         ipx_meme_coin_treasury,
@@ -113,6 +122,7 @@ public fun pump<Meme>(
 ): (Coin<SUI>, Coin<Meme>) {
     version.assert_is_valid();
     self.assert_is_bonding();
+    self.assert_uses_coin();
 
     let (start_migrating, excess_sui_coin, meme_coin) = self
         .state_mut()
@@ -128,6 +138,34 @@ public fun pump<Meme>(
     (excess_sui_coin, meme_coin)
 }
 
+public fun pump_token<Meme>(
+    self: &mut MemezFun<Stable, Meme>,
+    sui_coin: Coin<SUI>,
+    min_amount_out: u64,
+    version: CurrentVersion,
+    ctx: &mut TxContext,
+): (Coin<SUI>, Token<Meme>) {
+    version.assert_is_valid();
+    self.assert_is_bonding();
+    self.assert_uses_token();
+
+    let state = self.state_mut();
+
+    let (start_migrating, excess_sui_coin, meme_coin) = state
+        .fixed_rate
+        .pump(
+            sui_coin,
+            min_amount_out,
+            ctx,
+        );
+
+    let meme_token = state.token_cap().from_coin(meme_coin, ctx);
+
+    if (start_migrating) self.set_progress_to_migrating();
+
+    (excess_sui_coin, meme_token)
+}
+
 public fun dump<Meme>(
     self: &mut MemezFun<Stable, Meme>,
     meme_coin: Coin<Meme>,
@@ -137,9 +175,34 @@ public fun dump<Meme>(
 ): Coin<SUI> {
     version.assert_is_valid();
     self.assert_is_bonding();
+    self.assert_uses_coin();
 
     self
         .state_mut()
+        .fixed_rate
+        .dump(
+            meme_coin,
+            min_amount_out,
+            ctx,
+        )
+}
+
+public fun dump_token<Meme>(
+    self: &mut MemezFun<Stable, Meme>,
+    meme_token: Token<Meme>,
+    min_amount_out: u64,
+    version: CurrentVersion,
+    ctx: &mut TxContext,
+): Coin<SUI> {
+    version.assert_is_valid();
+    self.assert_is_bonding();
+    self.assert_uses_token();
+
+    let state = self.state_mut();
+
+    let meme_coin = state.token_cap().to_coin(meme_token, ctx);
+
+    state
         .fixed_rate
         .dump(
             meme_coin,
@@ -177,10 +240,10 @@ public fun dev_claim<Meme>(
     version: CurrentVersion,
     ctx: &mut TxContext,
 ): MemezVesting<Meme> {
+    version.assert_is_valid();
+
     self.assert_migrated();
     self.assert_is_dev(ctx);
-
-    version.assert_is_valid();
 
     let state = self.state_mut();
 
@@ -191,6 +254,15 @@ public fun dev_claim<Meme>(
         state.vesting_period,
         ctx,
     )
+}
+
+public fun to_coin<Meme>(
+    self: &mut MemezFun<Stable, Meme>,
+    meme_token: Token<Meme>,
+    ctx: &mut TxContext,
+): Coin<Meme> {
+    self.assert_migrated();
+    self.state_mut().token_cap().to_coin(meme_token, ctx)
 }
 
 // === Public View Functions ===
@@ -208,6 +280,10 @@ public fun dump_amount<Meme>(self: &mut MemezFun<Stable, Meme>, amount_in: u64):
 }
 
 // === Private Functions ===
+
+fun token_cap<Meme>(state: &StableState<Meme>): &MemezTokenCap<Meme> {
+    state.meme_token_cap.borrow()
+}
 
 fun state<Meme>(memez_fun: &mut MemezFun<Stable, Meme>): &StableState<Meme> {
     let versioned = memez_fun.versioned_mut();

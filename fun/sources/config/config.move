@@ -2,17 +2,13 @@ module memez_fun::memez_config;
 
 use ipx_coin_standard::ipx_coin_standard::{Self, MetadataCap};
 use memez_acl::acl::AuthWitness;
-use sui::{balance::Balance, coin::{Coin, CoinMetadata, TreasuryCap}, sui::SUI};
+use sui::{balance::Balance, coin::{Coin, TreasuryCap}, sui::SUI};
 
 // === Constants ===
 
 const CREATION_FEE: u64 = 2__000_000_000;
 
 const MIGRATION_FEE: u64 = 200__000_000_000;
-
-const TOTAL_MEME_SUPPLY: u64 = 1_000_000_000__000_000_000;
-
-const MEME_DECIMALS: u8 = 9;
 
 // === Errors ===
 
@@ -21,9 +17,6 @@ const ENotEnoughSuiForCreationFee: vector<u8> = b"Not enough SUI for creation fe
 
 #[error]
 const ENotEnoughSuiForMigrationFee: vector<u8> = b"Not enough SUI for migration fee";
-
-#[error]
-const EWrongDecimals: vector<u8> = b"Wrong decimals";
 
 #[error]
 const EPreMint: vector<u8> = b"Pre-mint";
@@ -68,15 +61,14 @@ public fun set_treasury(self: &mut MemezConfig, _: &AuthWitness, treasury: addre
 
 #[allow(lint(share_owned))]
 public(package) fun set_up_meme_treasury<Meme>(
-    meme_metadata: &CoinMetadata<Meme>,
     mut meme_treasury_cap: TreasuryCap<Meme>,
+    total_supply: u64,
     ctx: &mut TxContext,
 ): (address, MetadataCap, Balance<Meme>) {
-    assert!(meme_metadata.get_decimals() == MEME_DECIMALS, EWrongDecimals);
     assert!(meme_treasury_cap.total_supply() == 0, EPreMint);
 
     let meme_balance = meme_treasury_cap.mint_balance(
-        TOTAL_MEME_SUPPLY,
+        total_supply,
     );
 
     let (mut ipx_treasury_standard, mut cap_witness) = ipx_coin_standard::new(

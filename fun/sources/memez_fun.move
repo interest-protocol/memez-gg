@@ -21,6 +21,12 @@ const EInvalidWitness: vector<u8> = b"Invalid witness";
 #[error]
 const EInvalidDev: vector<u8> = b"Invalid dev";
 
+#[error]
+const ETokenNotSupported: vector<u8> = b"Token not supported";
+
+#[error]
+const ETokenSupported: vector<u8> = b"Token already supported";
+
 // === Structs ===
 
 public enum Progress has store, drop, copy {
@@ -39,6 +45,7 @@ public struct MemezMigrator<phantom Meme> {
 public struct MemezFun<phantom Curve, phantom Meme> has key {
     id: UID,
     dev: address,
+    is_token: bool,
     state: Versioned,
     metadata: VecMap<String, String>,
     migration_witness: TypeName,
@@ -65,6 +72,7 @@ public fun destroy<Meme, Witness: drop>(
 public(package) fun new<Curve, MigrationWitness, Meme>(
     migrator: &MemezMigratorList,
     state: Versioned,
+    is_token: bool,
     metadata_names: vector<String>,
     metadata_values: vector<String>,
     ipx_meme_coin_treasury: address,
@@ -85,6 +93,7 @@ public(package) fun new<Curve, MigrationWitness, Meme>(
     MemezFun {
         id,
         dev: ctx.sender(),
+        is_token,
         metadata: vec_map::from_keys_values(metadata_names, metadata_values),
         migration_witness,
         progress: Progress::Bonding,
@@ -136,6 +145,14 @@ public(package) fun assert_migrated<Curve, Meme>(self: &MemezFun<Curve, Meme>) {
 
 public(package) fun assert_is_dev<Curve, Meme>(self: &MemezFun<Curve, Meme>, ctx: &TxContext) {
     assert!(self.dev == ctx.sender(), EInvalidDev);
+}
+
+public(package) fun assert_uses_token<Curve, Meme>(self: &MemezFun<Curve, Meme>) {
+    assert!(self.is_token, ETokenNotSupported);
+}
+
+public(package) fun assert_uses_coin<Curve, Meme>(self: &MemezFun<Curve, Meme>) {
+    assert!(!self.is_token, ETokenSupported);
 }
 
 // === Public Package Migration Functions ===

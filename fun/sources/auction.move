@@ -8,6 +8,7 @@ use memez_fun::{
     memez_constant_product::{Self, MemezConstantProduct},
     memez_fun::{Self, MemezFun, MemezMigrator},
     memez_migrator_list::MemezMigratorList,
+    memez_token_cap::{Self, MemezTokenCap},
     memez_utils::{destroy_or_burn, pow_9},
     memez_version::CurrentVersion
 };
@@ -15,8 +16,9 @@ use std::string::String;
 use sui::{
     balance::Balance,
     clock::Clock,
-    coin::{Coin, TreasuryCap, CoinMetadata},
+    coin::{Coin, TreasuryCap},
     sui::SUI,
+    token::Token,
     versioned::{Self, Versioned}
 };
 
@@ -41,6 +43,7 @@ public struct AuctionState<phantom Meme> has store {
     dev_allocation: Balance<Meme>,
     liquidity_provision: Balance<Meme>,
     constant_product: MemezConstantProduct<Meme>,
+    meme_token_cap: Option<MemezTokenCap<Meme>>,
 }
 
 // === Public Mutative Functions ===
@@ -50,9 +53,10 @@ public fun new<Meme, MigrationWitness>(
     config: &MemezConfig,
     migrator_list: &MemezMigratorList,
     clock: &Clock,
-    meme_metadata: &CoinMetadata<Meme>,
     meme_treasury_cap: TreasuryCap<Meme>,
     creation_fee: Coin<SUI>,
+    total_supply: u64,
+    is_token: bool,
     metadata_names: vector<String>,
     metadata_values: vector<String>,
     version: CurrentVersion,
@@ -63,11 +67,14 @@ public fun new<Meme, MigrationWitness>(
 
     let auction_config = memez_auction_config::get(config);
 
+    let meme_token_cap = if (is_token) option::some(memez_token_cap::new(&meme_treasury_cap, ctx))
+    else option::none();
+
     let (
         ipx_meme_coin_treasury,
         metadata_cap,
         mut meme_reserve,
-    ) = memez_config::set_up_meme_treasury(meme_metadata, meme_treasury_cap, ctx);
+    ) = memez_config::set_up_meme_treasury(meme_treasury_cap, total_supply, ctx);
 
     let dev_allocation = meme_reserve.split(auction_config[1]);
 
@@ -88,11 +95,13 @@ public fun new<Meme, MigrationWitness>(
             meme_balance,
             auction_config[2],
         ),
+        meme_token_cap,
     };
 
     let mut memez_fun = memez_fun::new<Auction, MigrationWitness, Meme>(
         migrator_list,
         versioned::create(AUCTION_STATE_VERSION_V1, auction_state, ctx),
+        is_token,
         metadata_names,
         metadata_values,
         ipx_meme_coin_treasury,
@@ -119,6 +128,7 @@ public fun pump<Meme>(
     ctx: &mut TxContext,
 ): Coin<Meme> {
     version.assert_is_valid();
+    self.assert_uses_coin();
     self.assert_is_bonding();
 
     let state = self.state_mut();
@@ -138,6 +148,37 @@ public fun pump<Meme>(
     meme_coin
 }
 
+public fun pump_token<Meme>(
+    self: &mut MemezFun<Auction, Meme>,
+    clock: &Clock,
+    sui_coin: Coin<SUI>,
+    min_amount_out: u64,
+    version: CurrentVersion,
+    ctx: &mut TxContext,
+): Token<Meme> {
+    version.assert_is_valid();
+    self.assert_uses_token();
+    self.assert_is_bonding();
+
+    let state = self.state_mut();
+
+    state.provide_liquidity(clock);
+
+    let (start_migrating, meme_coin) = state
+        .constant_product
+        .pump(
+            sui_coin,
+            min_amount_out,
+            ctx,
+        );
+
+    let meme_token = state.token_cap().from_coin(meme_coin, ctx);
+
+    if (start_migrating) self.set_progress_to_migrating();
+
+    meme_token
+}
+
 public fun dump<Meme>(
     self: &mut MemezFun<Auction, Meme>,
     clock: &Clock,
@@ -148,11 +189,41 @@ public fun dump<Meme>(
     ctx: &mut TxContext,
 ): Coin<SUI> {
     version.assert_is_valid();
+    self.assert_uses_coin();
     self.assert_is_bonding();
 
     let state = self.state_mut();
 
     state.provide_liquidity(clock);
+
+    state
+        .constant_product
+        .dump(
+            treasury_cap,
+            meme_coin,
+            min_amount_out,
+            ctx,
+        )
+}
+
+public fun dump_token<Meme>(
+    self: &mut MemezFun<Auction, Meme>,
+    clock: &Clock,
+    treasury_cap: &mut IPXTreasuryStandard,
+    meme_token: Token<Meme>,
+    min_amount_out: u64,
+    version: CurrentVersion,
+    ctx: &mut TxContext,
+): Coin<SUI> {
+    version.assert_is_valid();
+    self.assert_uses_token();
+    self.assert_is_bonding();
+
+    let state = self.state_mut();
+
+    state.provide_liquidity(clock);
+
+    let meme_coin = state.token_cap().to_coin(meme_token, ctx);
 
     state
         .constant_product
@@ -200,6 +271,15 @@ public fun dev_claim<Meme>(
     let state = self.state_mut();
 
     state.dev_allocation.withdraw_all().into_coin(ctx)
+}
+
+public fun to_coin<Meme>(
+    self: &mut MemezFun<Auction, Meme>,
+    meme_token: Token<Meme>,
+    ctx: &mut TxContext,
+): Coin<Meme> {
+    self.assert_migrated();
+    self.state_mut().token_cap().to_coin(meme_token, ctx)
 }
 
 // === Public View Functions ===
@@ -265,6 +345,10 @@ fun provide_liquidity<Meme>(state: &mut AuctionState<Meme>, clock: &Clock) {
     let amount = new_liquidity_amount(state, clock);
 
     state.constant_product.meme_balance_mut().join(state.meme_reserve.split(amount));
+}
+
+fun token_cap<Meme>(state: &AuctionState<Meme>): &MemezTokenCap<Meme> {
+    state.meme_token_cap.borrow()
 }
 
 fun state<Meme>(memez_fun: &mut MemezFun<Auction, Meme>): &AuctionState<Meme> {

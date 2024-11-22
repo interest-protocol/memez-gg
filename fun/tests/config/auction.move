@@ -148,7 +148,6 @@ fun start(): World {
     World {
         scenario,
         config,
-
     }
 }
 

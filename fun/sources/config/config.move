@@ -88,7 +88,7 @@ public(package) fun set_up_meme_treasury<Meme>(
 
     cap_witness.add_burn_capability(&mut ipx_treasury_standard);
 
-    let treasury_address = object::id(&ipx_treasury_standard).to_address();
+    let treasury_address = object::id_address(&ipx_treasury_standard);
 
     transfer::public_share_object(ipx_treasury_standard);
 

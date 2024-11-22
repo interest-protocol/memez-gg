@@ -1,7 +1,7 @@
 module memez_fun::memez_migrator_tests;
 
 use memez_acl::acl;
-use memez_fun::memez_migrator::{Self, Migrator};
+use memez_fun::memez_migrator_list::{Self, MemezMigratorList};
 use std::type_name;
 use sui::{test_scenario::{Self as ts, Scenario}, test_utils::{assert_eq, destroy}};
 
@@ -13,14 +13,14 @@ public struct Cetus has drop ()
 
 public struct World {
     scenario: Scenario,
-    migrator: Migrator,
+    migrator: MemezMigratorList,
 }
 
 #[test]
 fun test_init() {
     let world = start();
 
-    let whitelist = memez_migrator::whitelisted(&world.migrator);
+    let whitelist = memez_migrator_list::whitelisted(&world.migrator);
 
     assert_eq(whitelist.is_empty(), true);
 
@@ -33,13 +33,13 @@ fun test_admin_setters() {
 
     let witness = acl::sign_in_for_testing();
 
-    let whitelist = memez_migrator::whitelisted(&world.migrator);
+    let whitelist = memez_migrator_list::whitelisted(&world.migrator);
 
     assert_eq(whitelist.is_empty(), true);
 
     world.migrator.add<MemezDex>(&witness);
 
-    let whitelist = memez_migrator::whitelisted(&world.migrator);
+    let whitelist = memez_migrator_list::whitelisted(&world.migrator);
 
     assert_eq(whitelist.contains(&type_name::get<MemezDex>()), true);
     assert_eq(!whitelist.contains(&type_name::get<Cetus>()), true);
@@ -48,14 +48,14 @@ fun test_admin_setters() {
 
     world.migrator.remove<MemezDex>(&witness);
 
-    let whitelist = memez_migrator::whitelisted(&world.migrator);
+    let whitelist = memez_migrator_list::whitelisted(&world.migrator);
 
     assert_eq(whitelist.is_empty(), true);
 
     end(world);
 }
 
-#[test, expected_failure(abort_code = memez_migrator::EInvalidWitness)]
+#[test, expected_failure(abort_code = memez_migrator_list::EInvalidWitness)]
 fun test_assert_is_whitelisted() {
     let world = start();
 
@@ -67,11 +67,11 @@ fun test_assert_is_whitelisted() {
 fun start(): World {
     let mut scenario = ts::begin(ADMIN);
 
-    memez_migrator::init_for_testing(scenario.ctx());
+    memez_migrator_list::init_for_testing(scenario.ctx());
 
     scenario.next_tx(ADMIN);
 
-    let migrator = scenario.take_shared<Migrator>();
+    let migrator = scenario.take_shared<MemezMigratorList>();
 
     World { scenario, migrator }
 }

@@ -5,7 +5,7 @@ use memez_fun::{
     memez_config::{Self, MemezConfig},
     memez_constant_product::{Self, MemezConstantProduct},
     memez_fun::{Self, MemezFun, MemezMigrator},
-    memez_migrator::Migrator,
+    memez_migrator_list::MemezMigratorList,
     memez_pump_config,
     memez_utils::destroy_or_burn,
     memez_version::CurrentVersion
@@ -42,7 +42,7 @@ public struct PumpState<phantom Meme> has store {
 #[allow(lint(share_owned))]
 public fun new<Meme, MigrationWitness>(
     config: &MemezConfig,
-    migrator: &Migrator,
+    migrator_list: &MemezMigratorList,
     meme_metadata: &CoinMetadata<Meme>,
     meme_treasury_cap: TreasuryCap<Meme>,
     creation_fee: Coin<SUI>,
@@ -77,7 +77,7 @@ public fun new<Meme, MigrationWitness>(
     };
 
     let mut memez_fun = memez_fun::new<Pump, MigrationWitness, Meme>(
-        migrator,
+        migrator_list,
         versioned::create(PUMP_STATE_VERSION_V1, pump_state, ctx),
         metadata_names,
         metadata_values,

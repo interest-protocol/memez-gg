@@ -1,6 +1,6 @@
 module memez_fun::memez_fun;
 
-use memez_fun::{memez_events, memez_migrator::Migrator};
+use memez_fun::{memez_events, memez_migrator_list::MemezMigratorList};
 use std::{string::String, type_name::{Self, TypeName}};
 use sui::{balance::Balance, sui::SUI, vec_map::{Self, VecMap}, versioned::Versioned};
 
@@ -63,7 +63,7 @@ public fun destroy<Meme, Witness: drop>(
 // === Public Package Functions ===
 
 public(package) fun new<Curve, MigrationWitness, Meme>(
-    migrator: &Migrator,
+    migrator: &MemezMigratorList,
     state: Versioned,
     metadata_names: vector<String>,
     metadata_values: vector<String>,

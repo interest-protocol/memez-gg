@@ -16,8 +16,8 @@ jobs:
             - name: Checkout repository
               uses: actions/checkout@v2
 
-            - name: install git
+            - name: Install git
               run: apt-get install -y git
 
-            - name: run account.tech tests
+            - name: Run memez.gg tests
               run: sui move test -p ./acl --test && sui move test -p ./fun --test && sui move test -p ./locks --test && sui move test -p ./vesting --test

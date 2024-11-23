@@ -1,7 +1,7 @@
 module memez_fun::memez_migrator_list_tests;
 
 use memez_acl::acl;
-use memez_fun::memez_migrator_list::{Self, MemezMigratorList};
+use memez_fun::{memez_errors, memez_migrator_list::{Self, MemezMigratorList}};
 use std::type_name;
 use sui::{test_scenario::{Self as ts, Scenario}, test_utils::{assert_eq, destroy}};
 
@@ -55,7 +55,13 @@ fun test_admin_setters() {
     end(world);
 }
 
-#[test, expected_failure(abort_code = memez_migrator_list::EInvalidWitness)]
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EInvalidWitness,
+        location = memez_migrator_list,
+    ),
+]
 fun test_assert_is_whitelisted() {
     let world = start();
 

@@ -1,6 +1,7 @@
 module memez_fun::memez_utils;
 
 use interest_math::fixed_point_wad;
+use memez_fun::memez_errors;
 use sui::{balance::Balance, coin::Coin};
 
 // === Constants ===
@@ -8,14 +9,6 @@ use sui::{balance::Balance, coin::Coin};
 const DEAD_ADDRESS: address = @0x0;
 
 const POW_9: u64 = 1__000_000_000;
-
-// === Errors ===
-
-#[error]
-const ESlippage: vector<u8> = b"Slippage";
-
-#[error]
-const EZeroCoin: vector<u8> = b"Coin value must be greater than 0";
 
 // === Public Package Functions ===
 
@@ -29,7 +22,7 @@ public(package) fun calculate_wad_percentage(percentage: u64, total_supply: u64)
 
 public(package) fun assert_coin_has_value<T>(coin: &Coin<T>): u64 {
     let value = coin.value();
-    assert!(value > 0, EZeroCoin);
+    assert!(value > 0, memez_errors::zero_coin());
     value
 }
 
@@ -41,5 +34,5 @@ public(package) fun destroy_or_burn<Meme>(balance: &mut Balance<Meme>, ctx: &mut
 }
 
 public(package) fun assert_slippage(amount: u64, minimum_expected: u64) {
-    assert!(amount >= minimum_expected, ESlippage);
+    assert!(amount >= minimum_expected, memez_errors::slippage());
 }

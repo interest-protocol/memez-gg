@@ -2,7 +2,7 @@
 module memez_fun::version_tests;
 
 use memez_acl::acl;
-use memez_fun::memez_version::{Self, Version};
+use memez_fun::{memez_errors, memez_version::{Self, Version}};
 use sui::{test_scenario::{Self as ts, Scenario}, test_utils::{assert_eq, destroy}};
 
 const ADMIN: address = @0x1;
@@ -45,7 +45,13 @@ fun test_assert_is_valid() {
     end(world);
 }
 
-#[test, expected_failure(abort_code = memez_version::EInvalidVersion)]
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EOutdatedPackageVersion,
+        location = memez_version,
+    ),
+]
 fun test_assert_is_invalid() {
     let mut world = start();
 

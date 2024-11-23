@@ -1,13 +1,9 @@
 module memez_fun::memez_migrator_list;
 
 use memez_acl::acl::AuthWitness;
+use memez_fun::memez_errors;
 use std::type_name::{Self, TypeName};
 use sui::vec_set::{Self, VecSet};
-
-// === Errors ===
-
-#[error]
-const EInvalidWitness: vector<u8> = b"This witness is not whitelisted";
 
 // === Structs ===
 
@@ -30,7 +26,7 @@ fun init(ctx: &mut TxContext) {
 // === Public Package Functions ===
 
 public(package) fun assert_is_whitelisted(self: &MemezMigratorList, witness: TypeName) {
-    assert!(self.whitelisted.contains(&witness), EInvalidWitness);
+    assert!(self.whitelisted.contains(&witness), memez_errors::invalid_witness());
 }
 
 // === Admin Functions ===

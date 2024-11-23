@@ -22,6 +22,7 @@ use ipx_coin_standard::ipx_coin_standard::{IPXTreasuryStandard, MetadataCap};
 use memez_fun::{
     memez_config::{Self, MemezConfig},
     memez_constant_product::{Self, MemezConstantProduct},
+    memez_errors,
     memez_fun::{Self, MemezFun, MemezMigrator},
     memez_migrator_list::MemezMigratorList,
     memez_pump_config,
@@ -41,11 +42,6 @@ use sui::{
 // === Constants ===
 
 const PUMP_STATE_VERSION_V1: u64 = 1;
-
-// === Errors ===
-
-#[error]
-const EInvalidVersion: vector<u8> = b"Invalid version";
 
 // === Structs ===
 
@@ -326,7 +322,10 @@ fun state_mut<Meme>(memez_fun: &mut MemezFun<Pump, Meme>): &mut PumpState<Meme> 
 
 #[allow(unused_mut_parameter)]
 fun maybe_upgrade_state_to_latest(versioned: &mut Versioned) {
-    assert!(versioned.version() == PUMP_STATE_VERSION_V1, EInvalidVersion);
+    assert!(
+        versioned.version() == PUMP_STATE_VERSION_V1,
+        memez_errors::outdated_pump_state_version(),
+    );
 }
 
 // === Aliases ===

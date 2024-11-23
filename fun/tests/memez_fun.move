@@ -2,7 +2,7 @@
 module memez_fun::memez_fun_tests;
 
 use memez_acl::acl;
-use memez_fun::{memez_fun, memez_migrator_list::{Self, MemezMigratorList}};
+use memez_fun::{memez_errors, memez_fun, memez_migrator_list::{Self, MemezMigratorList}};
 use std::type_name;
 use sui::{
     balance,
@@ -60,7 +60,7 @@ fun test_new() {
 #[
     test,
     expected_failure(
-        abort_code = memez_migrator_list::EInvalidWitness,
+        abort_code = memez_errors::EInvalidWitness,
         location = memez_migrator_list,
     ),
 ]
@@ -83,7 +83,7 @@ fun test_new_invalid_witness() {
     end(world);
 }
 
-#[test, expected_failure(abort_code = memez_fun::ENotBonding)]
+#[test, expected_failure(abort_code = memez_errors::ENotBonding, location = memez_fun)]
 fun test_progress_asserts_not_bonding() {
     let mut world = start();
 
@@ -107,7 +107,7 @@ fun test_progress_asserts_not_bonding() {
     end(world);
 }
 
-#[test, expected_failure(abort_code = memez_fun::ENotMigrating)]
+#[test, expected_failure(abort_code = memez_errors::ENotMigrating, location = memez_fun)]
 fun test_progress_asserts_not_migrating() {
     let mut world = start();
 
@@ -129,7 +129,7 @@ fun test_progress_asserts_not_migrating() {
     end(world);
 }
 
-#[test, expected_failure(abort_code = memez_fun::ENotMigrated)]
+#[test, expected_failure(abort_code = memez_errors::ENotMigrated, location = memez_fun)]
 fun test_progress_asserts_not_migrated() {
     let mut world = start();
 
@@ -175,7 +175,7 @@ fun test_assert_is_dev() {
     end(world);
 }
 
-#[test, expected_failure(abort_code = memez_fun::EInvalidDev)]
+#[test, expected_failure(abort_code = memez_errors::EInvalidDev, location = memez_fun)]
 fun test_assert_is_dev_invalid_dev() {
     let mut world = start();
 
@@ -247,7 +247,7 @@ fun test_assert_uses_coin() {
     end(world);
 }
 
-#[test, expected_failure(abort_code = memez_fun::ETokenSupported)]
+#[test, expected_failure(abort_code = memez_errors::ETokenSupported, location = memez_fun)]
 fun test_assert_uses_coin_invalid() {
     let mut world = start();
 
@@ -271,7 +271,7 @@ fun test_assert_uses_coin_invalid() {
     end(world);
 }
 
-#[test, expected_failure(abort_code = memez_fun::ETokenNotSupported)]
+#[test, expected_failure(abort_code = memez_errors::ETokenNotSupported, location = memez_fun)]
 fun test_assert_uses_token_invalid() {
     let mut world = start();
 
@@ -359,7 +359,7 @@ fun test_migrate() {
     end(world);
 }
 
-#[test, expected_failure(abort_code = memez_fun::EInvalidWitness)]
+#[test, expected_failure(abort_code = memez_errors::EInvalidWitness, location = memez_fun)]
 fun test_migrate_invalid_witness() {
     let mut world = start();
 

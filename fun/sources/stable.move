@@ -21,6 +21,7 @@ module memez_fun::memez_stable;
 use ipx_coin_standard::ipx_coin_standard::MetadataCap;
 use memez_fun::{
     memez_config::{Self, MemezConfig},
+    memez_errors,
     memez_fixed_rate::{Self, FixedRate},
     memez_fun::{Self, MemezFun, MemezMigrator},
     memez_migrator_list::MemezMigratorList,
@@ -43,11 +44,6 @@ use sui::{
 // === Constants ===
 
 const STABLE_STATE_VERSION_V1: u64 = 1;
-
-// === Errors ===
-
-#[error]
-const EInvalidVersion: vector<u8> = b"Invalid version";
 
 // === Structs ===
 
@@ -319,7 +315,10 @@ fun state_mut<Meme>(memez_fun: &mut MemezFun<Stable, Meme>): &mut StableState<Me
 
 #[allow(unused_mut_parameter)]
 fun maybe_upgrade_state_to_latest(versioned: &mut Versioned) {
-    assert!(versioned.version() == STABLE_STATE_VERSION_V1, EInvalidVersion);
+    assert!(
+        versioned.version() == STABLE_STATE_VERSION_V1,
+        memez_errors::outdated_stable_state_version(),
+    );
 }
 
 // === Aliases ===

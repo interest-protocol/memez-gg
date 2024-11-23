@@ -1,7 +1,7 @@
 #[test_only]
 module memez_fun::memez_fixed_rate_tests;
 
-use memez_fun::{memez_fixed_rate, memez_utils};
+use memez_fun::{memez_errors, memez_fixed_rate, memez_utils};
 use sui::{balance, coin::mint_for_testing, sui::SUI, test_utils::{assert_eq, destroy}};
 
 public struct Meme()
@@ -177,7 +177,7 @@ fun test_dump() {
     destroy(fixed_rate);
 }
 
-#[test, expected_failure(abort_code = memez_utils::EZeroCoin, location = memez_utils)]
+#[test, expected_failure(abort_code = memez_errors::EZeroCoin, location = memez_utils)]
 fun test_pump_zero_coin() {
     let mut ctx = tx_context::dummy();
 
@@ -203,7 +203,7 @@ fun test_pump_zero_coin() {
     destroy(fixed_rate);
 }
 
-#[test, expected_failure(abort_code = memez_utils::ESlippage, location = memez_utils)]
+#[test, expected_failure(abort_code = memez_errors::ESlippage, location = memez_utils)]
 fun test_pump_slippage() {
     let mut ctx = tx_context::dummy();
 
@@ -231,7 +231,7 @@ fun test_pump_slippage() {
     destroy(fixed_rate);
 }
 
-#[test, expected_failure(abort_code = memez_utils::EZeroCoin, location = memez_utils)]
+#[test, expected_failure(abort_code = memez_errors::EZeroCoin, location = memez_utils)]
 fun test_dump_zero_coin() {
     let mut ctx = tx_context::dummy();
 
@@ -267,7 +267,7 @@ fun test_dump_zero_coin() {
     destroy(fixed_rate);
 }
 
-#[test, expected_failure(abort_code = memez_utils::ESlippage, location = memez_utils)]
+#[test, expected_failure(abort_code = memez_errors::ESlippage, location = memez_utils)]
 fun test_dump_slippage() {
     let mut ctx = tx_context::dummy();
 

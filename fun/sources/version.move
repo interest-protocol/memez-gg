@@ -1,16 +1,11 @@
 module memez_fun::memez_version;
 
 use memez_acl::acl::AuthWitness;
+use memez_fun::memez_errors;
 
 // === Constants ===
 
 const VERSION: u64 = 1;
-
-// === Errors ===
-
-#[error]
-const EInvalidVersion: vector<u8> =
-    b"This package is out of date, please call the latest version of the package";
 
 // === Structs ===
 
@@ -47,7 +42,7 @@ public fun update(self: &mut Version, _: &AuthWitness) {
 // === Public Package Functions ===
 
 public(package) fun assert_is_valid(self: &CurrentVersion) {
-    assert!(self.0 == VERSION, EInvalidVersion);
+    assert!(self.0 == VERSION, memez_errors::outdated_package_version());
 }
 
 // === Test Functions ===

@@ -115,11 +115,10 @@ public fun new<Meme, MigrationWitness>(
     state.constant_product.set_memez_fun(memez_fun_address);
 
     if (first_purchase.value() != 0) {
-        let meme_coin = pump(
+        let meme_coin = pump_unchecked(
             &mut memez_fun,
             first_purchase,
             0,
-            version,
             ctx,
         );
 
@@ -144,18 +143,7 @@ public fun pump<Meme>(
     self.assert_uses_coin();
     self.assert_is_bonding();
 
-    let (start_migrating, meme_coin) = self
-        .state_mut()
-        .constant_product
-        .pump(
-            sui_coin,
-            min_amount_out,
-            ctx,
-        );
-
-    if (start_migrating) self.set_progress_to_migrating();
-
-    meme_coin
+    pump_unchecked(self, sui_coin, min_amount_out, ctx)
 }
 
 public fun pump_token<Meme>(
@@ -304,6 +292,26 @@ fun dump_amount<Meme>(self: &mut MemezFun<Pump, Meme>, amount_in: u64): (u64, u6
 
 // === Private Functions ===
 
+fun pump_unchecked<Meme>(
+    self: &mut MemezFun<Pump, Meme>,
+    sui_coin: Coin<SUI>,
+    min_amount_out: u64,
+    ctx: &mut TxContext,
+): Coin<Meme> {
+    let (start_migrating, meme_coin) = self
+        .state_mut()
+        .constant_product
+        .pump(
+            sui_coin,
+            min_amount_out,
+            ctx,
+        );
+
+    if (start_migrating) self.set_progress_to_migrating();
+
+    meme_coin
+}
+
 fun token_cap<Meme>(state: &PumpState<Meme>): &MemezTokenCap<Meme> {
     state.meme_token_cap.borrow()
 }
@@ -333,3 +341,23 @@ fun maybe_upgrade_state_to_latest(versioned: &mut Versioned) {
 use fun state as MemezFun.state;
 use fun state_mut as MemezFun.state_mut;
 use fun destroy_or_burn as Balance.destroy_or_burn;
+
+// === Public Test Only Functions ===
+
+#[test_only]
+public fun liquidity_provision<Meme>(self: &mut MemezFun<Pump, Meme>): u64 {
+    let state = self.state();
+    state.liquidity_provision.value()
+}
+
+#[test_only]
+public fun constant_product_mut<Meme>(
+    self: &mut MemezFun<Pump, Meme>,
+): &mut MemezConstantProduct<Meme> {
+    &mut self.state_mut().constant_product
+}
+
+#[test_only]
+public fun dev_purchase<Meme>(self: &mut MemezFun<Pump, Meme>): u64 {
+    self.state_mut().dev_purchase.value()
+}

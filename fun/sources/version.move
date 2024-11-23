@@ -56,3 +56,8 @@ public fun init_for_testing(ctx: &mut TxContext) {
 public fun version(self: &Version): u64 {
     self.version
 }
+
+#[test_only]
+public fun get_version_for_testing(version: u64): CurrentVersion {
+    CurrentVersion(version)
+}

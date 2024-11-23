@@ -2,7 +2,7 @@
 module memez_fun::memez_auction_config_tests;
 
 use memez_acl::acl;
-use memez_fun::{memez_auction_config, memez_config::{Self, MemezConfig}};
+use memez_fun::{memez_auction_config, memez_config::{Self, MemezConfig}, memez_errors};
 use sui::{test_scenario::{Self as ts, Scenario}, test_utils::{assert_eq, destroy}};
 
 const ADMIN: address = @0x1;
@@ -57,7 +57,7 @@ fun test_initialize() {
     world.end();
 }
 
-#[test, expected_failure(abort_code = memez_auction_config::EAlreadyInitialized)]
+#[test, expected_failure(abort_code = memez_errors::EAlreadyInitialized, location = memez_auction_config)]
 fun test_initialize_twice() {
     let mut world = start();
 
@@ -128,7 +128,7 @@ public fun test_percentage_calculation() {
     world.end();
 }
 
-#[test, expected_failure(abort_code = memez_auction_config::EBurnTaxExceedsMax)]
+#[test, expected_failure(abort_code = memez_errors::EBurnTaxExceedsMax, location = memez_auction_config)]
 fun test_set_burn_tax_too_high() {
     let mut world = start();
 
@@ -141,7 +141,7 @@ fun test_set_burn_tax_too_high() {
     world.end();
 }
 
-#[test, expected_failure(abort_code = memez_auction_config::EInvalidTargetSuiLiquidity)]
+#[test, expected_failure(abort_code = memez_errors::EInvalidTargetSuiLiquidity, location = memez_auction_config)]
 fun test_set_burn_tax_negative() {
     let mut world = start();
 

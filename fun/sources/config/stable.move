@@ -1,7 +1,7 @@
 module memez_fun::memez_stable_config;
 
 use memez_acl::acl::AuthWitness;
-use memez_fun::{memez_config::MemezConfig, memez_utils};
+use memez_fun::{memez_config::MemezConfig, memez_utils, memez_errors};
 use sui::dynamic_field as df;
 
 // === Constants ===
@@ -15,11 +15,6 @@ const LIQUIDITY_PROVISION: u64 = { POW_18 / 20 };
 const TARGET_SUI_LIQUIDITY: u64 = { 10_000 * POW_9 };
 
 const MEME_SALE_AMOUNT: u64 = { 40 * (POW_18 / 100) };
-
-// === Errors ===
-
-#[error]
-const EAlreadyInitialized: vector<u8> = b"Fixed rate config already initialized";
 
 // === Structs ===
 
@@ -35,7 +30,7 @@ public struct MemezStableConfig has store {
 
 entry fun initialize(config: &mut MemezConfig) {
     let uid_mut = config.uid_mut();
-    assert!(!df::exists_(uid_mut, MemezStableConfigKey()), EAlreadyInitialized);
+    assert!(!df::exists_(uid_mut, MemezStableConfigKey()), memez_errors::already_initialized());
 
     let memez_stable_config = MemezStableConfig {
         target_sui_liquidity: TARGET_SUI_LIQUIDITY,

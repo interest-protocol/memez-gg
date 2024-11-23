@@ -2,7 +2,7 @@ module memez_fun::memez_auction_config;
 
 use interest_math::u64;
 use memez_acl::acl::AuthWitness;
-use memez_fun::{memez_config::MemezConfig, memez_utils};
+use memez_fun::{memez_config::MemezConfig, memez_utils, memez_errors};
 use sui::dynamic_field as df;
 
 // === Constants ===
@@ -32,17 +32,6 @@ const SEED_LIQUIDITY: u64 = { POW_18 / 10_000 };
 
 const MIN_SEED_LIQUIDITY: u64 = 100;
 
-// === Errors ===
-
-#[error]
-const EAlreadyInitialized: vector<u8> = b"Auction config already initialized";
-
-#[error]
-const EBurnTaxExceedsMax: vector<u8> = b"Burn tax exceeds max";
-
-#[error]
-const EInvalidTargetSuiLiquidity: vector<u8> = b"Invalid target SUI liquidity";
-
 // === Structs ===
 
 public struct MemezAuctionConfigKey has copy, store, drop ()
@@ -66,7 +55,7 @@ entry fun initialize(config: &mut MemezConfig) {
             uid_mut,
             MemezAuctionConfigKey(),
         ),
-        EAlreadyInitialized,
+        memez_errors::already_initialized(),
     );
 
     let memez_auction_config = MemezAuctionConfig {
@@ -89,7 +78,7 @@ entry fun initialize(config: &mut MemezConfig) {
 // === Public Admin Functions ===
 
 public fun set_burn_tax(self: &mut MemezConfig, _: &AuthWitness, amount: u64) {
-    assert!(amount <= MAX_BURN_TAX, EBurnTaxExceedsMax);
+    assert!(amount <= MAX_BURN_TAX, memez_errors::burn_tax_exceeds_max());
 
     let state = state_mut(self);
 
@@ -105,7 +94,7 @@ public fun set_virtual_liquidity(self: &mut MemezConfig, _: &AuthWitness, amount
 public fun set_target_sui_liquidity(self: &mut MemezConfig, _: &AuthWitness, amount: u64) {
     let state = state_mut(self);
 
-    assert!(amount > state.virtual_liquidity, EInvalidTargetSuiLiquidity);
+    assert!(amount > state.virtual_liquidity, memez_errors::invalid_target_sui_liquidity());
 
     state.target_sui_liquidity = amount;
 }

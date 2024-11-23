@@ -2,7 +2,7 @@
 module memez_fun::memez_pump_config_tests;
 
 use memez_acl::acl;
-use memez_fun::{memez_config::{Self, MemezConfig}, memez_pump_config};
+use memez_fun::{memez_config::{Self, MemezConfig}, memez_pump_config, memez_errors};
 use sui::{test_scenario::{Self as ts, Scenario}, test_utils::{assert_eq, destroy}};
 
 const BURN_TAX: u64 = 200_000_000;
@@ -44,7 +44,7 @@ fun test_initialize() {
     world.end();
 }
 
-#[test, expected_failure(abort_code = memez_pump_config::EAlreadyInitialized)]
+#[test, expected_failure(abort_code = memez_errors::EAlreadyInitialized, location = memez_pump_config)]
 fun test_initialize_twice() {
     let mut world = start();
 
@@ -106,7 +106,7 @@ fun test_get_liquidity_provision() {
     world.end();
 }
 
-#[test, expected_failure(abort_code = memez_pump_config::EBurnTaxExceedsMax)]
+#[test, expected_failure(abort_code = memez_errors::EBurnTaxExceedsMax, location = memez_pump_config)]
 fun test_set_burn_tax_exceeds_max() {
     let mut world = start();
 
@@ -119,7 +119,7 @@ fun test_set_burn_tax_exceeds_max() {
     world.end();
 }
 
-#[test, expected_failure(abort_code = memez_pump_config::EInvalidTargetSuiLiquidity)]
+#[test, expected_failure(abort_code = memez_errors::EInvalidTargetSuiLiquidity, location = memez_pump_config)]
 fun test_set_target_sui_liquidity_invalid() {
     let mut world = start();
 

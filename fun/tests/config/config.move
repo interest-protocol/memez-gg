@@ -3,7 +3,7 @@ module memez_fun::memez_config_tests;
 
 use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
 use memez_acl::acl;
-use memez_fun::{gg::{Self, GG}, memez_config::{Self, MemezConfig}};
+use memez_fun::{gg::{Self, GG}, memez_config::{Self, MemezConfig}, memez_errors};
 use sui::{
     coin::{TreasuryCap, Coin, mint_for_testing},
     sui::SUI,
@@ -84,7 +84,7 @@ fun set_up_treasury() {
     world.end();
 }
 
-#[test, expected_failure(abort_code = memez_config::EPreMint)]
+#[test, expected_failure(abort_code = memez_errors::EPreMintNotAllowed, location = memez_config)]
 fun set_up_treasury_pre_mint() {
     let mut world = start();
 
@@ -126,7 +126,7 @@ fun test_take_fees() {
     world.end();
 }
 
-#[test, expected_failure(abort_code = memez_config::ENotEnoughSuiForCreationFee)]
+#[test, expected_failure(abort_code = memez_errors::ENotEnoughSuiForCreationFee, location = memez_config)]
 fun test_take_creation_fee_wrong_value() {
     let mut world = start();
 
@@ -135,7 +135,7 @@ fun test_take_creation_fee_wrong_value() {
     world.end();
 }
 
-#[test, expected_failure(abort_code = memez_config::ENotEnoughSuiForMigrationFee)]
+#[test, expected_failure(abort_code = memez_errors::ENotEnoughSuiForMigrationFee, location = memez_config)]
 fun test_take_migration_fee_wrong_value() {
     let mut world = start();
 

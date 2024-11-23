@@ -3,6 +3,7 @@ module memez_fun::memez_config;
 use ipx_coin_standard::ipx_coin_standard::{Self, MetadataCap};
 use memez_acl::acl::AuthWitness;
 use sui::{balance::Balance, coin::{Coin, TreasuryCap}, sui::SUI};
+use memez_fun::memez_errors;
 
 // === Constants ===
 
@@ -12,17 +13,6 @@ const POW_9: u64 = 1__000_000_000;
 const CREATION_FEE: u64 = { 2 * POW_9 };
 
 const MIGRATION_FEE: u64 = { 200 * POW_9 };
-
-// === Errors ===
-
-#[error]
-const ENotEnoughSuiForCreationFee: vector<u8> = b"Not enough SUI for creation fee";
-
-#[error]
-const ENotEnoughSuiForMigrationFee: vector<u8> = b"Not enough SUI for migration fee";
-
-#[error]
-const EPreMint: vector<u8> = b"Pre-mint";
 
 // === Structs ===
 
@@ -68,7 +58,7 @@ public(package) fun set_up_meme_treasury<Meme>(
     total_supply: u64,
     ctx: &mut TxContext,
 ): (address, MetadataCap, Balance<Meme>) {
-    assert!(meme_treasury_cap.total_supply() == 0, EPreMint);
+    assert!(meme_treasury_cap.total_supply() == 0, memez_errors::pre_mint_not_allowed());
 
     let meme_balance = meme_treasury_cap.mint_balance(
         total_supply,
@@ -107,7 +97,7 @@ public(package) fun migration_fee(self: &MemezConfig): u64 {
 }
 
 public(package) fun take_creation_fee(self: &MemezConfig, creation_fee: Coin<SUI>) {
-    assert!(creation_fee.value() >= self.creation_fee, ENotEnoughSuiForCreationFee);
+    assert!(creation_fee.value() >= self.creation_fee, memez_errors::not_enough_sui_for_creation_fee());
 
     transfer::public_transfer(
         creation_fee,
@@ -116,7 +106,7 @@ public(package) fun take_creation_fee(self: &MemezConfig, creation_fee: Coin<SUI
 }
 
 public(package) fun take_migration_fee(self: &MemezConfig, migration_fee: Coin<SUI>) {
-    assert!(migration_fee.value() >= self.migration_fee, ENotEnoughSuiForMigrationFee);
+    assert!(migration_fee.value() >= self.migration_fee, memez_errors::not_enough_sui_for_migration_fee());
 
     transfer::public_transfer(
         migration_fee,

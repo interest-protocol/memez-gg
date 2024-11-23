@@ -177,7 +177,7 @@ public(package) fun assert_uses_coin<Curve, Meme>(self: &MemezFun<Curve, Meme>) 
 
 // === Public Package Migration Functions ===
 
-public(package) fun new_migrator<Curve, Meme>(
+public(package) fun migrate<Curve, Meme>(
     self: &mut MemezFun<Curve, Meme>,
     sui_balance: Balance<SUI>,
     meme_balance: Balance<Meme>,
@@ -195,4 +195,9 @@ public(package) fun new_migrator<Curve, Meme>(
 #[test_only]
 public fun metadata<Curve, Meme>(self: &MemezFun<Curve, Meme>): &VecMap<String, String> {
     &self.metadata
+}
+
+#[test_only]
+public fun ip_meme_coin_treasury<Curve, Meme>(self: &MemezFun<Curve, Meme>): address {
+    self.ipx_meme_coin_treasury
 }

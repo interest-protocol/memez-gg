@@ -249,7 +249,7 @@ public fun migrate<Meme>(
 
     config.take_migration_fee(sui_balance.split(config.migration_fee()).into_coin(ctx));
 
-    self.new_migrator(sui_balance, liquidity_provision)
+    self.migrate(sui_balance, liquidity_provision)
 }
 
 public fun dev_claim<Meme>(

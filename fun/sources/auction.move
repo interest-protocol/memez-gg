@@ -273,7 +273,7 @@ public fun migrate<Meme>(
 
     config.take_migration_fee(sui_balance.split(config.migration_fee()).into_coin(ctx));
 
-    self.new_migrator(sui_balance, liquidity_provision)
+    self.migrate(sui_balance, liquidity_provision)
 }
 
 public fun dev_claim<Meme>(
@@ -300,15 +300,10 @@ public fun to_coin<Meme>(
     self.state_mut().token_cap().to_coin(meme_token, ctx)
 }
 
-
 // === View Functions for FE ===
 
 #[allow(unused_function)]
-fun pump_amount<Meme>(
-    self: &mut MemezFun<Auction, Meme>,
-    amount_in: u64,
-    clock: &Clock,
-): u64 {
+fun pump_amount<Meme>(self: &mut MemezFun<Auction, Meme>, amount_in: u64, clock: &Clock): u64 {
     let state = self.state();
 
     let amount = new_liquidity_amount(state, clock);

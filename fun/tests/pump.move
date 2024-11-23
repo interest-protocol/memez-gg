@@ -2,6 +2,7 @@
 module memez_fun::memez_pump_tests;
 
 use constant_product::constant_product::get_amount_out;
+use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
 use memez_acl::acl;
 use memez_fun::{
     memez_config::{Self, MemezConfig},
@@ -19,6 +20,10 @@ use sui::{
 };
 
 const ADMIN: address = @0x1;
+
+const DEAD_ADDRESS: address = @0x0;
+
+const POW_9: u64 = 1__000_000_000;
 
 public struct World {
     config: MemezConfig,
@@ -129,7 +134,134 @@ fun test_coin_end_to_end() {
         total_supply,
     );
 
+    let sui_dev_value = memez_pump::dev_purchase(&mut memez_fun);
+
+    let cp = memez_pump::constant_product_mut(&mut memez_fun);
+
+    let expected_sui_dev_value = get_amount_out(
+        first_purchase_value,
+        cp.virtual_liquidity(),
+        cp.meme_balance().value() + sui_dev_value,
+    );
+
+    world.scenario.next_tx(DEAD_ADDRESS);
+
+    let sui_fee_coin = world.scenario.take_from_address<Coin<SUI>>(@treasury);
+
+    assert_eq(sui_fee_coin.burn_for_testing(), 2 * POW_9);
+
+    let purchase_sui_value = 2_000 * POW_9;
+
+    let ctx = world.scenario.ctx();
+
+    let cp = memez_pump::constant_product_mut(&mut memez_fun);
+
+    let expected_meme_value = get_amount_out(
+        purchase_sui_value,
+        cp.virtual_liquidity() + cp.sui_balance().value(),
+        cp.meme_balance().value(),
+    );
+
+    let meme_coin = memez_pump::pump(
+        &mut memez_fun,
+        mint_for_testing(purchase_sui_value, ctx),
+        expected_meme_value,
+        memez_version::get_version_for_testing(1),
+        ctx,
+    );
+
+    assert_eq(meme_coin.burn_for_testing(), expected_meme_value);
+
+    let mut treasury = world.scenario.take_shared<IPXTreasuryStandard>();
+
+    let ctx = world.scenario.ctx();
+
+    let sell_meme_value = expected_meme_value / 3;
+
+    let cp = memez_pump::constant_product_mut(&mut memez_fun);
+
+    let (expected_sui_value, _) = cp.dump_amount(sell_meme_value, 0);
+
+    let sui_coin = memez_pump::dump(
+        &mut memez_fun,
+        &mut treasury,
+        mint_for_testing(sell_meme_value, ctx),
+        expected_sui_value,
+        memez_version::get_version_for_testing(1),
+        ctx,
+    );
+
+    assert_eq(sui_coin.burn_for_testing(), expected_sui_value);
+
+    let purchase_sui_value = 8_000 * POW_9 + expected_sui_value;
+
+    let ctx = world.scenario.ctx();
+
+    let cp = memez_pump::constant_product_mut(&mut memez_fun);
+
+    let expected_meme_value = get_amount_out(
+        purchase_sui_value,
+        cp.virtual_liquidity() + cp.sui_balance().value(),
+        cp.meme_balance().value(),
+    );
+
+    memez_fun.assert_is_bonding();
+
+    let meme_coin = memez_pump::pump(
+        &mut memez_fun,
+        mint_for_testing(purchase_sui_value, ctx),
+        expected_meme_value,
+        memez_version::get_version_for_testing(1),
+        ctx,
+    );
+
+    assert_eq(meme_coin.burn_for_testing(), expected_meme_value);
+
+    memez_fun.assert_is_migrating();
+
+    let config = &world.config;
+
+    let ctx = world.scenario.ctx();
+
+    let sui_balance_value = memez_pump::constant_product_mut(&mut memez_fun).sui_balance().value();
+
+    let migrator = memez_pump::migrate(
+        &mut memez_fun,
+        config,
+        memez_version::get_version_for_testing(1),
+        ctx,
+    );
+
+    memez_fun.assert_migrated();
+
+    let (sui_balance, meme_balance) = migrator.destroy(MigrationWitness());
+
+    world.scenario.next_tx(DEAD_ADDRESS);
+
+    let sui_fee_coin = world.scenario.take_from_address<Coin<SUI>>(@treasury);
+
+    assert_eq(sui_fee_coin.burn_for_testing(), 200 * POW_9);
+
+    let config = memez_pump_config::get(&world.config, total_supply);
+
+    assert_eq(sui_balance.destroy_for_testing(), sui_balance_value - 200 * POW_9);
+    assert_eq(sui_balance_value >= config[2], true);
+    assert_eq(meme_balance.destroy_for_testing(), config[3]);
+
+    world.scenario.next_tx(ADMIN);
+
+    let ctx = world.scenario.ctx();
+
+    let sui_dev_coin = memez_pump::dev_claim(
+        &mut memez_fun,
+        memez_version::get_version_for_testing(1),
+        ctx,
+    );
+
+    assert_eq(sui_dev_coin.burn_for_testing(), expected_sui_dev_value);
+
     destroy(memez_fun);
+    destroy(treasury);
 
     world.end();
 }

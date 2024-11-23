@@ -12,7 +12,6 @@ use memez_acl::events;
 // @dev Each epoch is roughly 1 day
 const THREE_EPOCHS: u64 = 3;
 
-
 // === Errors === 
 
 #[error]

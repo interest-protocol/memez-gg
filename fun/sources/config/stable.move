@@ -32,7 +32,7 @@ public struct MemezStableConfig has store {
 
 // === Initializer ===
 
-public fun initialize(config: &mut MemezConfig) {
+entry fun initialize(config: &mut MemezConfig) {
     let uid_mut = config.uid_mut();
     assert!(!df::exists_(uid_mut, MemezStableConfigKey()), EAlreadyInitialized);
 

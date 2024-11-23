@@ -9,7 +9,7 @@ const LIQUIDITY_PROVISION: u64 = 50_000_000__000_000_000;
 
 const TARGET_SUI_LIQUIDITY: u64 = 10_000__000_000_000;
 
-const MEME_SALE_AMOUNT: u64 = 400_000_000_000;
+const MEME_SALE_AMOUNT: u64 = 400_000_000_000_000_000;
 
 const TOTAL_SUPPLY: u64 = 1_000_000_000__000_000_000;
 
@@ -89,6 +89,19 @@ fun test_get_liquidity_provision() {
     let config = memez_stable_config::get(&world.config, 100);
 
     assert_eq(config[1], 5);
+
+    world.end();
+}
+
+#[test]
+fun test_get_meme_sale_amount() {
+    let mut world = start();
+
+    memez_stable_config::initialize(&mut world.config);
+
+    let config = memez_stable_config::get(&world.config, 100);
+
+    assert_eq(config[2], 40);
 
     world.end();
 }

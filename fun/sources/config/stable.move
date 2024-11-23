@@ -5,15 +5,16 @@ use memez_fun::{memez_config::MemezConfig, memez_utils};
 use sui::dynamic_field as df;
 
 // === Constants ===
+const POW_9: u64 = 1__000_000_000;
 
 const POW_18: u64 = 1__000_000_000_000_000_000;
 
 // @dev 50,000,000 = 5%
 const LIQUIDITY_PROVISION: u64 = { POW_18 / 20 };
 
-const TARGET_SUI_LIQUIDITY: u64 = 10_000__000_000_000;
+const TARGET_SUI_LIQUIDITY: u64 = { 10_000 * POW_9 };
 
-const MEME_SALE_AMOUNT: u64 = 400_000_000_000;
+const MEME_SALE_AMOUNT: u64 = { 40 * (POW_18 / 100) };
 
 // === Errors ===
 
@@ -72,8 +73,13 @@ public(package) fun get(self: &MemezConfig, total_supply: u64): vector<u64> {
         state.liquidity_provision,
         total_supply,
     );
+    
+    let meme_sale_amount = memez_utils::calculate_wad_percentage(
+        state.meme_sale_amount,
+        total_supply,
+    );
 
-    vector[state.target_sui_liquidity, liquidity_provision, state.meme_sale_amount]
+    vector[state.target_sui_liquidity, liquidity_provision, meme_sale_amount]
 }
 
 // === Private Functions ===

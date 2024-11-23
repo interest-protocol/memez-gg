@@ -7,12 +7,14 @@ use sui::dynamic_field as df;
 
 // === Constants ===
 
-// @dev 200,000,000 = 20%
-const BURN_TAX: u64 = 200_000_000;
-
-const MAX_BURN_TAX: u64 = 500_000_000;
+// @dev Sui Decimal Scale
+const POW_9: u64 = 1__000_000_000;
 
 const POW_18: u64 = 1__000_000_000_000_000_000;
+
+const BURN_TAX: u64 = { POW_9 / 5 };
+
+const MAX_BURN_TAX: u64 = { POW_9 / 2 };
 
 // @dev 10,000,000 = 1%
 const DEV_ALLOCATION: u64 = { POW_18 / 100 };
@@ -22,9 +24,9 @@ const LIQUIDITY_PROVISION: u64 = { POW_18 / 20 };
 
 const THIRTY_MINUTES_MS: u64 = 30 * 60 * 1_000;
 
-const VIRTUAL_LIQUIDITY: u64 = 1_000__000_000_000;
+const VIRTUAL_LIQUIDITY: u64 = { 1_000 * POW_9 };
 
-const TARGET_SUI_LIQUIDITY: u64 = 10_000__000_000_000;
+const TARGET_SUI_LIQUIDITY: u64 = { 10_000 * POW_9 };
 
 const SEED_LIQUIDITY: u64 = { POW_18 / 10_000 };
 

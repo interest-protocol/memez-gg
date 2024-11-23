@@ -6,9 +6,12 @@ use sui::{balance::Balance, coin::{Coin, TreasuryCap}, sui::SUI};
 
 // === Constants ===
 
-const CREATION_FEE: u64 = 2__000_000_000;
+// @dev Sui Decimal Scale
+const POW_9: u64 = 1__000_000_000;
 
-const MIGRATION_FEE: u64 = 200__000_000_000;
+const CREATION_FEE: u64 = { 2 * POW_9 };
+
+const MIGRATION_FEE: u64 = { 200 * POW_9 };
 
 // === Errors ===
 

@@ -1,10 +1,10 @@
 module memez_fun::memez_errors;
 
-// === Constants === 
+// === Constants ===
 
 const EAlreadyInitialized: u64 = 0;
 
-const EBurnTaxExceedsMax: u64 = 1; 
+const EBurnTaxExceedsMax: u64 = 1;
 
 const EInvalidTargetSuiLiquidity: u64 = 2;
 
@@ -14,7 +14,7 @@ const ENotEnoughSuiForMigrationFee: u64 = 4;
 
 const EPreMintNotAllowed: u64 = 5;
 
-// === Public Package Functions === 
+// === Public Package Functions ===
 
 public(package) fun already_initialized(): u64 {
     EAlreadyInitialized

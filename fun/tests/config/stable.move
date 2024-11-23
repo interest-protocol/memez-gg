@@ -2,7 +2,7 @@
 module memez_fun::memez_stable_config_tests;
 
 use memez_acl::acl;
-use memez_fun::{memez_config::{Self, MemezConfig}, memez_stable_config, memez_errors};
+use memez_fun::{memez_config::{Self, MemezConfig}, memez_errors, memez_stable_config};
 use sui::{test_scenario::{Self as ts, Scenario}, test_utils::{assert_eq, destroy}};
 
 const LIQUIDITY_PROVISION: u64 = 50_000_000__000_000_000;
@@ -106,7 +106,13 @@ fun test_get_meme_sale_amount() {
     world.end();
 }
 
-#[test, expected_failure(abort_code = memez_errors::EAlreadyInitialized, location = memez_stable_config)]
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EAlreadyInitialized,
+        location = memez_stable_config,
+    ),
+]
 fun test_initialize_twice() {
     let mut world = start();
 

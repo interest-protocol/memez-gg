@@ -126,7 +126,13 @@ fun test_take_fees() {
     world.end();
 }
 
-#[test, expected_failure(abort_code = memez_errors::ENotEnoughSuiForCreationFee, location = memez_config)]
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::ENotEnoughSuiForCreationFee,
+        location = memez_config,
+    ),
+]
 fun test_take_creation_fee_wrong_value() {
     let mut world = start();
 
@@ -135,7 +141,13 @@ fun test_take_creation_fee_wrong_value() {
     world.end();
 }
 
-#[test, expected_failure(abort_code = memez_errors::ENotEnoughSuiForMigrationFee, location = memez_config)]
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::ENotEnoughSuiForMigrationFee,
+        location = memez_config,
+    ),
+]
 fun test_take_migration_fee_wrong_value() {
     let mut world = start();
 

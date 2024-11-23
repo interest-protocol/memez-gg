@@ -2,7 +2,7 @@ module memez_fun::memez_auction_config;
 
 use interest_math::u64;
 use memez_acl::acl::AuthWitness;
-use memez_fun::{memez_config::MemezConfig, memez_utils, memez_errors};
+use memez_fun::{memez_config::MemezConfig, memez_errors, memez_utils};
 use sui::dynamic_field as df;
 
 // === Constants ===

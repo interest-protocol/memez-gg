@@ -1,7 +1,7 @@
 module memez_fun::memez_stable_config;
 
 use memez_acl::acl::AuthWitness;
-use memez_fun::{memez_config::MemezConfig, memez_utils, memez_errors};
+use memez_fun::{memez_config::MemezConfig, memez_errors, memez_utils};
 use sui::dynamic_field as df;
 
 // === Constants ===
@@ -68,7 +68,7 @@ public(package) fun get(self: &MemezConfig, total_supply: u64): vector<u64> {
         state.liquidity_provision,
         total_supply,
     );
-    
+
     let meme_sale_amount = memez_utils::calculate_wad_percentage(
         state.meme_sale_amount,
         total_supply,

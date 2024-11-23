@@ -1,7 +1,7 @@
 module memez_fun::memez_pump_config;
 
 use memez_acl::acl::AuthWitness;
-use memez_fun::{memez_config::MemezConfig, memez_utils, memez_errors};
+use memez_fun::{memez_config::MemezConfig, memez_errors, memez_utils};
 use sui::dynamic_field as df;
 
 // === Constants ===

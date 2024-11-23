@@ -2,8 +2,8 @@ module memez_fun::memez_config;
 
 use ipx_coin_standard::ipx_coin_standard::{Self, MetadataCap};
 use memez_acl::acl::AuthWitness;
-use sui::{balance::Balance, coin::{Coin, TreasuryCap}, sui::SUI};
 use memez_fun::memez_errors;
+use sui::{balance::Balance, coin::{Coin, TreasuryCap}, sui::SUI};
 
 // === Constants ===
 
@@ -97,7 +97,10 @@ public(package) fun migration_fee(self: &MemezConfig): u64 {
 }
 
 public(package) fun take_creation_fee(self: &MemezConfig, creation_fee: Coin<SUI>) {
-    assert!(creation_fee.value() >= self.creation_fee, memez_errors::not_enough_sui_for_creation_fee());
+    assert!(
+        creation_fee.value() >= self.creation_fee,
+        memez_errors::not_enough_sui_for_creation_fee(),
+    );
 
     transfer::public_transfer(
         creation_fee,
@@ -106,7 +109,10 @@ public(package) fun take_creation_fee(self: &MemezConfig, creation_fee: Coin<SUI
 }
 
 public(package) fun take_migration_fee(self: &MemezConfig, migration_fee: Coin<SUI>) {
-    assert!(migration_fee.value() >= self.migration_fee, memez_errors::not_enough_sui_for_migration_fee());
+    assert!(
+        migration_fee.value() >= self.migration_fee,
+        memez_errors::not_enough_sui_for_migration_fee(),
+    );
 
     transfer::public_transfer(
         migration_fee,

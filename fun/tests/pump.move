@@ -6,19 +6,19 @@ use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
 use memez_acl::acl;
 use memez_fun::{
     memez_config::{Self, MemezConfig},
+    memez_errors,
     memez_fun::{Self, MemezFun},
     memez_migrator_list::{Self, MemezMigratorList},
     memez_pump::{Self, Pump},
     memez_pump_config,
-    memez_version,
-    memez_errors,
+    memez_version
 };
 use sui::{
     coin::{Self, mint_for_testing, create_treasury_cap_for_testing, Coin},
     sui::SUI,
-    token,
     test_scenario::{Self as ts, Scenario},
-    test_utils::{assert_eq, destroy}
+    test_utils::{assert_eq, destroy},
+    token
 };
 
 const ADMIN: address = @0x1;
@@ -423,7 +423,13 @@ fun test_token_end_to_end() {
     world.end();
 }
 
-#[test, expected_failure(abort_code = memez_errors::EOutdatedPackageVersion, location = memez_version)]
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EOutdatedPackageVersion,
+        location = memez_version,
+    ),
+]
 fun new_invalid_version() {
     let mut world = start();
 
@@ -446,7 +452,13 @@ fun new_invalid_version() {
     world.end();
 }
 
-#[test, expected_failure(abort_code = memez_errors::ENotEnoughSuiForCreationFee, location = memez_config)]
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::ENotEnoughSuiForCreationFee,
+        location = memez_config,
+    ),
+]
 fun new_low_creation_fee() {
     let mut world = start();
 
@@ -469,7 +481,13 @@ fun new_low_creation_fee() {
     world.end();
 }
 
-#[test, expected_failure(abort_code = memez_errors::EOutdatedPackageVersion, location = memez_version)]
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EOutdatedPackageVersion,
+        location = memez_version,
+    ),
+]
 fun pump_invalid_version() {
     let mut world = start();
 
@@ -559,7 +577,13 @@ fun pump_is_not_bonding() {
     world.end();
 }
 
-#[test, expected_failure(abort_code = memez_errors::EOutdatedPackageVersion, location = memez_version)]
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EOutdatedPackageVersion,
+        location = memez_version,
+    ),
+]
 fun dump_invalid_version() {
     let mut world = start();
 
@@ -597,7 +621,7 @@ fun dump_invalid_version() {
         memez_version::get_version_for_testing(1),
         ctx,
     ).burn_for_testing();
-    
+
     world.scenario.next_tx(DEAD_ADDRESS);
 
     let mut treasury = world.scenario.take_shared<IPXTreasuryStandard>();
@@ -697,7 +721,13 @@ fun dump_is_not_bonding() {
     world.end();
 }
 
-#[test, expected_failure(abort_code = memez_errors::EOutdatedPackageVersion, location = memez_version)]
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EOutdatedPackageVersion,
+        location = memez_version,
+    ),
+]
 fun migrate_invalid_version() {
     let mut world = start();
 
@@ -761,7 +791,13 @@ fun migrate_is_not_migrating() {
     world.end();
 }
 
-#[test, expected_failure(abort_code = memez_errors::EOutdatedPackageVersion, location = memez_version)]
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EOutdatedPackageVersion,
+        location = memez_version,
+    ),
+]
 fun dev_claim_invalid_version() {
     let mut world = start();
 
@@ -879,6 +915,246 @@ fun dev_claim_is_not_dev() {
     destroy(sui_balance);
     destroy(meme_balance);
     destroy(memez_fun);
+
+    world.end();
+}
+
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EOutdatedPackageVersion,
+        location = memez_version,
+    ),
+]
+fun pump_token_invalid_version() {
+    let mut world = start();
+
+    let first_purchase_value = 50_000_000_000;
+
+    let total_supply = 1_000_000_000_000_000_000;
+
+    let first_purchase = mint_for_testing(first_purchase_value, world.scenario.ctx());
+
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        first_purchase,
+        true,
+        total_supply,
+    );
+
+    memez_pump::pump_token(
+        &mut memez_fun,
+        mint_for_testing(first_purchase_value, world.scenario.ctx()),
+        0,
+        memez_version::get_version_for_testing(2),
+        world.scenario.ctx(),
+    ).burn_for_testing();
+
+    destroy(memez_fun);
+
+    world.end();
+}
+
+#[test, expected_failure(abort_code = memez_errors::ETokenNotSupported, location = memez_fun)]
+fun pump_use_coin_instead() {
+    let mut world = start();
+
+    let first_purchase_value = 50_000_000_000;
+
+    let total_supply = 1_000_000_000_000_000_000;
+
+    let first_purchase = mint_for_testing(first_purchase_value, world.scenario.ctx());
+
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        first_purchase,
+        false,
+        total_supply,
+    );
+
+    memez_pump::pump_token(
+        &mut memez_fun,
+        mint_for_testing(first_purchase_value, world.scenario.ctx()),
+        0,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    ).burn_for_testing();
+
+    destroy(memez_fun);
+
+    world.end();
+}
+
+#[test, expected_failure(abort_code = memez_errors::ENotBonding, location = memez_fun)]
+fun pump_token_is_not_bonding() {
+    let mut world = start();
+
+    let first_purchase_value = 10_000_000_000_000;
+
+    let total_supply = 1_000_000_000_000_000_000;
+
+    let first_purchase = mint_for_testing(first_purchase_value, world.scenario.ctx());
+
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        first_purchase,
+        true,
+        total_supply,
+    );
+
+    memez_pump::pump_token(
+        &mut memez_fun,
+        mint_for_testing(first_purchase_value, world.scenario.ctx()),
+        0,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    ).burn_for_testing();
+
+    destroy(memez_fun);
+
+    world.end();
+}
+
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EOutdatedPackageVersion,
+        location = memez_version,
+    ),
+]
+fun dump_token_invalid_version() {
+    let mut world = start();
+
+    let first_purchase_value = 50_000_000_000;
+
+    let total_supply = 1_000_000_000_000_000_000;
+
+    let first_purchase = mint_for_testing(first_purchase_value, world.scenario.ctx());
+
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        first_purchase,
+        true,
+        total_supply,
+    );
+
+    world.scenario.next_tx(DEAD_ADDRESS);
+
+    let purchase_sui_value = 2_000 * POW_9;
+
+    let ctx = world.scenario.ctx();
+
+    let cp = memez_pump::constant_product_mut(&mut memez_fun);
+
+    let expected_meme_value = get_amount_out(
+        purchase_sui_value,
+        cp.virtual_liquidity() + cp.sui_balance().value(),
+        cp.meme_balance().value(),
+    );
+
+    memez_pump::pump_token(
+        &mut memez_fun,
+        mint_for_testing(purchase_sui_value, ctx),
+        expected_meme_value,
+        memez_version::get_version_for_testing(1),
+        ctx,
+    ).burn_for_testing();
+
+    world.scenario.next_tx(DEAD_ADDRESS);
+
+    let mut treasury = world.scenario.take_shared<IPXTreasuryStandard>();
+
+    let ctx = world.scenario.ctx();
+
+    let sell_meme_value = expected_meme_value / 3;
+
+    memez_pump::dump_token(
+        &mut memez_fun,
+        &mut treasury,
+        token::mint_for_testing(sell_meme_value, ctx),
+        0,
+        memez_version::get_version_for_testing(2),
+        ctx,
+    ).burn_for_testing();
+
+    destroy(memez_fun);
+    destroy(treasury);
+
+    world.end();
+}
+
+#[test, expected_failure(abort_code = memez_errors::ETokenNotSupported, location = memez_fun)]
+fun dump_use_coin_instead() {
+    let mut world = start();
+
+    let first_purchase_value = 50_000_000_000;
+
+    let total_supply = 1_000_000_000_000_000_000;
+
+    let first_purchase = mint_for_testing(first_purchase_value, world.scenario.ctx());
+
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        first_purchase,
+        false,
+        total_supply,
+    );
+
+    world.scenario.next_tx(DEAD_ADDRESS);
+
+    let mut treasury = world.scenario.take_shared<IPXTreasuryStandard>();
+
+    let ctx = world.scenario.ctx();
+
+    memez_pump::dump_token(
+        &mut memez_fun,
+        &mut treasury,
+        token::mint_for_testing(100, ctx),
+        0,
+        memez_version::get_version_for_testing(1),
+        ctx,
+    ).burn_for_testing();
+
+    destroy(memez_fun);
+    destroy(treasury);
+
+    world.end();
+}
+
+#[test, expected_failure(abort_code = memez_errors::ENotBonding, location = memez_fun)]
+fun dump_token_is_not_bonding() {
+    let mut world = start();
+
+    let first_purchase_value = 10_000_000_000_000;
+
+    let total_supply = 1_000_000_000_000_000_000;
+
+    let first_purchase = mint_for_testing(first_purchase_value, world.scenario.ctx());
+
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        first_purchase,
+        true,
+        total_supply,
+    );
+
+    world.scenario.next_tx(DEAD_ADDRESS);
+
+    let mut treasury = world.scenario.take_shared<IPXTreasuryStandard>();
+
+    let ctx = world.scenario.ctx();
+
+    memez_pump::dump_token(
+        &mut memez_fun,
+        &mut treasury,
+        token::mint_for_testing(100, ctx),
+        0,
+        memez_version::get_version_for_testing(1),
+        ctx,
+    ).burn_for_testing();
+
+    destroy(memez_fun);
+    destroy(treasury);
 
     world.end();
 }

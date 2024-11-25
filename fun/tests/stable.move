@@ -5,7 +5,7 @@ use memez_acl::acl;
 use memez_fun::{
     memez_config::{Self, MemezConfig},
     memez_errors,
-    memez_fun::MemezFun,
+    memez_fun::{Self, MemezFun},
     memez_migrator_list::{Self, MemezMigratorList},
     memez_stable::{Self, Stable},
     memez_stable_config,
@@ -426,6 +426,98 @@ fun test_new_invalid_creation_fee() {
     );
 
     metadata_cap.destroy();
+    world.end();
+}
+
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EOutdatedPackageVersion,
+        location = memez_version,
+    ),
+]
+fun pump_invalid_version() {
+    let mut world = start();
+
+    let total_supply = POW_9 * POW_9;
+
+    let dev_allocation = POW_9 / 10;
+
+    let mut memez_fun = set_up_pool(&mut world, false, POW_9 * POW_9, vector[dev_allocation, DAY], total_supply);
+
+    let (x, y) = memez_stable::pump(
+        &mut memez_fun,
+        coin::mint_for_testing(1000 * POW_9, world.scenario.ctx()),
+        0,
+        memez_version::get_version_for_testing(2),
+        world.scenario.ctx(),
+    );
+
+    x.burn_for_testing();
+    y.burn_for_testing();
+
+    destroy(memez_fun);
+    world.end();
+}
+
+#[test, expected_failure(abort_code = memez_errors::ETokenSupported, location = memez_fun)]
+fun pump_use_token_instead() {
+    let mut world = start();
+
+    let total_supply = POW_9 * POW_9;
+
+    let dev_allocation = POW_9 / 10;
+
+    let mut memez_fun = set_up_pool(&mut world, true, POW_9 * POW_9, vector[dev_allocation, DAY], total_supply);
+
+    let (x, y) = memez_stable::pump(
+        &mut memez_fun,
+        coin::mint_for_testing(1000 * POW_9, world.scenario.ctx()),
+        0,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    x.burn_for_testing();
+    y.burn_for_testing();
+
+    destroy(memez_fun);
+    world.end();
+}
+
+#[test, expected_failure(abort_code = memez_errors::ENotBonding, location = memez_fun)]
+fun pump_is_not_bonding() {
+    let mut world = start();
+
+    let total_supply = POW_9 * POW_9;
+
+    let dev_allocation = POW_9 / 10;
+
+    let mut memez_fun = set_up_pool(&mut world, false, 10_000 * POW_9, vector[dev_allocation, DAY], total_supply);
+
+    let (x, y) = memez_stable::pump(
+        &mut memez_fun,
+        coin::mint_for_testing(10_000 * POW_9, world.scenario.ctx()),
+        0,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    x.burn_for_testing();
+    y.burn_for_testing();
+
+    let (x, y) = memez_stable::pump(
+        &mut memez_fun,
+        coin::mint_for_testing(POW_9, world.scenario.ctx()),
+        0,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    x.burn_for_testing();
+    y.burn_for_testing();
+
+    destroy(memez_fun);
     world.end();
 }
 

@@ -12,7 +12,7 @@ const POW_18: u64 = 1__000_000_000_000_000_000;
 // @dev 50,000,000 = 5%
 const LIQUIDITY_PROVISION: u64 = { POW_18 / 20 };
 
-const TARGET_SUI_LIQUIDITY: u64 = { 10_000 * POW_9 };
+const MAX_TARGET_SUI_LIQUIDITY: u64 = { 500_000 * POW_9 };
 
 const MEME_SALE_AMOUNT: u64 = { 40 * (POW_18 / 100) };
 
@@ -21,7 +21,7 @@ const MEME_SALE_AMOUNT: u64 = { 40 * (POW_18 / 100) };
 public struct MemezStableConfigKey has copy, store, drop ()
 
 public struct MemezStableConfig has store {
-    target_sui_liquidity: u64,
+    max_target_sui_liquidity: u64,
     liquidity_provision: u64,
     meme_sale_amount: u64,
 }
@@ -33,7 +33,7 @@ entry fun initialize(config: &mut MemezConfig) {
     assert!(!df::exists_(uid_mut, MemezStableConfigKey()), memez_errors::already_initialized());
 
     let memez_stable_config = MemezStableConfig {
-        target_sui_liquidity: TARGET_SUI_LIQUIDITY,
+        max_target_sui_liquidity: MAX_TARGET_SUI_LIQUIDITY,
         liquidity_provision: LIQUIDITY_PROVISION,
         meme_sale_amount: MEME_SALE_AMOUNT,
     };
@@ -41,10 +41,10 @@ entry fun initialize(config: &mut MemezConfig) {
     df::add(uid_mut, MemezStableConfigKey(), memez_stable_config);
 }
 
-public fun set_target_sui_liquidity(self: &mut MemezConfig, _: &AuthWitness, amount: u64) {
+public fun set_max_target_sui_liquidity(self: &mut MemezConfig, _: &AuthWitness, amount: u64) {
     let state = state_mut(self);
 
-    state.target_sui_liquidity = amount;
+    state.max_target_sui_liquidity = amount;
 }
 
 public fun set_liquidity_provision(self: &mut MemezConfig, _: &AuthWitness, amount: u64) {
@@ -74,7 +74,7 @@ public(package) fun get(self: &MemezConfig, total_supply: u64): vector<u64> {
         total_supply,
     );
 
-    vector[state.target_sui_liquidity, liquidity_provision, meme_sale_amount]
+    vector[state.max_target_sui_liquidity, liquidity_provision, meme_sale_amount]
 }
 
 // === Private Functions ===

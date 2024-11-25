@@ -7,7 +7,7 @@ use sui::{test_scenario::{Self as ts, Scenario}, test_utils::{assert_eq, destroy
 
 const LIQUIDITY_PROVISION: u64 = 50_000_000__000_000_000;
 
-const TARGET_SUI_LIQUIDITY: u64 = 10_000__000_000_000;
+const MAX_TARGET_SUI_LIQUIDITY: u64 = 500_000__000_000_000;
 
 const MEME_SALE_AMOUNT: u64 = 400_000_000_000_000_000;
 
@@ -32,7 +32,7 @@ fun test_initialize() {
 
     let config = memez_stable_config::get(&world.config, TOTAL_SUPPLY);
 
-    assert_eq(config[0], TARGET_SUI_LIQUIDITY);
+    assert_eq(config[0], MAX_TARGET_SUI_LIQUIDITY);
     assert_eq(config[1], LIQUIDITY_PROVISION);
     assert_eq(config[2], MEME_SALE_AMOUNT);
 
@@ -49,14 +49,14 @@ fun test_setters() {
 
     let config = memez_stable_config::get(&world.config, TOTAL_SUPPLY);
 
-    assert_eq(config[0], TARGET_SUI_LIQUIDITY);
+    assert_eq(config[0], MAX_TARGET_SUI_LIQUIDITY);
     assert_eq(config[1], LIQUIDITY_PROVISION);
     assert_eq(config[2], MEME_SALE_AMOUNT);
 
-    memez_stable_config::set_target_sui_liquidity(
+    memez_stable_config::set_max_target_sui_liquidity(
         &mut world.config,
         &witness,
-        TARGET_SUI_LIQUIDITY + 1,
+        MAX_TARGET_SUI_LIQUIDITY + 1,
     );
 
     memez_stable_config::set_liquidity_provision(
@@ -73,7 +73,7 @@ fun test_setters() {
 
     let config = memez_stable_config::get(&world.config, TOTAL_SUPPLY);
 
-    assert_eq(config[0], TARGET_SUI_LIQUIDITY + 1);
+    assert_eq(config[0], MAX_TARGET_SUI_LIQUIDITY + 1);
     assert_eq(config[1], LIQUIDITY_PROVISION + 2);
     assert_eq(config[2], MEME_SALE_AMOUNT + 3);
 

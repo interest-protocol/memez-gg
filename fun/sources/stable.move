@@ -18,6 +18,7 @@ G:::::G        G::::GG:::::G        G::::G
 */
 module memez_fun::memez_stable;
 
+use interest_math::u64;
 use ipx_coin_standard::ipx_coin_standard::MetadataCap;
 use memez_fun::{
     memez_config::{Self, MemezConfig},
@@ -66,6 +67,7 @@ public fun new<Meme, MigrationWitness>(
     migrator_list: &MemezMigratorList,
     meme_treasury_cap: TreasuryCap<Meme>,
     creation_fee: Coin<SUI>,
+    target_sui_liquidity: u64,
     total_supply: u64,
     is_token: bool,
     metadata_names: vector<String>,
@@ -93,7 +95,7 @@ public fun new<Meme, MigrationWitness>(
     let liquidity_provision = meme_reserve.split(stable_config[1]);
 
     let fixed_rate = memez_fixed_rate::new(
-        stable_config[0],
+        u64::min(target_sui_liquidity, stable_config[0]),
         meme_reserve.split(stable_config[2]),
     );
 
@@ -326,3 +328,32 @@ fun maybe_upgrade_state_to_latest(versioned: &mut Versioned) {
 use fun state as MemezFun.state;
 use fun state_mut as MemezFun.state_mut;
 use fun destroy_or_burn as Balance.destroy_or_burn;
+
+// === Public Test Only Functions ===
+
+#[test_only]
+public fun dev_allocation<Meme>(self: &mut MemezFun<Stable, Meme>): u64 {
+    let state = self.state();
+    state.dev_allocation.value()
+}
+
+#[test_only]
+public fun liquidity_provision<Meme>(self: &mut MemezFun<Stable, Meme>): u64 {
+    let state = self.state();
+    state.liquidity_provision.value()
+}
+
+#[test_only]
+public fun fixed_rate<Meme>(self: &mut MemezFun<Stable, Meme>): &FixedRate<Meme> {
+    &self.state().fixed_rate
+}
+
+#[test_only]
+public fun meme_reserve<Meme>(self: &mut MemezFun<Stable, Meme>): &Balance<Meme> {
+    &self.state().meme_reserve
+}
+
+#[test_only]
+public fun vesting_period<Meme>(self: &mut MemezFun<Stable, Meme>): u64 {
+    self.state().vesting_period
+}

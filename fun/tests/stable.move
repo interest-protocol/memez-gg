@@ -5,16 +5,16 @@ use memez_acl::acl;
 use memez_fun::{
     memez_config::{Self, MemezConfig},
     memez_errors,
+    memez_fixed_rate,
     memez_fun::{Self, MemezFun},
     memez_migrator_list::{Self, MemezMigratorList},
     memez_stable::{Self, Stable},
     memez_stable_config,
-    memez_version,
-    memez_fixed_rate
+    memez_version
 };
 use sui::{
-    clock,
     balance,
+    clock,
     coin::{Self, mint_for_testing, create_treasury_cap_for_testing, Coin},
     sui::SUI,
     test_scenario::{Self as ts, Scenario},
@@ -48,9 +48,15 @@ fun test_new_coin() {
 
     let target_sui_liquidity = 10_000 * POW_9;
 
-    let mut memez_fun = set_up_pool(&mut world, false, target_sui_liquidity, vector[dev_allocation, DAY], total_supply);
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        false,
+        target_sui_liquidity,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
 
-    memez_fun.assert_uses_coin(); 
+    memez_fun.assert_uses_coin();
 
     let stable_config = memez_stable_config::get(&world.config, total_supply);
 
@@ -85,9 +91,15 @@ fun test_new_token() {
 
     let target_sui_liquidity = 10_000 * POW_9;
 
-    let mut memez_fun = set_up_pool(&mut world, true, target_sui_liquidity, vector[dev_allocation, DAY], total_supply);
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        true,
+        target_sui_liquidity,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
 
-    memez_fun.assert_uses_token(); 
+    memez_fun.assert_uses_token();
 
     let stable_config = memez_stable_config::get(&world.config, total_supply);
 
@@ -120,7 +132,13 @@ fun test_new_max_target_sui_liquidity() {
 
     let dev_allocation = POW_9 / 10;
 
-    let mut memez_fun = set_up_pool(&mut world, false, POW_9 * POW_9, vector[dev_allocation, DAY], total_supply);
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        false,
+        POW_9 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
 
     let stable_config = memez_stable_config::get(&world.config, total_supply);
 
@@ -177,7 +195,13 @@ fun test_coin_end_to_end() {
 
     let stable_config = memez_stable_config::get(&world.config, total_supply);
 
-    let mut memez_fun = set_up_pool(&mut world, false, target_sui_liquidity, vector[dev_allocation, DAY], total_supply);
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        false,
+        target_sui_liquidity,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
 
     world.scenario.next_tx(ADMIN);
 
@@ -250,7 +274,10 @@ fun test_coin_end_to_end() {
 
     let (sui_balance_after, meme_balance_after) = migrator.destroy(MigrationWitness());
 
-    assert_eq(sui_balance_after.destroy_for_testing(), target_sui_liquidity - world.config.migration_fee());
+    assert_eq(
+        sui_balance_after.destroy_for_testing(),
+        target_sui_liquidity - world.config.migration_fee(),
+    );
     assert_eq(meme_balance_after.destroy_for_testing(), stable_config[1]);
 
     memez_fun.assert_migrated();
@@ -278,7 +305,13 @@ fun test_token_end_to_end() {
 
     let stable_config = memez_stable_config::get(&world.config, total_supply);
 
-    let mut memez_fun = set_up_pool(&mut world, true, target_sui_liquidity, vector[dev_allocation, DAY], total_supply);
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        true,
+        target_sui_liquidity,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
 
     world.scenario.next_tx(ADMIN);
 
@@ -353,7 +386,10 @@ fun test_token_end_to_end() {
 
     let (sui_balance_after, meme_balance_after) = migrator.destroy(MigrationWitness());
 
-    assert_eq(sui_balance_after.destroy_for_testing(), target_sui_liquidity - world.config.migration_fee());
+    assert_eq(
+        sui_balance_after.destroy_for_testing(),
+        target_sui_liquidity - world.config.migration_fee(),
+    );
     assert_eq(meme_balance_after.destroy_for_testing(), stable_config[1]);
 
     memez_fun.assert_migrated();
@@ -394,7 +430,6 @@ fun test_token_end_to_end() {
     destroy(memez_fun);
     world.end();
 }
-
 
 #[
     test,
@@ -443,7 +478,13 @@ fun pump_invalid_version() {
 
     let dev_allocation = POW_9 / 10;
 
-    let mut memez_fun = set_up_pool(&mut world, false, POW_9 * POW_9, vector[dev_allocation, DAY], total_supply);
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        false,
+        POW_9 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
 
     let (x, y) = memez_stable::pump(
         &mut memez_fun,
@@ -468,7 +509,13 @@ fun pump_use_token_instead() {
 
     let dev_allocation = POW_9 / 10;
 
-    let mut memez_fun = set_up_pool(&mut world, true, POW_9 * POW_9, vector[dev_allocation, DAY], total_supply);
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        true,
+        POW_9 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
 
     let (x, y) = memez_stable::pump(
         &mut memez_fun,
@@ -493,7 +540,13 @@ fun pump_is_not_bonding() {
 
     let dev_allocation = POW_9 / 10;
 
-    let mut memez_fun = set_up_pool(&mut world, false, 10_000 * POW_9, vector[dev_allocation, DAY], total_supply);
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        false,
+        10_000 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
 
     let (x, y) = memez_stable::pump(
         &mut memez_fun,
@@ -535,7 +588,13 @@ fun dump_invalid_version() {
 
     let dev_allocation = POW_9 / 10;
 
-    let mut memez_fun = set_up_pool(&mut world, false, 10_000 * POW_9, vector[dev_allocation, DAY], total_supply);
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        false,
+        10_000 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
 
     let (x, y) = memez_stable::pump(
         &mut memez_fun,
@@ -570,7 +629,13 @@ fun dump_use_token_instead() {
 
     let dev_allocation = POW_9 / 10;
 
-    let mut memez_fun = set_up_pool(&mut world, true, 10_000 * POW_9, vector[dev_allocation, DAY], total_supply);
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        true,
+        10_000 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
 
     let sui_coin = memez_stable::dump(
         &mut memez_fun,
@@ -594,7 +659,13 @@ fun dump_is_not_bonding() {
 
     let dev_allocation = POW_9 / 10;
 
-    let mut memez_fun = set_up_pool(&mut world, false, 10_000 * POW_9, vector[dev_allocation, DAY], total_supply);
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        false,
+        10_000 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
 
     let (x, y) = memez_stable::pump(
         &mut memez_fun,
@@ -633,7 +704,13 @@ fun migrate_invalid_version() {
 
     let dev_allocation = POW_9 / 10;
 
-    let mut memez_fun = set_up_pool(&mut world, false, 10_000 * POW_9, vector[dev_allocation, DAY], total_supply);
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        false,
+        10_000 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
 
     let migrator = memez_stable::migrate(
         &mut memez_fun,
@@ -656,7 +733,13 @@ fun migrate_is_not_migrating() {
 
     let dev_allocation = POW_9 / 10;
 
-    let mut memez_fun = set_up_pool(&mut world, false, 10_000 * POW_9, vector[dev_allocation, DAY], total_supply);
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        false,
+        10_000 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
 
     let migrator = memez_stable::migrate(
         &mut memez_fun,
@@ -685,7 +768,13 @@ fun dev_claim_invalid_version() {
 
     let dev_allocation = POW_9 / 10;
 
-    let mut memez_fun = set_up_pool(&mut world, false, 10_000 * POW_9, vector[dev_allocation, DAY], total_supply);
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        false,
+        10_000 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
 
     let (x, y) = memez_stable::pump(
         &mut memez_fun,
@@ -717,7 +806,7 @@ fun dev_claim_invalid_version() {
     );
 
     destroy(clock);
-    destroy(memez_vesting); 
+    destroy(memez_vesting);
     destroy(memez_fun);
     world.end();
 }
@@ -730,7 +819,13 @@ fun dev_claim_has_not_migrated() {
 
     let dev_allocation = POW_9 / 10;
 
-    let mut memez_fun = set_up_pool(&mut world, false, 10_000 * POW_9, vector[dev_allocation, DAY], total_supply);
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        false,
+        10_000 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
 
     let (x, y) = memez_stable::pump(
         &mut memez_fun,
@@ -753,7 +848,7 @@ fun dev_claim_has_not_migrated() {
     );
 
     destroy(clock);
-    destroy(memez_vesting); 
+    destroy(memez_vesting);
     destroy(memez_fun);
     world.end();
 }
@@ -766,7 +861,13 @@ fun dev_claim_is_not_dev() {
 
     let dev_allocation = POW_9 / 10;
 
-    let mut memez_fun = set_up_pool(&mut world, false, 10_000 * POW_9, vector[dev_allocation, DAY], total_supply);
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        false,
+        10_000 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
 
     let (x, y) = memez_stable::pump(
         &mut memez_fun,
@@ -800,7 +901,7 @@ fun dev_claim_is_not_dev() {
     );
 
     destroy(clock);
-    destroy(memez_vesting); 
+    destroy(memez_vesting);
     destroy(memez_fun);
     world.end();
 }
@@ -819,7 +920,13 @@ fun pump_token_invalid_version() {
 
     let dev_allocation = POW_9 / 10;
 
-    let mut memez_fun = set_up_pool(&mut world, true, POW_9 * POW_9, vector[dev_allocation, DAY], total_supply);
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        true,
+        POW_9 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
 
     let (x, y) = memez_stable::pump_token(
         &mut memez_fun,
@@ -844,7 +951,13 @@ fun pump_use_coin_instead() {
 
     let dev_allocation = POW_9 / 10;
 
-    let mut memez_fun = set_up_pool(&mut world, false, POW_9 * POW_9, vector[dev_allocation, DAY], total_supply);
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        false,
+        POW_9 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
 
     let (x, y) = memez_stable::pump_token(
         &mut memez_fun,
@@ -869,7 +982,13 @@ fun pump_token_is_not_bonding() {
 
     let dev_allocation = POW_9 / 10;
 
-    let mut memez_fun = set_up_pool(&mut world, true, 1000 * POW_9, vector[dev_allocation, DAY], total_supply);
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        true,
+        1000 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
 
     let (x, y) = memez_stable::pump_token(
         &mut memez_fun,
@@ -911,7 +1030,13 @@ fun dump_token_invalid_version() {
 
     let dev_allocation = POW_9 / 10;
 
-    let mut memez_fun = set_up_pool(&mut world, true, 10_000 * POW_9, vector[dev_allocation, DAY], total_supply);
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        true,
+        10_000 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
 
     let (x, y) = memez_stable::pump_token(
         &mut memez_fun,
@@ -946,7 +1071,13 @@ fun dump_use_coin_instead() {
 
     let dev_allocation = POW_9 / 10;
 
-    let mut memez_fun = set_up_pool(&mut world, false, 10_000 * POW_9, vector[dev_allocation, DAY], total_supply);
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        false,
+        10_000 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
 
     let (x, y) = memez_stable::pump_token(
         &mut memez_fun,
@@ -981,7 +1112,13 @@ fun dump_token_is_not_bonding() {
 
     let dev_allocation = POW_9 / 10;
 
-    let mut memez_fun = set_up_pool(&mut world, true, 10_000 * POW_9, vector[dev_allocation, DAY], total_supply);
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        true,
+        10_000 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
 
     let (x, y) = memez_stable::pump_token(
         &mut memez_fun,

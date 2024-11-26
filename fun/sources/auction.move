@@ -388,3 +388,40 @@ fun maybe_upgrade_state_to_latest(versioned: &mut Versioned) {
 use fun state as MemezFun.state;
 use fun state_mut as MemezFun.state_mut;
 use fun destroy_or_burn as Balance.destroy_or_burn;
+
+// === Test Only Functions ===
+
+#[test_only]
+public fun start_time<Meme>(self: &mut MemezFun<Auction, Meme>): u64 {
+    self.state().start_time
+}
+
+#[test_only]
+public fun auction_duration<Meme>(self: &mut MemezFun<Auction, Meme>): u64 {
+    self.state().auction_duration
+}
+
+#[test_only]
+public fun initial_reserve<Meme>(self: &mut MemezFun<Auction, Meme>): u64 {
+    self.state().initial_reserve
+}
+
+#[test_only]
+public fun meme_reserve<Meme>(self: &mut MemezFun<Auction, Meme>): u64 {
+    self.state().meme_reserve.value()
+}
+
+#[test_only]
+public fun constant_product<Meme>(self: &mut MemezFun<Auction, Meme>): &MemezConstantProduct<Meme> {
+    &self.state().constant_product
+}
+
+#[test_only]
+public fun dev_allocation<Meme>(self: &mut MemezFun<Auction, Meme>): u64 {
+    self.state().dev_allocation.value()
+}
+
+#[test_only]
+public fun liquidity_provision<Meme>(self: &mut MemezFun<Auction, Meme>): u64 {
+    self.state().liquidity_provision.value()
+}

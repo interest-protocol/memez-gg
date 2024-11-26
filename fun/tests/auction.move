@@ -10,7 +10,7 @@ use memez_fun::{
     memez_errors,
     memez_fun::{Self, MemezFun},
     memez_migrator_list::{Self, MemezMigratorList},
-    memez_stable_config,
+    memez_auction_config,
     memez_version
 };
 use sui::{
@@ -61,6 +61,88 @@ public struct World {
     scenario: Scenario,
 }
 
+#[test]
+fun test_new() {
+    let mut world = start();
+
+    let total_supply = 2_500_000_000 * POW_9;
+
+    let start_time = 100;
+
+    world.clock.increment_for_testing(start_time);
+
+    let auction_config = memez_auction_config::get(&world.config, total_supply);
+
+    let mut memez_fun = set_up_pool(&mut world, false, total_supply);
+
+    assert_eq(memez_auction::start_time(&mut memez_fun), start_time);
+
+    assert_eq(memez_auction::auction_duration(&mut memez_fun), THIRTY_MINUTES_MS);
+    assert_eq(
+        memez_auction::initial_reserve(&mut memez_fun),
+        total_supply - auction_config[1] - auction_config[5] - auction_config[6],
+    );
+    assert_eq(memez_auction::meme_reserve(&mut memez_fun), total_supply - auction_config[1] - auction_config[5] - auction_config[6]);
+    assert_eq(memez_auction::dev_allocation(&mut memez_fun), auction_config[1]);
+    assert_eq(memez_auction::liquidity_provision(&mut memez_fun), auction_config[5]);
+
+    let cp = memez_auction::constant_product(&mut memez_fun);
+
+    assert_eq(cp.virtual_liquidity(), auction_config[3]);
+    assert_eq(cp.target_sui_liquidity(), auction_config[4]);
+    assert_eq(cp.burn_tax().tax(), auction_config[2]);
+    assert_eq(cp.meme_balance().value(), auction_config[6]);
+    assert_eq(cp.sui_balance().value(), 0);
+
+    memez_fun.assert_is_bonding();
+    memez_fun.assert_uses_coin();
+
+    destroy(memez_fun);
+
+    world.end();
+}
+
+#[test]
+fun test_new_token() {
+    let mut world = start();
+
+    let total_supply = 2_500_000_000 * POW_9;
+
+    let start_time = 100;
+
+    world.clock.increment_for_testing(start_time);
+
+    let auction_config = memez_auction_config::get(&world.config, total_supply);
+
+    let mut memez_fun = set_up_pool(&mut world, true, total_supply);
+
+    assert_eq(memez_auction::start_time(&mut memez_fun), start_time);
+
+    assert_eq(memez_auction::auction_duration(&mut memez_fun), THIRTY_MINUTES_MS);
+    assert_eq(
+        memez_auction::initial_reserve(&mut memez_fun),
+        total_supply - auction_config[1] - auction_config[5] - auction_config[6],
+    );
+    assert_eq(memez_auction::meme_reserve(&mut memez_fun), total_supply - auction_config[1] - auction_config[5] - auction_config[6]);
+    assert_eq(memez_auction::dev_allocation(&mut memez_fun), auction_config[1]);
+    assert_eq(memez_auction::liquidity_provision(&mut memez_fun), auction_config[5]);
+
+    let cp = memez_auction::constant_product(&mut memez_fun);
+
+    assert_eq(cp.virtual_liquidity(), auction_config[3]);
+    assert_eq(cp.target_sui_liquidity(), auction_config[4]);
+    assert_eq(cp.burn_tax().tax(), auction_config[2]);
+    assert_eq(cp.meme_balance().value(), auction_config[6]);
+    assert_eq(cp.sui_balance().value(), 0);
+
+    memez_fun.assert_is_bonding();
+    memez_fun.assert_uses_token();
+
+    destroy(memez_fun);
+
+    world.end();
+}
+
 fun set_up_pool(world: &mut World, is_token: bool, total_supply: u64): MemezFun<Auction, Meme> {
     let ctx = world.scenario.ctx();
 
@@ -100,7 +182,7 @@ fun start(): World {
 
     migrator_list.add<MigrationWitness>(&witness);
 
-    memez_stable_config::initialize(&mut config);
+    memez_auction_config::initialize(&mut config);
 
     let clock = clock::create_for_testing(scenario.ctx());
 

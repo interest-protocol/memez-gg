@@ -139,8 +139,8 @@ public(package) fun dump_amount<Meme>(
     self: &MemezConstantProduct<Meme>,
     amount_in: u64,
     extra_meme_amount: u64,
-): (u64, u64) {
-    if (amount_in == 0) return (0, 0);
+): (u64, u64, u64) {
+    if (amount_in == 0) return (0, 0, 0);
 
     let meme_balance_value = self.meme_balance.value() + extra_meme_amount;
 
@@ -164,7 +164,7 @@ public(package) fun dump_amount<Meme>(
         sui_virtual_liquidity,
     );
 
-    (post_tax_sui_value_out.min(sui_balance_value), meme_fee_value)
+    (post_tax_sui_value_out.min(sui_balance_value), post_tax_sui_value_out, meme_fee_value)
 }
 
 public(package) fun virtual_liquidity<Meme>(self: &MemezConstantProduct<Meme>): u64 {

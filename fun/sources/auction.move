@@ -317,12 +317,21 @@ fun dump_amount<Meme>(
     self: &mut MemezFun<Auction, Meme>,
     amount_in: u64,
     clock: &Clock,
-): (u64, u64) {
+): (u64, u64, u64) {
     let state = self.state();
 
     let amount = new_liquidity_amount(state, clock);
 
     state.constant_product.dump_amount(amount_in, amount)
+}
+
+#[allow(unused_function)]
+fun meme_balance<Meme>(self: &mut MemezFun<Auction, Meme>, clock: &Clock): u64 {
+    let state = self.state();
+
+    let amount = new_liquidity_amount(state, clock);
+
+    state.constant_product.meme_balance().value() + amount
 }
 
 // === Private Functions ===
@@ -332,13 +341,11 @@ fun new_liquidity_amount<Meme>(self: &AuctionState<Meme>, clock: &Clock): u64 {
 
     let meme_balance_value = self.constant_product.meme_balance().value();
 
-    if (current_time - self.start_time > self.auction_duration) return 0;
-
     let progress = current_time - self.start_time;
 
     let pow_9 = pow_9();
 
-    let percentage = u64::mul_div_up(progress, pow_9, self.auction_duration);
+    let percentage = u64::mul_div_up(progress, pow_9, self.auction_duration).min(pow_9);
 
     let expected_meme_balance = u64::mul_div_up(self.initial_reserve, percentage, pow_9);
 
@@ -424,4 +431,21 @@ public fun dev_allocation<Meme>(self: &mut MemezFun<Auction, Meme>): u64 {
 #[test_only]
 public fun liquidity_provision<Meme>(self: &mut MemezFun<Auction, Meme>): u64 {
     self.state().liquidity_provision.value()
+}
+
+#[test_only]
+public fun market_cap<Meme>(
+    self: &mut MemezFun<Auction, Meme>,
+    clock: &Clock,
+    decimals: u8,
+    total_supply: u64,
+): u64 {
+    let (_, virtual_price, _) = dump_amount(self, 10u64.pow(decimals), clock);
+
+    u64::mul_div_up(virtual_price, total_supply, 10u64.pow(decimals))
+}
+
+#[test_only]
+public fun current_meme_balance<Meme>(self: &mut MemezFun<Auction, Meme>, clock: &Clock): u64 {
+    meme_balance(self, clock)
 }

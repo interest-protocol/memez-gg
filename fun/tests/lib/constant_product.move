@@ -158,7 +158,7 @@ fun test_dump() {
 
     let meme_coin_out_value = coin_meme_out.value();
 
-    let (expected_sui_coin_out, fee) = cp.dump_amount(meme_coin_out_value, 0);
+    let (expected_sui_coin_out, _, fee) = cp.dump_amount(meme_coin_out_value, 0);
 
     let pre_tax_amount_out = get_amount_out(
         meme_coin_out_value,
@@ -251,7 +251,7 @@ fun test_dump_amount() {
         virtual_liquidity,
     );
 
-    let (expected_amount_out, _) = cp.dump_amount(amount_in, 1200);
+    let (expected_amount_out, _, _) = cp.dump_amount(amount_in, 1200);
 
     assert_eq(expected_amount_out, 0);
     assert_eq(amount_out != 0, true);
@@ -265,11 +265,11 @@ fun test_dump_amount() {
         virtual_liquidity + 600,
     );
 
-    let (expected_amount_out, _) = cp.dump_amount(amount_in, 1200);
+    let (expected_amount_out, _, _) = cp.dump_amount(amount_in, 1200);
 
     assert_eq(expected_amount_out, amount_out);
 
-    let (expected_amount_out, fee) = cp.dump_amount(0, 1200);
+    let (expected_amount_out, _, fee) = cp.dump_amount(0, 1200);
 
     assert_eq(expected_amount_out, 0);
     assert_eq(fee, 0);
@@ -400,7 +400,7 @@ fun test_dump_slippage() {
 
     let meme_coin_out_value = coin_meme_out.value();
 
-    let (expected_sui_coin_out, _) = cp.dump_amount(meme_coin_out_value, 0);
+    let (expected_sui_coin_out, _, _) = cp.dump_amount(meme_coin_out_value, 0);
 
     let sui_coin_out = cp.dump(
         &mut ipx_treasury,

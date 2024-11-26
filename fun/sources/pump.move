@@ -284,7 +284,7 @@ fun pump_amount<Meme>(self: &mut MemezFun<Pump, Meme>, amount_in: u64): u64 {
 }
 
 #[allow(unused_function)]
-fun dump_amount<Meme>(self: &mut MemezFun<Pump, Meme>, amount_in: u64): (u64, u64) {
+fun dump_amount<Meme>(self: &mut MemezFun<Pump, Meme>, amount_in: u64): (u64, u64, u64) {
     let state = self.state();
 
     state.constant_product.dump_amount(amount_in, 0)

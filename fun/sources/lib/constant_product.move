@@ -105,7 +105,7 @@ public(package) fun dump<Meme>(
 
     self.meme_balance.join(meme_coin.into_balance());
 
-    let sui_coin_amount_out = u64::min(post_tax_sui_value_out, sui_balance_value);
+    let sui_coin_amount_out = post_tax_sui_value_out.min(sui_balance_value);
 
     assert_slippage(sui_coin_amount_out, min_amount_out);
 
@@ -164,7 +164,7 @@ public(package) fun dump_amount<Meme>(
         sui_virtual_liquidity,
     );
 
-    (u64::min(post_tax_sui_value_out, sui_balance_value), meme_fee_value)
+    (post_tax_sui_value_out.min(sui_balance_value), meme_fee_value)
 }
 
 public(package) fun virtual_liquidity<Meme>(self: &MemezConstantProduct<Meme>): u64 {

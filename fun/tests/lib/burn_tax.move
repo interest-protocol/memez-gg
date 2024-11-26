@@ -18,7 +18,7 @@ fun test_end_to_end() {
         expected_target_liquidity,
     );
 
-    assert_eq(tax.tax(), expected_tax);
+    assert_eq(tax.value(), expected_tax);
     assert_eq(tax.start_liquidity(), expected_start_liquidity);
     assert_eq(tax.target_liquidity(), expected_target_liquidity);
 

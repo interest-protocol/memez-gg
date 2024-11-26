@@ -6,11 +6,11 @@ use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
 use memez_acl::acl;
 use memez_fun::{
     memez_auction::{Self, Auction},
+    memez_auction_config,
     memez_config::{Self, MemezConfig},
     memez_errors,
     memez_fun::{Self, MemezFun},
     memez_migrator_list::{Self, MemezMigratorList},
-    memez_auction_config,
     memez_version
 };
 use sui::{
@@ -82,7 +82,10 @@ fun test_new() {
         memez_auction::initial_reserve(&mut memez_fun),
         total_supply - auction_config[1] - auction_config[5] - auction_config[6],
     );
-    assert_eq(memez_auction::meme_reserve(&mut memez_fun), total_supply - auction_config[1] - auction_config[5] - auction_config[6]);
+    assert_eq(
+        memez_auction::meme_reserve(&mut memez_fun),
+        total_supply - auction_config[1] - auction_config[5] - auction_config[6],
+    );
     assert_eq(memez_auction::dev_allocation(&mut memez_fun), auction_config[1]);
     assert_eq(memez_auction::liquidity_provision(&mut memez_fun), auction_config[5]);
 
@@ -90,7 +93,7 @@ fun test_new() {
 
     assert_eq(cp.virtual_liquidity(), auction_config[3]);
     assert_eq(cp.target_sui_liquidity(), auction_config[4]);
-    assert_eq(cp.burn_tax().tax(), auction_config[2]);
+    assert_eq(cp.burn_tax().value(), auction_config[2]);
     assert_eq(cp.meme_balance().value(), auction_config[6]);
     assert_eq(cp.sui_balance().value(), 0);
 
@@ -123,7 +126,10 @@ fun test_new_token() {
         memez_auction::initial_reserve(&mut memez_fun),
         total_supply - auction_config[1] - auction_config[5] - auction_config[6],
     );
-    assert_eq(memez_auction::meme_reserve(&mut memez_fun), total_supply - auction_config[1] - auction_config[5] - auction_config[6]);
+    assert_eq(
+        memez_auction::meme_reserve(&mut memez_fun),
+        total_supply - auction_config[1] - auction_config[5] - auction_config[6],
+    );
     assert_eq(memez_auction::dev_allocation(&mut memez_fun), auction_config[1]);
     assert_eq(memez_auction::liquidity_provision(&mut memez_fun), auction_config[5]);
 
@@ -131,7 +137,7 @@ fun test_new_token() {
 
     assert_eq(cp.virtual_liquidity(), auction_config[3]);
     assert_eq(cp.target_sui_liquidity(), auction_config[4]);
-    assert_eq(cp.burn_tax().tax(), auction_config[2]);
+    assert_eq(cp.burn_tax().value(), auction_config[2]);
     assert_eq(cp.meme_balance().value(), auction_config[6]);
     assert_eq(cp.sui_balance().value(), 0);
 

@@ -18,7 +18,6 @@ G:::::G        G::::GG:::::G        G::::G
 */
 module memez_fun::memez_stable;
 
-use interest_math::u64;
 use ipx_coin_standard::ipx_coin_standard::MetadataCap;
 use memez_fun::{
     memez_config::{Self, MemezConfig},
@@ -95,7 +94,7 @@ public fun new<Meme, MigrationWitness>(
     let liquidity_provision = meme_reserve.split(stable_config[1]);
 
     let fixed_rate = memez_fixed_rate::new(
-        u64::min(target_sui_liquidity, stable_config[0]),
+        target_sui_liquidity.min(stable_config[0]),
         meme_reserve.split(stable_config[2]),
     );
 

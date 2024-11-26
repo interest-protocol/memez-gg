@@ -6,16 +6,16 @@ use memez_fun::memez_utils::pow_9;
 // === Structs ===
 
 public struct BurnTax has copy, drop, store {
-    tax: u64,
+    value: u64,
     start_liquidity: u64,
     target_liquidity: u64,
 }
 
 // === Public Package Functions ===
 
-public(package) fun new(tax: u64, start_liquidity: u64, target_liquidity: u64): BurnTax {
+public(package) fun new(value: u64, start_liquidity: u64, target_liquidity: u64): BurnTax {
     BurnTax {
-        tax,
+        value,
         start_liquidity,
         target_liquidity,
     }
@@ -24,7 +24,7 @@ public(package) fun new(tax: u64, start_liquidity: u64, target_liquidity: u64): 
 public(package) fun calculate(self: BurnTax, liquidity: u64): u64 {
     if (liquidity >= self.target_liquidity) return 0;
 
-    if (self.start_liquidity >= liquidity) return self.tax;
+    if (self.start_liquidity >= liquidity) return self.value;
 
     let total_range = self.target_liquidity - self.start_liquidity;
 
@@ -34,14 +34,14 @@ public(package) fun calculate(self: BurnTax, liquidity: u64): u64 {
 
     let remaining_percentage = u64::mul_div_down(total_range - progress, pow_9, total_range);
 
-    u64::mul_div_up(self.tax, remaining_percentage, pow_9)
+    u64::mul_div_up(self.value, remaining_percentage, pow_9)
 }
 
 // === Test Only ===
 
 #[test_only]
-public fun tax(self: BurnTax): u64 {
-    self.tax
+public fun value(self: BurnTax): u64 {
+    self.value
 }
 
 #[test_only]

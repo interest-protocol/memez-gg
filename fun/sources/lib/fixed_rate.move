@@ -47,10 +47,12 @@ public(package) fun pump<Meme>(
 
     let sui_coin_value = sui_coin.value();
 
-    let meme_coin_value_out = u64::min(
-        self.meme_balance.value(),
-        u64::mul_div_down(sui_coin_value, self.meme_sale_amount, self.sui_raise_amount),
-    );
+    let meme_coin_value_out = self
+        .meme_balance
+        .value()
+        .min(
+            u64::mul_div_down(sui_coin_value, self.meme_sale_amount, self.sui_raise_amount),
+        );
 
     assert_slippage(meme_coin_value_out, min_amount_out);
 
@@ -71,10 +73,12 @@ public(package) fun dump<Meme>(
 ): Coin<SUI> {
     let meme_coin_value = assert_coin_has_value(&meme_coin);
 
-    let sui_coin_value_out = u64::min(
-        self.sui_balance.value(),
-        u64::mul_div_down(meme_coin_value, self.sui_raise_amount, self.meme_sale_amount),
-    );
+    let sui_coin_value_out = self
+        .sui_balance
+        .value()
+        .min(
+            u64::mul_div_down(meme_coin_value, self.sui_raise_amount, self.meme_sale_amount),
+        );
 
     assert_slippage(sui_coin_value_out, min_amount_out);
 
@@ -104,20 +108,24 @@ public(package) fun pump_amount<Meme>(self: &FixedRate<Meme>, sui_amount: u64): 
 
     let sui_coin_value = sui_amount - excess_sui_amount;
 
-    let meme_coin_value_out = u64::min(
-        self.meme_balance.value(),
-        u64::mul_div_down(sui_coin_value, self.meme_sale_amount, self.sui_raise_amount),
-    );
+    let meme_coin_value_out = self
+        .meme_balance
+        .value()
+        .min(
+            u64::mul_div_down(sui_coin_value, self.meme_sale_amount, self.sui_raise_amount),
+        );
 
     (excess_sui_amount, meme_coin_value_out)
 }
 
 public(package) fun dump_amount<Meme>(self: &FixedRate<Meme>, meme_amount: u64): u64 {
     if (meme_amount == 0) return 0;
-    u64::min(
-        self.sui_balance.value(),
-        u64::mul_div_down(meme_amount, self.sui_raise_amount, self.meme_sale_amount),
-    )
+    self
+        .sui_balance
+        .value()
+        .min(
+            u64::mul_div_down(meme_amount, self.sui_raise_amount, self.meme_sale_amount),
+        )
 }
 
 public(package) fun sui_balance<Meme>(self: &FixedRate<Meme>): &Balance<SUI> {

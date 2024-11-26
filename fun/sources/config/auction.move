@@ -1,6 +1,5 @@
 module memez_fun::memez_auction_config;
 
-use interest_math::u64;
 use memez_acl::acl::AuthWitness;
 use memez_fun::{memez_config::MemezConfig, memez_errors, memez_utils};
 use sui::dynamic_field as df;
@@ -133,10 +132,10 @@ public(package) fun get(self: &MemezConfig, total_supply: u64): vector<u64> {
         state.liquidity_provision,
         total_supply,
     );
-    let seed_liquidity = u64::max(
-        memez_utils::calculate_wad_percentage(state.seed_liquidity, total_supply),
-        MIN_SEED_LIQUIDITY,
-    );
+    let seed_liquidity = memez_utils::calculate_wad_percentage(
+        state.seed_liquidity,
+        total_supply,
+    ).max(MIN_SEED_LIQUIDITY);
 
     vector[
         state.auction_duration,

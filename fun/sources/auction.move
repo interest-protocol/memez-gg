@@ -350,7 +350,7 @@ fun new_liquidity_amount<Meme>(self: &AuctionState<Meme>, clock: &Clock): u64 {
 
     let current_meme_reserve = self.meme_reserve.value();
 
-    u64::min(meme_delta, current_meme_reserve)
+    meme_delta.min(current_meme_reserve)
 }
 
 fun provide_liquidity<Meme>(state: &mut AuctionState<Meme>, clock: &Clock) {

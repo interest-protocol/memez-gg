@@ -30,7 +30,7 @@ fun test_new() {
     assert_eq(cp.virtual_liquidity(), virtual_liquidity);
     assert_eq(cp.target_sui_liquidity(), target_sui_liquidity);
     assert_eq(cp.meme_balance().value(), meme_balance_value);
-    assert_eq(cp.burn_tax().tax(), burn_tax);
+    assert_eq(cp.burn_tax().value(), burn_tax);
     assert_eq(cp.burn_tax().start_liquidity(), virtual_liquidity);
     assert_eq(cp.burn_tax().target_liquidity(), target_sui_liquidity);
 

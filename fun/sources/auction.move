@@ -53,6 +53,7 @@ public struct AuctionState<phantom Meme> has store {
     start_time: u64,
     auction_duration: u64,
     initial_reserve: u64,
+    accrued_meme_balance: u64,
     meme_reserve: Balance<Meme>,
     dev_allocation: Balance<Meme>,
     liquidity_provision: Balance<Meme>,
@@ -100,6 +101,7 @@ public fun new<Meme, MigrationWitness>(
         start_time: clock.timestamp_ms(),
         auction_duration: auction_config[0],
         initial_reserve: meme_reserve.value(),
+        accrued_meme_balance: 0,
         meme_reserve,
         dev_allocation,
         liquidity_provision,
@@ -339,8 +341,6 @@ fun meme_balance<Meme>(self: &mut MemezFun<Auction, Meme>, clock: &Clock): u64 {
 fun new_liquidity_amount<Meme>(self: &AuctionState<Meme>, clock: &Clock): u64 {
     let current_time = clock.timestamp_ms();
 
-    let meme_balance_value = self.constant_product.meme_balance().value();
-
     let progress = current_time - self.start_time;
 
     let pow_9 = pow_9();
@@ -349,9 +349,9 @@ fun new_liquidity_amount<Meme>(self: &AuctionState<Meme>, clock: &Clock): u64 {
 
     let expected_meme_balance = u64::mul_div_up(self.initial_reserve, percentage, pow_9);
 
-    if (expected_meme_balance <= meme_balance_value) return 0;
+    if (expected_meme_balance <= self.accrued_meme_balance) return 0;
 
-    let meme_delta = expected_meme_balance - meme_balance_value;
+    let meme_delta = expected_meme_balance - self.accrued_meme_balance;
 
     if (meme_delta == 0) return 0;
 
@@ -363,6 +363,7 @@ fun new_liquidity_amount<Meme>(self: &AuctionState<Meme>, clock: &Clock): u64 {
 fun provide_liquidity<Meme>(state: &mut AuctionState<Meme>, clock: &Clock) {
     let amount = new_liquidity_amount(state, clock);
 
+    state.accrued_meme_balance = state.accrued_meme_balance + amount;
     state.constant_product.meme_balance_mut().join(state.meme_reserve.split(amount));
 }
 

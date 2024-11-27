@@ -330,6 +330,168 @@ fun test_coin_end_to_end() {
     world.end();
 }
 
+#[test]
+fun test_token_end_to_end() {
+    let mut world = start();
+
+    let total_supply = 1_000_000_000 * POW_9;
+
+    let start_time = 100;
+
+    world.clock.increment_for_testing(start_time);
+
+    let mut memez_fun = set_up_pool(&mut world, true, total_supply);
+
+    world.scenario.next_tx(ADMIN);
+
+    let creation_fee = world.scenario.take_from_address<Coin<SUI>>(@treasury);
+
+    assert_eq(creation_fee.burn_for_testing(), 2 * POW_9);
+
+    let cp = memez_auction::constant_product(&mut memez_fun);
+
+    let initial_meme_balance = cp.meme_balance().value();
+
+    let expected_meme_amount_out = get_amount_out(
+        1_000 * POW_9,
+        cp.virtual_liquidity(),
+        cp.meme_balance().value(),
+    );
+
+    let meme_token = memez_auction::pump_token(
+        &mut memez_fun,
+        &world.clock,
+        mint_for_testing(1_000 * POW_9, world.scenario.ctx()),
+        expected_meme_amount_out,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    assert_eq(meme_token.value(), expected_meme_amount_out);
+
+    meme_token.burn_for_testing();
+
+    let cp = memez_auction::constant_product(&mut memez_fun); 
+
+    assert_eq(cp.sui_balance().value(), 1_000 * POW_9);
+    assert_eq(cp.meme_balance().value(), initial_meme_balance - expected_meme_amount_out);
+
+    memez_fun.assert_is_bonding();
+    memez_fun.assert_uses_token();
+
+    // @dev Advance 5 minutes to increase liquidity 
+    world.clock.increment_for_testing(THIRTY_MINUTES_MS / 6);
+
+    let current_meme_balance = memez_auction::current_meme_balance(&mut memez_fun, &world.clock);
+
+    let cp = memez_auction::constant_product(&mut memez_fun);
+
+    let expected_meme_amount_out_2 = get_amount_out(
+        1_000 * POW_9,
+        cp.virtual_liquidity() + cp.sui_balance().value(),
+        current_meme_balance,
+    );
+
+    // Get at cheaper value
+    assert_eq(expected_meme_amount_out_2 > expected_meme_amount_out, true);
+
+    let meme_token_2 = memez_auction::pump_token(
+        &mut memez_fun,
+        &world.clock,
+        mint_for_testing(1_000 * POW_9, world.scenario.ctx()),
+        expected_meme_amount_out_2,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    assert_eq(meme_token_2.value(), expected_meme_amount_out_2);
+
+    meme_token_2.burn_for_testing();
+
+    let cp = memez_auction::constant_product(&mut memez_fun); 
+
+    let (_, expected_sui_value, _) = cp.dump_amount(expected_meme_amount_out_2 / 2, 0);
+
+    let mut treasury = world.scenario.take_shared<IPXTreasuryStandard>();
+
+    let sui_coin = memez_auction::dump_token(
+        &mut memez_fun,
+        &world.clock,
+        &mut treasury,
+        token::mint_for_testing(expected_meme_amount_out_2 / 2, world.scenario.ctx()),
+        0,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    assert_eq(sui_coin.burn_for_testing(), expected_sui_value);
+
+    let cp = memez_auction::constant_product(&mut memez_fun); 
+
+    let remaining_amount_to_migrate = 10_000 * POW_9 - cp.sui_balance().value();
+
+    let expected_meme_amount_out = get_amount_out(
+        remaining_amount_to_migrate,
+        cp.virtual_liquidity() + cp.sui_balance().value(),
+        cp.meme_balance().value(),
+    );
+
+    let meme_token = memez_auction::pump_token(
+        &mut memez_fun,
+        &world.clock,
+        mint_for_testing(remaining_amount_to_migrate, world.scenario.ctx()),
+        expected_meme_amount_out,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    assert_eq(meme_token.value(), expected_meme_amount_out);
+
+    memez_fun.assert_is_migrating();
+
+    let migrator = memez_auction::migrate(
+        &mut memez_fun,
+        &world.config,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    let (sui_balance, meme_balance) = migrator.destroy(MigrationWitness());
+
+    let auction_config = memez_auction_config::get(&world.config, total_supply);
+
+    assert_eq(sui_balance.value(), 10_000 * POW_9 - 200 * POW_9);
+    assert_eq(meme_balance.value(), auction_config[5]);
+
+    sui_balance.destroy_for_testing();
+    meme_balance.destroy_for_testing();
+
+    memez_fun.assert_migrated();
+
+    world.scenario.next_tx(ADMIN);
+
+    let migration_fee = world.scenario.take_from_address<Coin<SUI>>(@treasury);
+
+    assert_eq(migration_fee.burn_for_testing(), 200 * POW_9);
+
+    let dev_allocation = memez_auction::dev_claim(&mut memez_fun, memez_version::get_version_for_testing(1), world.scenario.ctx());
+
+    assert_eq(dev_allocation.burn_for_testing(), auction_config[1]);
+
+    let meme_coin = memez_auction::to_coin(
+        &mut memez_fun,
+        meme_token,
+        world.scenario.ctx(),
+    );
+
+    assert_eq(meme_coin.burn_for_testing(), expected_meme_amount_out);
+
+    destroy(memez_fun);
+
+    destroy(treasury);
+    world.end();
+}
+
 fun set_up_pool(world: &mut World, is_token: bool, total_supply: u64): MemezFun<Auction, Meme> {
     let ctx = world.scenario.ctx();
 
@@ -352,13 +514,6 @@ fun set_up_pool(world: &mut World, is_token: bool, total_supply: u64): MemezFun<
     world.scenario.next_tx(ADMIN);
 
     world.scenario.take_shared<MemezFun<Auction, Meme>>()
-}
-
-fun assert_eq_reduce_precision(value: u64, expected: u64, decimals_precision: u8) {
-    let x = value / 10u64.pow(decimals_precision);
-    let y = expected / 10u64.pow(decimals_precision);
-
-    assert_eq(x, y);
 }
 
 fun start(): World {

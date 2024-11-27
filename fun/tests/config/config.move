@@ -92,15 +92,13 @@ fun set_up_treasury_pre_mint() {
 
     treasury_cap.mint(100, world.scenario.ctx()).burn_for_testing();
 
-    let (_, metadata_cap, meme_balance) = memez_config::set_up_meme_treasury(
+    let (_addy, _metadata_cap, _meme_balance) = memez_config::set_up_meme_treasury(
         treasury_cap,
         TOTAL_MEME_SUPPLY,
         world.scenario.ctx(),
     );
 
-    destroy(meme_balance);
-    metadata_cap.destroy();
-    world.end();
+    abort
 }
 
 #[test]

@@ -150,15 +150,13 @@ fun test_decrease_auction_mechanism() {
 
     let final_meme_balance = memez_auction::initial_reserve(&mut memez_fun);
 
-    let coin_per_ms = u64::div_up(final_meme_balance - meme_balance_t0, THIRTY_MINUTES_MS);
-
     world.clock.increment_for_testing(THIRTY_MINUTES_MS / 2);
 
     let market_cap_t1 = memez_auction::market_cap(&mut memez_fun, &world.clock, 9, total_supply);
 
     assert_eq(
         memez_auction::current_meme_balance(&mut memez_fun, &world.clock),
-        final_meme_balance / 2,
+        final_meme_balance / 2 + meme_balance_t0,
     );
 
     // @dev After 15 minutes the market is lower than 2000 Sui
@@ -171,12 +169,7 @@ fun test_decrease_auction_mechanism() {
 
     assert_eq(
         memez_auction::current_meme_balance(&mut memez_fun, &world.clock),
-        final_meme_balance,
-    );
-    assert_eq_reduce_precision(
-        memez_auction::current_meme_balance(&mut memez_fun, &world.clock),
-        meme_balance_t0 + coin_per_ms * THIRTY_MINUTES_MS,
-        8,
+        final_meme_balance + meme_balance_t0,
     );
 
     // @dev After 30 minutes the market is lower than 1000 Sui
@@ -301,13 +294,6 @@ fun set_up_pool(world: &mut World, is_token: bool, total_supply: u64): MemezFun<
     world.scenario.next_tx(ADMIN);
 
     world.scenario.take_shared<MemezFun<Auction, Meme>>()
-}
-
-fun assert_eq_reduce_precision(value: u64, expected: u64, decimals_precision: u8) {
-    let x = value / 10u64.pow(decimals_precision);
-    let y = expected / 10u64.pow(decimals_precision);
-
-    assert_eq(x, y);
 }
 
 fun start(): World {

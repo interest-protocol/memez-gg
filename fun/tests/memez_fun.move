@@ -103,8 +103,7 @@ fun test_progress_asserts_not_bonding() {
 
     memez_fun.assert_is_bonding();
 
-    memez_fun.share();
-    end(world);
+    abort
 }
 
 #[test, expected_failure(abort_code = memez_errors::ENotMigrating, location = memez_fun)]
@@ -125,8 +124,7 @@ fun test_progress_asserts_not_migrating() {
 
     memez_fun.assert_is_migrating();
 
-    memez_fun.share();
-    end(world);
+    abort
 }
 
 #[test, expected_failure(abort_code = memez_errors::ENotMigrated, location = memez_fun)]
@@ -147,8 +145,7 @@ fun test_progress_asserts_not_migrated() {
 
     memez_fun.assert_migrated();
 
-    memez_fun.share();
-    end(world);
+    abort
 }
 
 #[test]
@@ -172,7 +169,7 @@ fun test_assert_is_dev() {
     memez_fun.assert_is_dev(world.scenario.ctx());
 
     destroy(memez_fun);
-    end(world);
+    world.end();
 }
 
 #[test, expected_failure(abort_code = memez_errors::EInvalidDev, location = memez_fun)]
@@ -195,8 +192,7 @@ fun test_assert_is_dev_invalid_dev() {
 
     memez_fun.assert_is_dev(world.scenario.ctx());
 
-    destroy(memez_fun);
-    end(world);
+    abort
 }
 
 #[test]
@@ -267,8 +263,7 @@ fun test_assert_uses_coin_invalid() {
 
     memez_fun.assert_uses_coin();
 
-    destroy(memez_fun);
-    end(world);
+    abort
 }
 
 #[test, expected_failure(abort_code = memez_errors::ETokenNotSupported, location = memez_fun)]

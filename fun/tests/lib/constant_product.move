@@ -293,15 +293,13 @@ fun test_pump_zero_coin() {
         burn_tax,
     );
 
-    let (_, coin_meme_out) = cp.pump(
+    let (_can_migrate, _coin_meme_out) = cp.pump(
         coin::zero(&mut ctx),
         0,
         &mut ctx,
     );
 
-    coin_meme_out.burn_for_testing();
-
-    destroy(cp);
+    abort
 }
 
 #[test, expected_failure(abort_code = memez_errors::ESlippage, location = memez_utils)]
@@ -324,15 +322,13 @@ fun test_pump_slippage() {
 
     let expected_amount_out = cp.pump_amount(amount_in, 0);
 
-    let (_, coin_meme_out) = cp.pump(
+    let (_can_migrate, _coin_meme_out) = cp.pump(
         mint_for_testing<SUI>(amount_in, &mut ctx),
         expected_amount_out + 1,
         &mut ctx,
     );
 
-    coin_meme_out.burn_for_testing();
-
-    destroy(cp);
+    abort
 }
 
 #[test, expected_failure(abort_code = memez_errors::EZeroCoin, location = memez_utils)]
@@ -355,17 +351,14 @@ fun test_dump_zero_coin() {
         burn_tax,
     );
 
-    let sui_coin_out = cp.dump(
+    cp.dump(
         &mut ipx_treasury,
         coin::zero(&mut ctx),
         0,
         &mut ctx,
-    );
+    ).burn_for_testing();
 
-    sui_coin_out.burn_for_testing();
-
-    destroy(ipx_treasury);
-    destroy(cp);
+    abort
 }
 
 #[test, expected_failure(abort_code = memez_errors::ESlippage, location = memez_utils)]
@@ -402,15 +395,12 @@ fun test_dump_slippage() {
 
     let (expected_sui_coin_out, _, _) = cp.dump_amount(meme_coin_out_value, 0);
 
-    let sui_coin_out = cp.dump(
+    cp.dump(
         &mut ipx_treasury,
         coin_meme_out,
         expected_sui_coin_out + 1,
         &mut ctx,
-    );
+    ).burn_for_testing();
 
-    sui_coin_out.burn_for_testing();
-
-    destroy(ipx_treasury);
-    destroy(cp);
+    abort
 }

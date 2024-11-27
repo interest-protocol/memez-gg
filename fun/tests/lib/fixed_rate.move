@@ -256,15 +256,13 @@ fun test_dump_zero_coin() {
 
     let min_amount_out = fixed_rate.dump_amount(1000);
 
-    let sui_coin_out = fixed_rate.dump(
+    fixed_rate.dump(
         mint_for_testing<Meme>(0, &mut ctx),
         min_amount_out + 1,
         &mut ctx,
-    );
+    ).burn_for_testing();
 
-    assert_eq(sui_coin_out.burn_for_testing(), 200);
-
-    destroy(fixed_rate);
+    abort
 }
 
 #[test, expected_failure(abort_code = memez_errors::ESlippage, location = memez_utils)]
@@ -292,13 +290,11 @@ fun test_dump_slippage() {
 
     let min_amount_out = fixed_rate.dump_amount(1000);
 
-    let sui_coin_out = fixed_rate.dump(
+    fixed_rate.dump(
         mint_for_testing<Meme>(1000, &mut ctx),
         min_amount_out + 1,
         &mut ctx,
-    );
+    ).burn_for_testing();
 
-    assert_eq(sui_coin_out.burn_for_testing(), 200);
-
-    destroy(fixed_rate);
+    abort
 }

@@ -192,6 +192,12 @@ fun test_coin_end_to_end() {
 
     let mut memez_fun = set_up_pool(&mut world, false, total_supply);
 
+    world.scenario.next_tx(ADMIN);
+
+    let creation_fee = world.scenario.take_from_address<Coin<SUI>>(@treasury);
+
+    assert_eq(creation_fee.burn_for_testing(), 2 * POW_9);
+
     let cp = memez_auction::constant_product(&mut memez_fun);
 
     let initial_meme_balance = cp.meme_balance().value();
@@ -265,6 +271,58 @@ fun test_coin_end_to_end() {
     );
 
     assert_eq(sui_coin.burn_for_testing(), expected_sui_value);
+
+    let cp = memez_auction::constant_product(&mut memez_fun); 
+
+    let remaining_amount_to_migrate = 10_000 * POW_9 - cp.sui_balance().value();
+
+    let expected_meme_amount_out = get_amount_out(
+        remaining_amount_to_migrate,
+        cp.virtual_liquidity() + cp.sui_balance().value(),
+        cp.meme_balance().value(),
+    );
+
+    let meme_coin = memez_auction::pump(
+        &mut memez_fun,
+        &world.clock,
+        mint_for_testing(remaining_amount_to_migrate, world.scenario.ctx()),
+        expected_meme_amount_out,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    assert_eq(meme_coin.burn_for_testing(), expected_meme_amount_out);
+
+    memez_fun.assert_is_migrating();
+
+    let migrator = memez_auction::migrate(
+        &mut memez_fun,
+        &world.config,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    let (sui_balance, meme_balance) = migrator.destroy(MigrationWitness());
+
+    let auction_config = memez_auction_config::get(&world.config, total_supply);
+
+    assert_eq(sui_balance.value(), 10_000 * POW_9 - 200 * POW_9);
+    assert_eq(meme_balance.value(), auction_config[5]);
+
+    sui_balance.destroy_for_testing();
+    meme_balance.destroy_for_testing();
+
+    memez_fun.assert_migrated();
+
+    world.scenario.next_tx(ADMIN);
+
+    let migration_fee = world.scenario.take_from_address<Coin<SUI>>(@treasury);
+
+    assert_eq(migration_fee.burn_for_testing(), 200 * POW_9);
+
+    let dev_allocation = memez_auction::dev_claim(&mut memez_fun, memez_version::get_version_for_testing(1), world.scenario.ctx());
+
+    assert_eq(dev_allocation.burn_for_testing(), auction_config[1]);
 
     destroy(memez_fun);
 

@@ -18,7 +18,7 @@ const MEME_SALE_AMOUNT: u64 = { 40 * (POW_18 / 100) };
 
 // === Structs ===
 
-public struct MemezStableConfigKey has copy, store, drop ()
+public struct MemezStableConfigKey() has copy, store, drop;
 
 public struct MemezStableConfig has store {
     max_target_sui_liquidity: u64,

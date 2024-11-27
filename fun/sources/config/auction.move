@@ -33,7 +33,7 @@ const MIN_SEED_LIQUIDITY: u64 = 100;
 
 // === Structs ===
 
-public struct MemezAuctionConfigKey has copy, store, drop ()
+public struct MemezAuctionConfigKey() has copy, store, drop;
 
 public struct MemezAuctionConfig has store {
     auction_duration: u64,

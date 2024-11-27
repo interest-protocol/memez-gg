@@ -4,7 +4,7 @@ use sui::event::emit;
 
 // === Structs ===
 
-public struct Event<T: copy + drop> has copy, drop (T)
+public struct Event<T: copy + drop>(T) has copy, drop;
 
 // === Public Package Functions ===
 

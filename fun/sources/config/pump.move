@@ -24,7 +24,7 @@ const TARGET_SUI_LIQUIDITY: u64 = { 10_000 * POW_9 };
 
 // === Structs ===
 
-public struct MemezPumpConfigKey has copy, store, drop ()
+public struct MemezPumpConfigKey() has copy, store, drop;
 
 public struct MemezPumpConfig has store {
     burn_tax: u64,

@@ -296,6 +296,13 @@ fun set_up_pool(world: &mut World, is_token: bool, total_supply: u64): MemezFun<
     world.scenario.take_shared<MemezFun<Auction, Meme>>()
 }
 
+fun assert_eq_reduce_precision(value: u64, expected: u64, decimals_precision: u8) {
+    let x = value / 10u64.pow(decimals_precision);
+    let y = expected / 10u64.pow(decimals_precision);
+
+    assert_eq(x, y);
+}
+
 fun start(): World {
     let mut scenario = ts::begin(ADMIN);
 

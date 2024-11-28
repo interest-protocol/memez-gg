@@ -70,7 +70,7 @@ public(package) fun pump<Meme>(
     (total_sui_balance >= self.target_sui_liquidity, meme_coin)
 }
 
-public(package) fun dump<Meme>(
+public(package) fun burn_and_dump<Meme>(
     self: &mut MemezConstantProduct<Meme>,
     treasury_cap: &mut IPXTreasuryStandard,
     mut meme_coin: Coin<Meme>,
@@ -135,7 +135,7 @@ public(package) fun pump_amount<Meme>(
     )
 }
 
-public(package) fun dump_amount<Meme>(
+public(package) fun burn_and_dump_amount<Meme>(
     self: &MemezConstantProduct<Meme>,
     amount_in: u64,
     extra_meme_amount: u64,

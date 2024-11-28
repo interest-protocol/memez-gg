@@ -254,7 +254,7 @@ fun test_coin_end_to_end() {
 
     let cp = memez_auction::constant_product(&mut memez_fun);
 
-    let (_, expected_sui_value, _) = cp.dump_amount(expected_meme_amount_out_2 / 2, 0);
+    let (_, expected_sui_value, _) = cp.burn_and_dump_amount(expected_meme_amount_out_2 / 2, 0);
 
     let mut treasury = world.scenario.take_shared<IPXTreasuryStandard>();
 
@@ -412,7 +412,7 @@ fun test_token_end_to_end() {
 
     let cp = memez_auction::constant_product(&mut memez_fun);
 
-    let (_, expected_sui_value, _) = cp.dump_amount(expected_meme_amount_out_2 / 2, 0);
+    let (_, expected_sui_value, _) = cp.burn_and_dump_amount(expected_meme_amount_out_2 / 2, 0);
 
     let mut treasury = world.scenario.take_shared<IPXTreasuryStandard>();
 

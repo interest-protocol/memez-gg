@@ -189,7 +189,7 @@ public fun dump<Meme>(
     self
         .state_mut()
         .constant_product
-        .dump(
+        .burn_and_dump(
             treasury_cap,
             meme_coin,
             min_amount_out,
@@ -215,7 +215,7 @@ public fun dump_token<Meme>(
 
     state
         .constant_product
-        .dump(
+        .burn_and_dump(
             treasury_cap,
             meme_coin,
             min_amount_out,
@@ -287,7 +287,7 @@ fun pump_amount<Meme>(self: &mut MemezFun<Pump, Meme>, amount_in: u64): u64 {
 fun dump_amount<Meme>(self: &mut MemezFun<Pump, Meme>, amount_in: u64): (u64, u64, u64) {
     let state = self.state();
 
-    state.constant_product.dump_amount(amount_in, 0)
+    state.constant_product.burn_and_dump_amount(amount_in, 0)
 }
 
 // === Private Functions ===

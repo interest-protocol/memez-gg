@@ -214,7 +214,7 @@ public fun dump<Meme>(
 
     state
         .constant_product
-        .dump(
+        .burn_and_dump(
             treasury_cap,
             meme_coin,
             min_amount_out,
@@ -243,7 +243,7 @@ public fun dump_token<Meme>(
 
     state
         .constant_product
-        .dump(
+        .burn_and_dump(
             treasury_cap,
             meme_coin,
             min_amount_out,
@@ -324,7 +324,7 @@ fun dump_amount<Meme>(
 
     let amount = new_liquidity_amount(state, clock);
 
-    state.constant_product.dump_amount(amount_in, amount)
+    state.constant_product.burn_and_dump_amount(amount_in, amount)
 }
 
 #[allow(unused_function)]

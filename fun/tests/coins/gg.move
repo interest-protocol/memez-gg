@@ -3,7 +3,7 @@ module memez_fun::gg;
 
 use sui::{coin, url::new_unsafe_from_bytes};
 
-public struct GG has drop ()
+public struct GG() has drop;
 
 fun init(witness: GG, ctx: &mut TxContext) {
     let (treasury, metadata) = coin::create_currency(

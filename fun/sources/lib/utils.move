@@ -1,5 +1,6 @@
 module memez_fun::memez_utils;
 
+use interest_bps::bps::{Self, BPS};
 use interest_math::fixed_point_wad;
 use memez_fun::memez_errors;
 use sui::{balance::Balance, coin::Coin};
@@ -16,8 +17,8 @@ public(package) fun pow_9(): u64 {
     POW_9
 }
 
-public(package) fun calculate_wad_percentage(percentage: u64, total_supply: u64): u64 {
-    (fixed_point_wad::mul_down((percentage as u256), (total_supply as u256)) as u64)
+public(package) fun calculate_wad_percentage(percentage: u64, value: u64): u64 {
+    (fixed_point_wad::mul_down((percentage as u256), (value as u256)) as u64)
 }
 
 public(package) fun assert_coin_has_value<T>(coin: &Coin<T>): u64 {
@@ -33,6 +34,19 @@ public(package) fun destroy_or_burn<Meme>(balance: &mut Balance<Meme>, ctx: &mut
     else transfer::public_transfer(bal.into_coin(ctx), DEAD_ADDRESS);
 }
 
+#[allow(lint(self_transfer))]
+public(package) fun destroy_or_return<Meme>(coin: Coin<Meme>, ctx: &TxContext) {
+    if (coin.value() == 0) coin.destroy_zero()
+    else transfer::public_transfer(coin, ctx.sender());
+}
+
 public(package) fun assert_slippage(amount: u64, minimum_expected: u64) {
     assert!(amount >= minimum_expected, memez_errors::slippage());
+}
+
+public(package) fun validate_bps(percentages: vector<BPS>) {
+    assert!(
+        percentages.fold!(0, |acc, bps| acc + bps.value()) == bps::max_bps(),
+        memez_errors::invalid_percentages(),
+    );
 }

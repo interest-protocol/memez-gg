@@ -23,11 +23,12 @@ use memez_fun::{
     memez_config::{Self, MemezConfig},
     memez_constant_product::{Self, MemezConstantProduct},
     memez_errors,
+    memez_fee_model::FeeModel,
     memez_fun::{Self, MemezFun, MemezMigrator},
     memez_migrator_list::MemezMigratorList,
     memez_pump_config,
     memez_token_cap::{Self, MemezTokenCap},
-    memez_utils::destroy_or_burn,
+    memez_utils::{destroy_or_burn, destroy_or_return},
     memez_version::CurrentVersion
 };
 use std::string::String;
@@ -52,16 +53,17 @@ public struct PumpState<phantom Meme> has store {
     liquidity_provision: Balance<Meme>,
     constant_product: MemezConstantProduct<Meme>,
     meme_token_cap: Option<MemezTokenCap<Meme>>,
+    fee_model: FeeModel,
 }
 
 // === Public Mutative Functions ===
 
 #[allow(lint(share_owned))]
-public fun new<Meme, MigrationWitness>(
+public fun new<Meme, MigrationWitness, FeeModelKey>(
     config: &MemezConfig,
     migrator_list: &MemezMigratorList,
     meme_treasury_cap: TreasuryCap<Meme>,
-    creation_fee: Coin<SUI>,
+    mut creation_fee: Coin<SUI>,
     total_supply: u64,
     is_token: bool,
     first_purchase: Coin<SUI>,
@@ -71,7 +73,12 @@ public fun new<Meme, MigrationWitness>(
     ctx: &mut TxContext,
 ): MetadataCap {
     version.assert_is_valid();
-    config.take_creation_fee(creation_fee);
+
+    let fee_model = config.get_model<FeeModelKey>();
+
+    fee_model.new_fee().send(&mut creation_fee, ctx);
+
+    creation_fee.destroy_or_return(ctx);
 
     let pump_config = memez_pump_config::get(config, total_supply);
 
@@ -96,6 +103,7 @@ public fun new<Meme, MigrationWitness>(
             pump_config[0],
         ),
         meme_token_cap,
+        fee_model,
     };
 
     let mut memez_fun = memez_fun::new<Pump, MigrationWitness, Meme>(
@@ -225,7 +233,6 @@ public fun dump_token<Meme>(
 
 public fun migrate<Meme>(
     self: &mut MemezFun<Pump, Meme>,
-    config: &MemezConfig,
     version: CurrentVersion,
     ctx: &mut TxContext,
 ): MemezMigrator<Meme> {
@@ -234,15 +241,17 @@ public fun migrate<Meme>(
 
     let state = self.state_mut();
 
-    let mut sui_balance = state.constant_product.sui_balance_mut().withdraw_all();
+    let sui_balance = state.constant_product.sui_balance_mut().withdraw_all();
 
     let liquidity_provision = state.liquidity_provision.withdraw_all();
 
     state.constant_product.meme_balance_mut().destroy_or_burn(ctx);
 
-    config.take_migration_fee(sui_balance.split(config.migration_fee()).into_coin(ctx));
+    let mut sui_coin = sui_balance.into_coin(ctx);
 
-    self.migrate(sui_balance, liquidity_provision)
+    state.fee_model.migration_fee().send(&mut sui_coin, ctx);
+
+    self.migrate(sui_coin.into_balance(), liquidity_provision)
 }
 
 public fun dev_claim<Meme>(
@@ -341,6 +350,7 @@ fun maybe_upgrade_state_to_latest(versioned: &mut Versioned) {
 use fun state as MemezFun.state;
 use fun state_mut as MemezFun.state_mut;
 use fun destroy_or_burn as Balance.destroy_or_burn;
+use fun destroy_or_return as Coin.destroy_or_return;
 
 // === Public Test Only Functions ===
 

@@ -1,25 +1,18 @@
 module memez_fun::memez_config;
 
+use interest_bps::bps;
 use ipx_coin_standard::ipx_coin_standard::{Self, MetadataCap};
 use memez_acl::acl::AuthWitness;
-use memez_fun::memez_errors;
-use sui::{balance::Balance, coin::{Coin, TreasuryCap}, sui::SUI};
-
-// === Constants ===
-
-// @dev Sui Decimal Scale
-const POW_9: u64 = 1__000_000_000;
-
-const CREATION_FEE: u64 = { 2 * POW_9 };
-
-const MIGRATION_FEE: u64 = { 200 * POW_9 };
+use memez_fun::{memez_errors, memez_fee_model::{Self, FeeModel}};
+use std::type_name;
+use sui::{balance::Balance, coin::TreasuryCap, dynamic_field as df};
 
 // === Structs ===
 
+public struct StandardFeeModelKey() has copy, drop, store;
+
 public struct MemezConfig has key {
     id: UID,
-    creation_fee: u64,
-    migration_fee: u64,
     treasury: address,
 }
 
@@ -28,8 +21,6 @@ public struct MemezConfig has key {
 fun init(ctx: &mut TxContext) {
     let config = MemezConfig {
         id: object::new(ctx),
-        creation_fee: CREATION_FEE,
-        migration_fee: MIGRATION_FEE,
         treasury: @treasury,
     };
 
@@ -38,12 +29,40 @@ fun init(ctx: &mut TxContext) {
 
 // === Public Admin Functions ===
 
-public fun set_creation_fee(self: &mut MemezConfig, _: &AuthWitness, amount: u64) {
-    self.creation_fee = amount;
-}
+public fun set_fee_model<ModelKey>(
+    self: &mut MemezConfig,
+    _: &AuthWitness,
+    values: vector<vector<u64>>,
+    recipients: vector<vector<address>>,
+    _ctx: &mut TxContext,
+) {
+    let mut new_percentages = values[0];
+    let mut swap_percentages = values[1];
+    let mut migration_percentages = values[2];
 
-public fun set_migration_fee(self: &mut MemezConfig, _: &AuthWitness, amount: u64) {
-    self.migration_fee = amount;
+    let new_value = new_percentages.pop_back();
+    let swap_value = swap_percentages.pop_back();
+    let migration_value = migration_percentages.pop_back();
+
+    let fee_model = memez_fee_model::new(
+        memez_fee_model::fee_value(new_value, new_percentages.map!(|x| bps::new(x)), recipients[0]),
+        memez_fee_model::fee_percentage(
+            bps::new(swap_value),
+            swap_percentages.map!(|x| bps::new(x)),
+            recipients[1],
+        ),
+        memez_fee_model::fee_value(
+            migration_value,
+            migration_percentages.map!(|x| bps::new(x)),
+            recipients[2],
+        ),
+    );
+
+    let key = type_name::get<ModelKey>();
+
+    df::remove_if_exists<_, FeeModel>(&mut self.id, key);
+
+    df::add(&mut self.id, key, fee_model);
 }
 
 public fun set_treasury(self: &mut MemezConfig, _: &AuthWitness, treasury: address) {
@@ -92,32 +111,8 @@ public(package) fun uid_mut(self: &mut MemezConfig): &mut UID {
     &mut self.id
 }
 
-public(package) fun migration_fee(self: &MemezConfig): u64 {
-    self.migration_fee
-}
-
-public(package) fun take_creation_fee(self: &MemezConfig, creation_fee: Coin<SUI>) {
-    assert!(
-        creation_fee.value() >= self.creation_fee,
-        memez_errors::not_enough_sui_for_creation_fee(),
-    );
-
-    transfer::public_transfer(
-        creation_fee,
-        self.treasury,
-    );
-}
-
-public(package) fun take_migration_fee(self: &MemezConfig, migration_fee: Coin<SUI>) {
-    assert!(
-        migration_fee.value() >= self.migration_fee,
-        memez_errors::not_enough_sui_for_migration_fee(),
-    );
-
-    transfer::public_transfer(
-        migration_fee,
-        self.treasury,
-    );
+public(package) fun get_model<ModelKey>(self: &MemezConfig): FeeModel {
+    *df::borrow<_, FeeModel>(&self.id, type_name::get<ModelKey>())
 }
 
 // === Tests Only Functions ===
@@ -130,9 +125,4 @@ public fun init_for_testing(ctx: &mut TxContext) {
 #[test_only]
 public fun treasury(self: &MemezConfig): address {
     self.treasury
-}
-
-#[test_only]
-public fun creation_fee(self: &MemezConfig): u64 {
-    self.creation_fee
 }

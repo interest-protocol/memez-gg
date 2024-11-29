@@ -40,6 +40,8 @@ const EOutdatedStableStateVersion: u64 = 17;
 
 const EOutdatedPackageVersion: u64 = 18;
 
+const EInvalidPercentages: u64 = 19;
+
 // === Public Package Functions ===
 
 public(package) fun already_initialized(): u64 {
@@ -116,4 +118,8 @@ public(package) fun outdated_stable_state_version(): u64 {
 
 public(package) fun outdated_package_version(): u64 {
     EOutdatedPackageVersion
+}
+
+public(package) fun invalid_percentages(): u64 {
+    EInvalidPercentages
 }

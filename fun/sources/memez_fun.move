@@ -37,7 +37,7 @@ public struct MemezMigrator<phantom Meme> {
     meme_balance: Balance<Meme>,
 }
 
-public struct MemezFun<phantom Curve, phantom Meme> has key {
+public struct MemezFun<phantom Curve, phantom Meme> has key, store {
     id: UID,
     dev: address,
     is_token: bool,
@@ -98,8 +98,9 @@ public(package) fun new<Curve, MigrationWitness, Meme>(
     }
 }
 
+#[allow(lint(share_owned))]
 public(package) fun share<Curve, Meme>(self: MemezFun<Curve, Meme>) {
-    transfer::share_object(self);
+    transfer::public_share_object(self);
 }
 
 public(package) fun addy<Curve, Meme>(self: &MemezFun<Curve, Meme>): address {

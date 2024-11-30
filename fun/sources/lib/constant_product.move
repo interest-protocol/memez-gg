@@ -4,7 +4,7 @@ use constant_product::constant_product::get_amount_out;
 use interest_math::u64;
 use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
 use memez_fun::{
-    memez_burn_tax::{Self, BurnTax},
+    memez_burn_model::{Self, BurnModel},
     memez_events,
     memez_utils::{assert_slippage, assert_coin_has_value, pow_9}
 };
@@ -18,7 +18,7 @@ public struct MemezConstantProduct<phantom Meme> has store {
     target_sui_liquidity: u64,
     sui_balance: Balance<SUI>,
     meme_balance: Balance<Meme>,
-    burn_tax: BurnTax,
+    burn_model: BurnModel,
 }
 
 // === Public Package Functions ===
@@ -35,7 +35,11 @@ public(package) fun new<Meme>(
         target_sui_liquidity,
         sui_balance: balance::zero(),
         meme_balance,
-        burn_tax: memez_burn_tax::new(burn_tax, virtual_liquidity, target_sui_liquidity),
+        burn_model: memez_burn_model::new(vector[
+            burn_tax,
+            virtual_liquidity,
+            target_sui_liquidity,
+        ]),
     }
 }
 
@@ -129,7 +133,7 @@ public(package) fun burn_and_dump<Meme>(
         sui_virtual_liquidity,
     );
 
-    let dynamic_burn_tax = self.burn_tax.calculate(sui_virtual_liquidity - pre_tax_sui_value_out);
+    let dynamic_burn_tax = self.burn_model.calculate(sui_virtual_liquidity - pre_tax_sui_value_out);
 
     let meme_fee_value = u64::mul_div_up(meme_coin_value, dynamic_burn_tax, pow_9());
 
@@ -187,7 +191,7 @@ public(package) fun burn_and_dump_amount<Meme>(
         sui_virtual_liquidity,
     );
 
-    let dynamic_burn_tax = self.burn_tax.calculate(sui_virtual_liquidity - pre_tax_sui_value_out);
+    let dynamic_burn_tax = self.burn_model.calculate(sui_virtual_liquidity - pre_tax_sui_value_out);
 
     let meme_fee_value = u64::mul_div_up(amount_in, dynamic_burn_tax, pow_9());
 
@@ -212,8 +216,8 @@ public(package) fun sui_balance<Meme>(self: &MemezConstantProduct<Meme>): &Balan
     &self.sui_balance
 }
 
-public(package) fun burn_tax<Meme>(self: &MemezConstantProduct<Meme>): BurnTax {
-    self.burn_tax
+public(package) fun burn_model<Meme>(self: &MemezConstantProduct<Meme>): &BurnModel {
+    &self.burn_model
 }
 
 public(package) fun meme_balance<Meme>(self: &MemezConstantProduct<Meme>): &Balance<Meme> {

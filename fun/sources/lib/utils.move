@@ -1,6 +1,6 @@
 module memez_fun::memez_utils;
 
-use interest_bps::bps::{Self, BPS};
+use interest_bps::bps;
 use interest_math::fixed_point_wad;
 use memez_fun::memez_errors;
 use sui::{balance::Balance, coin::Coin};
@@ -44,9 +44,9 @@ public(package) fun assert_slippage(amount: u64, minimum_expected: u64) {
     assert!(amount >= minimum_expected, memez_errors::slippage());
 }
 
-public(package) fun validate_bps(percentages: vector<BPS>) {
+public(package) fun validate_bps(percentages: vector<u64>) {
     assert!(
-        percentages.fold!(0, |acc, bps| acc + bps.value()) == bps::max_bps(),
+        percentages.fold!(0, |acc, bps| acc + bps) == bps::max_bps(),
         memez_errors::invalid_percentages(),
     );
 }

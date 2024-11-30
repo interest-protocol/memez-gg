@@ -21,7 +21,6 @@ module memez_fun::memez_auction;
 use interest_math::u64;
 use ipx_coin_standard::ipx_coin_standard::{IPXTreasuryStandard, MetadataCap};
 use memez_fun::{
-    memez_auction_config,
     memez_config::{Self, MemezConfig},
     memez_constant_product::{Self, MemezConstantProduct},
     memez_errors,
@@ -66,7 +65,7 @@ public struct AuctionState<phantom Meme> has store {
 // === Public Mutative Functions ===
 
 #[allow(lint(share_owned))]
-public fun new<Meme, MigrationWitness, FeeModelKey>(
+public fun new<Meme, MigrationWitness, ConfigKey>(
     config: &MemezConfig,
     migrator_list: &MemezMigratorList,
     clock: &Clock,
@@ -81,13 +80,13 @@ public fun new<Meme, MigrationWitness, FeeModelKey>(
 ): MetadataCap {
     version.assert_is_valid();
 
-    let fee_model = config.get_model<FeeModelKey>();
+    let fee_model = config.fee_model<ConfigKey>();
 
     fee_model.new_fee().send(&mut creation_fee, ctx);
 
     creation_fee.destroy_or_return(ctx);
 
-    let auction_config = memez_auction_config::get(config, total_supply);
+    let auction_config = config.get_auction<ConfigKey>(total_supply);
 
     let meme_token_cap = if (is_token) option::some(memez_token_cap::new(&meme_treasury_cap, ctx))
     else option::none();
@@ -146,7 +145,7 @@ public fun new<Meme, MigrationWitness, FeeModelKey>(
 public fun pump<Meme>(
     self: &mut MemezFun<Auction, Meme>,
     clock: &Clock,
-    sui_coin: Coin<SUI>,
+    mut sui_coin: Coin<SUI>,
     min_amount_out: u64,
     version: CurrentVersion,
     ctx: &mut TxContext,
@@ -158,6 +157,8 @@ public fun pump<Meme>(
     let state = self.state_mut();
 
     state.provide_liquidity(clock);
+
+    state.fee_model.swap_fee().send(&mut sui_coin, ctx);
 
     let (start_migrating, meme_coin) = state
         .constant_product
@@ -175,7 +176,7 @@ public fun pump<Meme>(
 public fun pump_token<Meme>(
     self: &mut MemezFun<Auction, Meme>,
     clock: &Clock,
-    sui_coin: Coin<SUI>,
+    mut sui_coin: Coin<SUI>,
     min_amount_out: u64,
     version: CurrentVersion,
     ctx: &mut TxContext,
@@ -187,6 +188,8 @@ public fun pump_token<Meme>(
     let state = self.state_mut();
 
     state.provide_liquidity(clock);
+
+    state.fee_model.swap_fee().send(&mut sui_coin, ctx);
 
     let (start_migrating, meme_coin) = state
         .constant_product
@@ -207,7 +210,7 @@ public fun dump<Meme>(
     self: &mut MemezFun<Auction, Meme>,
     clock: &Clock,
     treasury_cap: &mut IPXTreasuryStandard,
-    meme_coin: Coin<Meme>,
+    mut meme_coin: Coin<Meme>,
     min_amount_out: u64,
     version: CurrentVersion,
     ctx: &mut TxContext,
@@ -219,6 +222,8 @@ public fun dump<Meme>(
     let state = self.state_mut();
 
     state.provide_liquidity(clock);
+
+    state.fee_model.swap_fee().send(&mut meme_coin, ctx);
 
     state
         .constant_product
@@ -247,7 +252,9 @@ public fun dump_token<Meme>(
 
     state.provide_liquidity(clock);
 
-    let meme_coin = state.token_cap().to_coin(meme_token, ctx);
+    let mut meme_coin = state.token_cap().to_coin(meme_token, ctx);
+
+    state.fee_model.swap_fee().send(&mut meme_coin, ctx);
 
     state
         .constant_product

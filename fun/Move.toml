@@ -17,4 +17,3 @@ MemezVesting = { local = "../vesting" }
 
 [addresses]
 memez_fun = "0x0123456789abcdef"
-treasury = "0xdd224f2287f0b38693555c6077abe85fcb4aa13e355ad54bc167611896b007e6"

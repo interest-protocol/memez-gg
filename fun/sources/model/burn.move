@@ -1,11 +1,15 @@
-module memez_fun::memez_burn_tax;
+module memez_fun::memez_burn_model;
 
 use interest_math::u64;
-use memez_fun::memez_utils::pow_9;
+use memez_fun::{memez_errors, memez_utils::pow_9};
+
+// === Constants ===
+
+const VALUES_LENGTH: u64 = 3;
 
 // === Structs ===
 
-public struct BurnTax has copy, drop, store {
+public struct BurnModel has copy, drop, store {
     value: u64,
     start_liquidity: u64,
     target_liquidity: u64,
@@ -13,15 +17,17 @@ public struct BurnTax has copy, drop, store {
 
 // === Public Package Functions ===
 
-public(package) fun new(value: u64, start_liquidity: u64, target_liquidity: u64): BurnTax {
-    BurnTax {
-        value,
-        start_liquidity,
-        target_liquidity,
+public(package) fun new(values: vector<u64>): BurnModel {
+    assert!(values.length() == VALUES_LENGTH, memez_errors::invalid_model_config());
+
+    BurnModel {
+        value: values[0],
+        start_liquidity: values[1],
+        target_liquidity: values[2],
     }
 }
 
-public(package) fun calculate(self: BurnTax, liquidity: u64): u64 {
+public(package) fun calculate(self: BurnModel, liquidity: u64): u64 {
     if (liquidity >= self.target_liquidity) return 0;
 
     if (self.start_liquidity >= liquidity) return self.value;
@@ -40,16 +46,16 @@ public(package) fun calculate(self: BurnTax, liquidity: u64): u64 {
 // === Test Only ===
 
 #[test_only]
-public fun value(self: BurnTax): u64 {
+public fun value(self: BurnModel): u64 {
     self.value
 }
 
 #[test_only]
-public fun start_liquidity(self: BurnTax): u64 {
+public fun start_liquidity(self: BurnModel): u64 {
     self.start_liquidity
 }
 
 #[test_only]
-public fun target_liquidity(self: BurnTax): u64 {
+public fun target_liquidity(self: BurnModel): u64 {
     self.target_liquidity
 }

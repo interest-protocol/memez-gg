@@ -23,7 +23,7 @@ use memez_fun::{
     memez_config::{Self, MemezConfig},
     memez_constant_product::{Self, MemezConstantProduct},
     memez_errors,
-    memez_fee_model::FeeModel,
+    memez_fee_model::Fee,
     memez_fun::{Self, MemezFun, MemezMigrator},
     memez_migrator_list::MemezMigratorList,
     memez_token_cap::{Self, MemezTokenCap},
@@ -52,7 +52,7 @@ public struct PumpState<phantom Meme> has store {
     liquidity_provision: Balance<Meme>,
     constant_product: MemezConstantProduct<Meme>,
     meme_token_cap: Option<MemezTokenCap<Meme>>,
-    fee_model: FeeModel,
+    migration_fee: Fee,
 }
 
 // === Public Mutative Functions ===
@@ -75,7 +75,7 @@ public fun new<Meme, MigrationWitness, ConfigKey>(
 
     let fee_model = config.fee_model<ConfigKey>();
 
-    fee_model.new_fee().send(&mut creation_fee, ctx);
+    fee_model.new_fee().take(&mut creation_fee, ctx);
 
     creation_fee.destroy_or_return(ctx);
 
@@ -99,10 +99,11 @@ public fun new<Meme, MigrationWitness, ConfigKey>(
             pump_config[1],
             pump_config[2],
             meme_balance,
+            fee_model.swap_fee(),
             pump_config[0],
         ),
         meme_token_cap,
-        fee_model,
+        migration_fee: fee_model.migration_fee(),
     };
 
     let mut memez_fun = memez_fun::new<Pump, MigrationWitness, Meme>(
@@ -155,7 +156,7 @@ public fun pump<Meme>(
 
 public fun pump_token<Meme>(
     self: &mut MemezFun<Pump, Meme>,
-    mut sui_coin: Coin<SUI>,
+    sui_coin: Coin<SUI>,
     min_amount_out: u64,
     version: CurrentVersion,
     ctx: &mut TxContext,
@@ -165,8 +166,6 @@ public fun pump_token<Meme>(
     self.assert_is_bonding();
 
     let state = self.state_mut();
-
-    state.fee_model.swap_fee().send(&mut sui_coin, ctx);
 
     let (start_migrating, meme_coin) = state
         .constant_product
@@ -186,7 +185,7 @@ public fun pump_token<Meme>(
 public fun dump<Meme>(
     self: &mut MemezFun<Pump, Meme>,
     treasury_cap: &mut IPXTreasuryStandard,
-    mut meme_coin: Coin<Meme>,
+    meme_coin: Coin<Meme>,
     min_amount_out: u64,
     version: CurrentVersion,
     ctx: &mut TxContext,
@@ -195,9 +194,7 @@ public fun dump<Meme>(
     self.assert_uses_coin();
     self.assert_is_bonding();
 
-    let state = self.state_mut();   
-
-    state.fee_model.swap_fee().send(&mut meme_coin, ctx);
+    let state = self.state_mut();
 
     state
         .constant_product
@@ -223,9 +220,7 @@ public fun dump_token<Meme>(
 
     let state = self.state_mut();
 
-    let mut meme_coin = state.token_cap().to_coin(meme_token, ctx);
-
-    state.fee_model.swap_fee().send(&mut meme_coin, ctx);
+    let meme_coin = state.token_cap().to_coin(meme_token, ctx);
 
     state
         .constant_product
@@ -255,7 +250,7 @@ public fun migrate<Meme>(
 
     let mut sui_coin = sui_balance.into_coin(ctx);
 
-    state.fee_model.migration_fee().send(&mut sui_coin, ctx);
+    state.migration_fee.take(&mut sui_coin, ctx);
 
     self.migrate(sui_coin.into_balance(), liquidity_provision)
 }
@@ -287,7 +282,7 @@ public fun to_coin<Meme>(
 // === View Functions for FE ===
 
 #[allow(unused_function)]
-fun pump_amount<Meme>(self: &mut MemezFun<Pump, Meme>, amount_in: u64): u64 {
+fun pump_amount<Meme>(self: &mut MemezFun<Pump, Meme>, amount_in: u64): vector<u64> {
     let state = self.state();
 
     state
@@ -299,7 +294,7 @@ fun pump_amount<Meme>(self: &mut MemezFun<Pump, Meme>, amount_in: u64): u64 {
 }
 
 #[allow(unused_function)]
-fun dump_amount<Meme>(self: &mut MemezFun<Pump, Meme>, amount_in: u64): (u64, u64, u64) {
+fun dump_amount<Meme>(self: &mut MemezFun<Pump, Meme>, amount_in: u64): vector<u64> {
     let state = self.state();
 
     state.constant_product.dump_amount(amount_in, 0)
@@ -309,13 +304,11 @@ fun dump_amount<Meme>(self: &mut MemezFun<Pump, Meme>, amount_in: u64): (u64, u6
 
 fun pump_unchecked<Meme>(
     self: &mut MemezFun<Pump, Meme>,
-    mut sui_coin: Coin<SUI>,
+    sui_coin: Coin<SUI>,
     min_amount_out: u64,
     ctx: &mut TxContext,
 ): Coin<Meme> {
     let state = self.state_mut();
-
-    state.fee_model.swap_fee().send(&mut sui_coin, ctx);
 
     let (start_migrating, meme_coin) = state
         .constant_product

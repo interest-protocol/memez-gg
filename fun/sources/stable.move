@@ -22,7 +22,7 @@ use ipx_coin_standard::ipx_coin_standard::MetadataCap;
 use memez_fun::{
     memez_config::{Self, MemezConfig},
     memez_errors,
-    memez_fee_model::FeeModel,
+    memez_fee_model::Fee,
     memez_fixed_rate::{Self, FixedRate},
     memez_fun::{Self, MemezFun, MemezMigrator},
     memez_migrator_list::MemezMigratorList,
@@ -56,7 +56,7 @@ public struct StableState<phantom Meme> has store {
     liquidity_provision: Balance<Meme>,
     fixed_rate: FixedRate<Meme>,
     meme_token_cap: Option<MemezTokenCap<Meme>>,
-    fee_model: FeeModel,
+    migration_fee: Fee,
 }
 
 // === Public Mutative Functions ===
@@ -80,7 +80,7 @@ public fun new<Meme, MigrationWitness, ConfigKey>(
 
     let fee_model = config.fee_model<ConfigKey>();
 
-    fee_model.new_fee().send(&mut creation_fee, ctx);
+    fee_model.new_fee().take(&mut creation_fee, ctx);
 
     creation_fee.destroy_or_return(ctx);
 
@@ -102,6 +102,7 @@ public fun new<Meme, MigrationWitness, ConfigKey>(
     let fixed_rate = memez_fixed_rate::new(
         target_sui_liquidity.min(stable_config[0]),
         meme_reserve.split(stable_config[2]),
+        fee_model.swap_fee(),
     );
 
     let stable_state = StableState {
@@ -111,7 +112,7 @@ public fun new<Meme, MigrationWitness, ConfigKey>(
         liquidity_provision,
         fixed_rate,
         meme_token_cap,
-        fee_model,
+        migration_fee: fee_model.migration_fee(),
     };
 
     let mut memez_fun = memez_fun::new<Stable, MigrationWitness, Meme>(
@@ -137,7 +138,7 @@ public fun new<Meme, MigrationWitness, ConfigKey>(
 
 public fun pump<Meme>(
     self: &mut MemezFun<Stable, Meme>,
-    mut sui_coin: Coin<SUI>,
+    sui_coin: Coin<SUI>,
     min_amount_out: u64,
     version: CurrentVersion,
     ctx: &mut TxContext,
@@ -146,9 +147,7 @@ public fun pump<Meme>(
     self.assert_is_bonding();
     self.assert_uses_coin();
 
-    let state = self.state_mut(); 
-
-    state.fee_model.swap_fee().send(&mut sui_coin, ctx);
+    let state = self.state_mut();
 
     let (start_migrating, excess_sui_coin, meme_coin) = state
         .fixed_rate
@@ -165,7 +164,7 @@ public fun pump<Meme>(
 
 public fun pump_token<Meme>(
     self: &mut MemezFun<Stable, Meme>,
-    mut sui_coin: Coin<SUI>,
+    sui_coin: Coin<SUI>,
     min_amount_out: u64,
     version: CurrentVersion,
     ctx: &mut TxContext,
@@ -175,8 +174,6 @@ public fun pump_token<Meme>(
     self.assert_uses_token();
 
     let state = self.state_mut();
-
-    state.fee_model.swap_fee().send(&mut sui_coin, ctx);
 
     let (start_migrating, excess_sui_coin, meme_coin) = state
         .fixed_rate
@@ -195,7 +192,7 @@ public fun pump_token<Meme>(
 
 public fun dump<Meme>(
     self: &mut MemezFun<Stable, Meme>,
-    mut meme_coin: Coin<Meme>,
+    meme_coin: Coin<Meme>,
     min_amount_out: u64,
     version: CurrentVersion,
     ctx: &mut TxContext,
@@ -205,8 +202,6 @@ public fun dump<Meme>(
     self.assert_uses_coin();
 
     let state = self.state_mut();
-
-    state.fee_model.swap_fee().send(&mut meme_coin, ctx);
 
     state
         .fixed_rate
@@ -230,9 +225,7 @@ public fun dump_token<Meme>(
 
     let state = self.state_mut();
 
-    let mut meme_coin = state.token_cap().to_coin(meme_token, ctx);
-
-    state.fee_model.swap_fee().send(&mut meme_coin, ctx);
+    let meme_coin = state.token_cap().to_coin(meme_token, ctx);
 
     state
         .fixed_rate
@@ -262,7 +255,7 @@ public fun migrate<Meme>(
 
     let mut sui_coin = sui_balance.into_coin(ctx);
 
-    state.fee_model.migration_fee().send(&mut sui_coin, ctx);
+    state.migration_fee.take(&mut sui_coin, ctx);
 
     self.migrate(sui_coin.into_balance(), liquidity_provision)
 }
@@ -301,14 +294,14 @@ public fun to_coin<Meme>(
 // === View Functions for FE ===
 
 #[allow(unused_function)]
-fun pump_amount<Meme>(self: &mut MemezFun<Stable, Meme>, amount_in: u64): (u64, u64) {
+fun pump_amount<Meme>(self: &mut MemezFun<Stable, Meme>, amount_in: u64): vector<u64> {
     let state = self.state();
 
     state.fixed_rate.pump_amount(amount_in)
 }
 
 #[allow(unused_function)]
-fun dump_amount<Meme>(self: &mut MemezFun<Stable, Meme>, amount_in: u64): u64 {
+fun dump_amount<Meme>(self: &mut MemezFun<Stable, Meme>, amount_in: u64): vector<u64> {
     let state = self.state();
 
     state.fixed_rate.dump_amount(amount_in)

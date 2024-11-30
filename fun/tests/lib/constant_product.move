@@ -4,7 +4,7 @@
 // use constant_product::constant_product::get_amount_out;
 // use interest_math::u64;
 // use ipx_coin_standard::ipx_coin_standard;
-// use memez_fun::{memez_burn_tax, memez_constant_product, memez_errors, memez_utils};
+// use memez_fun::{memez_burn_model, memez_constant_product, memez_errors, memez_utils};
 // use sui::{balance, coin::{Self, mint_for_testing}, sui::SUI, test_utils::{assert_eq, destroy}};
 
 // // === Imports ===
@@ -30,9 +30,9 @@
 //     assert_eq(cp.virtual_liquidity(), virtual_liquidity);
 //     assert_eq(cp.target_sui_liquidity(), target_sui_liquidity);
 //     assert_eq(cp.meme_balance().value(), meme_balance_value);
-//     assert_eq(cp.burn_tax().value(), burn_tax);
-//     assert_eq(cp.burn_tax().start_liquidity(), virtual_liquidity);
-//     assert_eq(cp.burn_tax().target_liquidity(), target_sui_liquidity);
+//     assert_eq(cp.burn_model().value(), burn_tax);
+//     assert_eq(cp.burn_model().start_liquidity(), virtual_liquidity);
+//     assert_eq(cp.burn_model().target_liquidity(), target_sui_liquidity);
 
 //     destroy(cp);
 // }

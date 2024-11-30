@@ -24,7 +24,7 @@ use memez_fun::{
     memez_config::{Self, MemezConfig},
     memez_constant_product::{Self, MemezConstantProduct},
     memez_errors,
-    memez_fee_model::FeeModel,
+    memez_fee_model::Fee,
     memez_fun::{Self, MemezFun, MemezMigrator},
     memez_migrator_list::MemezMigratorList,
     memez_token_cap::{Self, MemezTokenCap},
@@ -51,7 +51,7 @@ public struct Auction()
 
 public struct AuctionState<phantom Meme> has store {
     start_time: u64,
-    fee_model: FeeModel,
+    migration_fee: Fee,
     auction_duration: u64,
     initial_reserve: u64,
     accrued_meme_balance: u64,
@@ -82,7 +82,7 @@ public fun new<Meme, MigrationWitness, ConfigKey>(
 
     let fee_model = config.fee_model<ConfigKey>();
 
-    fee_model.new_fee().send(&mut creation_fee, ctx);
+    fee_model.new_fee().take(&mut creation_fee, ctx);
 
     creation_fee.destroy_or_return(ctx);
 
@@ -115,10 +115,11 @@ public fun new<Meme, MigrationWitness, ConfigKey>(
             auction_config[3],
             auction_config[4],
             meme_balance,
+            fee_model.swap_fee(),
             auction_config[2],
         ),
         meme_token_cap,
-        fee_model,
+        migration_fee: fee_model.migration_fee(),
     };
 
     let mut memez_fun = memez_fun::new<Auction, MigrationWitness, Meme>(
@@ -145,7 +146,7 @@ public fun new<Meme, MigrationWitness, ConfigKey>(
 public fun pump<Meme>(
     self: &mut MemezFun<Auction, Meme>,
     clock: &Clock,
-    mut sui_coin: Coin<SUI>,
+    sui_coin: Coin<SUI>,
     min_amount_out: u64,
     version: CurrentVersion,
     ctx: &mut TxContext,
@@ -157,8 +158,6 @@ public fun pump<Meme>(
     let state = self.state_mut();
 
     state.provide_liquidity(clock);
-
-    state.fee_model.swap_fee().send(&mut sui_coin, ctx);
 
     let (start_migrating, meme_coin) = state
         .constant_product
@@ -176,7 +175,7 @@ public fun pump<Meme>(
 public fun pump_token<Meme>(
     self: &mut MemezFun<Auction, Meme>,
     clock: &Clock,
-    mut sui_coin: Coin<SUI>,
+    sui_coin: Coin<SUI>,
     min_amount_out: u64,
     version: CurrentVersion,
     ctx: &mut TxContext,
@@ -188,8 +187,6 @@ public fun pump_token<Meme>(
     let state = self.state_mut();
 
     state.provide_liquidity(clock);
-
-    state.fee_model.swap_fee().send(&mut sui_coin, ctx);
 
     let (start_migrating, meme_coin) = state
         .constant_product
@@ -210,7 +207,7 @@ public fun dump<Meme>(
     self: &mut MemezFun<Auction, Meme>,
     clock: &Clock,
     treasury_cap: &mut IPXTreasuryStandard,
-    mut meme_coin: Coin<Meme>,
+    meme_coin: Coin<Meme>,
     min_amount_out: u64,
     version: CurrentVersion,
     ctx: &mut TxContext,
@@ -222,8 +219,6 @@ public fun dump<Meme>(
     let state = self.state_mut();
 
     state.provide_liquidity(clock);
-
-    state.fee_model.swap_fee().send(&mut meme_coin, ctx);
 
     state
         .constant_product
@@ -252,9 +247,7 @@ public fun dump_token<Meme>(
 
     state.provide_liquidity(clock);
 
-    let mut meme_coin = state.token_cap().to_coin(meme_token, ctx);
-
-    state.fee_model.swap_fee().send(&mut meme_coin, ctx);
+    let meme_coin = state.token_cap().to_coin(meme_token, ctx);
 
     state
         .constant_product
@@ -285,7 +278,7 @@ public fun migrate<Meme>(
 
     let mut sui_coin = sui_balance.into_coin(ctx);
 
-    state.fee_model.migration_fee().send(&mut sui_coin, ctx);
+    state.migration_fee.take(&mut sui_coin, ctx);
 
     self.migrate(sui_coin.into_balance(), liquidity_provision)
 }
@@ -317,7 +310,11 @@ public fun to_coin<Meme>(
 // === View Functions for FE ===
 
 #[allow(unused_function)]
-fun pump_amount<Meme>(self: &mut MemezFun<Auction, Meme>, amount_in: u64, clock: &Clock): u64 {
+fun pump_amount<Meme>(
+    self: &mut MemezFun<Auction, Meme>,
+    amount_in: u64,
+    clock: &Clock,
+): vector<u64> {
     let state = self.state();
 
     let amount = new_liquidity_amount(state, clock);
@@ -335,7 +332,7 @@ fun dump_amount<Meme>(
     self: &mut MemezFun<Auction, Meme>,
     amount_in: u64,
     clock: &Clock,
-): (u64, u64, u64) {
+): vector<u64> {
     let state = self.state();
 
     let amount = new_liquidity_amount(state, clock);
@@ -458,9 +455,9 @@ public fun market_cap<Meme>(
     decimals: u8,
     total_supply: u64,
 ): u64 {
-    let (_, virtual_price, _) = dump_amount(self, 10u64.pow(decimals), clock);
+    let amounts = dump_amount(self, 10u64.pow(decimals), clock);
 
-    u64::mul_div_up(virtual_price, total_supply, 10u64.pow(decimals))
+    u64::mul_div_up(amounts[1], total_supply, 10u64.pow(decimals))
 }
 
 #[test_only]

@@ -71,22 +71,35 @@ public(package) fun new(
     }
 }
 
-public(package) fun send<T>(fee: Fee, asset: &mut Coin<T>, ctx: &mut TxContext) {
+public(package) fun calculate(fee: Fee, amount_in: u64): u64 {
+    match (fee) {
+        Fee::Value(value, _) => value,
+        Fee::Percentage(bps, _) => bps.calc(amount_in),
+    }
+}
+
+public(package) fun take<T>(fee: Fee, asset: &mut Coin<T>, ctx: &mut TxContext): u64 {
     match (fee) {
         Fee::Value(value, beneficiaries) => {
-            if (value == 0) return;
+            if (value == 0) return 0;
 
             let payment = asset.split(value, ctx);
-            send_internal(payment, beneficiaries, ctx);
+            let payment_value = payment.value();
+            take_internal(payment, beneficiaries, ctx);
+
+            payment_value
         },
         Fee::Percentage(bps, beneficiaries) => {
-            if (bps.value() == 0) return;
+            if (bps.value() == 0) return 0;
 
             let asset_value = asset.value();
             let payment = asset.split(bps.calc(asset_value), ctx);
-            send_internal(payment, beneficiaries, ctx);
+            let payment_value = payment.value();
+            take_internal(payment, beneficiaries, ctx);
+
+            payment_value
         },
-    };
+    }
 }
 
 public(package) fun new_fee(self: FeeModel): Fee {
@@ -101,9 +114,9 @@ public(package) fun migration_fee(self: FeeModel): Fee {
     self.migration
 }
 
-// === Private Functions === 
+// === Private Functions ===
 
-fun send_internal<T>(mut payment: Coin<T>, beneficiaries: vector<Recipient>, ctx: &mut TxContext) {
+fun take_internal<T>(mut payment: Coin<T>, beneficiaries: vector<Recipient>, ctx: &mut TxContext) {
     let payment_value = payment.value();
 
     beneficiaries.do_ref!(|beneficiary| {

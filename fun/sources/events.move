@@ -18,6 +18,7 @@ public struct Pump has copy, drop {
     meme: TypeName,
     sui_amount_in: u64,
     meme_amount_out: u64,
+    swap_fee: u64,
 }
 
 public struct Dump has copy, drop {
@@ -25,6 +26,7 @@ public struct Dump has copy, drop {
     meme: TypeName,
     sui_amount_out: u64,
     meme_amount_in: u64,
+    swap_fee: u64,
     meme_burn_amount: u64,
 }
 
@@ -56,14 +58,26 @@ public(package) fun new<Curve, Meme>(
     });
 }
 
-public(package) fun pump<Meme>(memez_fun: address, sui_amount_in: u64, meme_amount_out: u64) {
-    emit_event(Pump { memez_fun, meme: type_name::get<Meme>(), sui_amount_in, meme_amount_out });
+public(package) fun pump<Meme>(
+    memez_fun: address,
+    sui_amount_in: u64,
+    meme_amount_out: u64,
+    swap_fee: u64,
+) {
+    emit_event(Pump {
+        memez_fun,
+        meme: type_name::get<Meme>(),
+        sui_amount_in,
+        meme_amount_out,
+        swap_fee,
+    });
 }
 
 public(package) fun dump<Meme>(
     memez_fun: address,
     sui_amount_out: u64,
     meme_amount_in: u64,
+    swap_fee: u64,
     meme_burn_amount: u64,
 ) {
     emit_event(Dump {
@@ -71,6 +85,7 @@ public(package) fun dump<Meme>(
         meme: type_name::get<Meme>(),
         sui_amount_out,
         meme_amount_in,
+        swap_fee,
         meme_burn_amount,
     });
 }

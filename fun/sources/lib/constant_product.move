@@ -6,6 +6,7 @@ use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
 use memez_fun::{
     memez_burn_model::{Self, BurnModel},
     memez_events,
+    memez_fee_model::Fee,
     memez_utils::{assert_slippage, assert_coin_has_value, pow_9}
 };
 use sui::{balance::{Self, Balance}, coin::Coin, sui::SUI};
@@ -19,6 +20,7 @@ public struct MemezConstantProduct<phantom Meme> has store {
     sui_balance: Balance<SUI>,
     meme_balance: Balance<Meme>,
     burn_model: BurnModel,
+    swap_fee: Fee,
 }
 
 // === Public Package Functions ===
@@ -27,6 +29,7 @@ public(package) fun new<Meme>(
     virtual_liquidity: u64,
     target_sui_liquidity: u64,
     meme_balance: Balance<Meme>,
+    swap_fee: Fee,
     burn_tax: u64,
 ): MemezConstantProduct<Meme> {
     MemezConstantProduct {
@@ -40,6 +43,7 @@ public(package) fun new<Meme>(
             virtual_liquidity,
             target_sui_liquidity,
         ]),
+        swap_fee,
     }
 }
 
@@ -49,10 +53,12 @@ public(package) fun set_memez_fun<Meme>(self: &mut MemezConstantProduct<Meme>, m
 
 public(package) fun pump<Meme>(
     self: &mut MemezConstantProduct<Meme>,
-    sui_coin: Coin<SUI>,
+    mut sui_coin: Coin<SUI>,
     min_amount_out: u64,
     ctx: &mut TxContext,
 ): (bool, Coin<Meme>) {
+    let swap_fee = self.swap_fee.take(&mut sui_coin, ctx);
+
     let sui_coin_value = assert_coin_has_value(&sui_coin);
 
     let meme_balance_value = self.meme_balance.value();
@@ -69,7 +75,7 @@ public(package) fun pump<Meme>(
 
     let total_sui_balance = self.sui_balance.join(sui_coin.into_balance());
 
-    memez_events::pump<Meme>(self.memez_fun, sui_coin_value, meme_coin_value_out);
+    memez_events::pump<Meme>(self.memez_fun, sui_coin_value, meme_coin_value_out, swap_fee);
 
     (total_sui_balance >= self.target_sui_liquidity, meme_coin)
 }
@@ -81,6 +87,8 @@ public(package) fun dump<Meme>(
     min_amount_out: u64,
     ctx: &mut TxContext,
 ): Coin<SUI> {
+    let swap_fee = self.swap_fee.take(&mut meme_coin, ctx);
+
     let meme_coin_value = assert_coin_has_value(&meme_coin);
 
     let meme_balance_value = self.meme_balance.value();
@@ -96,11 +104,9 @@ public(package) fun dump<Meme>(
     );
 
     let dynamic_burn_tax = self.burn_model.calculate(sui_virtual_liquidity - pre_tax_sui_value_out);
+    let meme_burn_fee_value = u64::mul_div_up(meme_coin_value, dynamic_burn_tax, pow_9());
 
-    if (dynamic_burn_tax != 0) {
-        let meme_fee_value = u64::mul_div_up(meme_coin_value, dynamic_burn_tax, pow_9());
-        treasury_cap.burn(meme_coin.split(meme_fee_value, ctx));
-    };
+    if (dynamic_burn_tax != 0) treasury_cap.burn(meme_coin.split(meme_burn_fee_value, ctx));
 
     let meme_coin_value = assert_coin_has_value(&meme_coin);
 
@@ -128,7 +134,8 @@ public(package) fun dump<Meme>(
         self.memez_fun,
         sui_value_out,
         meme_coin_value,
-        0,
+        swap_fee,
+        meme_burn_fee_value,
     );
 
     sui_coin
@@ -138,22 +145,26 @@ public(package) fun pump_amount<Meme>(
     self: &MemezConstantProduct<Meme>,
     amount_in: u64,
     extra_meme_amount: u64,
-): u64 {
-    if (amount_in == 0) return 0;
+): vector<u64> {
+    if (amount_in == 0) return vector[0, 0];
 
-    get_amount_out(
-        amount_in,
+    let swap_fee = self.swap_fee.calculate(amount_in);
+
+    let amount_out = get_amount_out(
+        amount_in - swap_fee,
         self.virtual_liquidity + self.sui_balance.value(),
         self.meme_balance.value() + extra_meme_amount,
-    )
+    );
+
+    vector[amount_out, swap_fee]
 }
 
 public(package) fun dump_amount<Meme>(
     self: &MemezConstantProduct<Meme>,
     amount_in: u64,
     extra_meme_amount: u64,
-): (u64, u64, u64) {
-    if (amount_in == 0) return (0, 0, 0);
+): vector<u64> {
+    if (amount_in == 0) return vector[0, 0, 0, 0];
 
     let meme_balance_value = self.meme_balance.value() + extra_meme_amount;
 
@@ -161,23 +172,39 @@ public(package) fun dump_amount<Meme>(
 
     let sui_virtual_liquidity = self.virtual_liquidity + sui_balance_value;
 
+    let swap_fee = self.swap_fee.calculate(amount_in);
+
     let pre_tax_sui_value_out = get_amount_out(
-        amount_in,
+        amount_in - swap_fee,
         meme_balance_value,
         sui_virtual_liquidity,
     );
 
     let dynamic_burn_tax = self.burn_model.calculate(sui_virtual_liquidity - pre_tax_sui_value_out);
 
-    let meme_fee_value = u64::mul_div_up(amount_in, dynamic_burn_tax, pow_9());
+    let meme_burn_fee_value = u64::mul_div_up(amount_in, dynamic_burn_tax, pow_9());
+
+    if (dynamic_burn_tax != 0) {
+        return vector[
+            pre_tax_sui_value_out.min(sui_balance_value),
+            pre_tax_sui_value_out,
+            swap_fee,
+            meme_burn_fee_value,
+        ]
+    };
 
     let post_tax_sui_value_out = get_amount_out(
-        amount_in - meme_fee_value,
+        amount_in - meme_burn_fee_value,
         meme_balance_value,
         sui_virtual_liquidity,
     );
 
-    (post_tax_sui_value_out.min(sui_balance_value), post_tax_sui_value_out, meme_fee_value)
+    vector[
+        post_tax_sui_value_out.min(sui_balance_value),
+        post_tax_sui_value_out,
+        swap_fee,
+        meme_burn_fee_value,
+    ]
 }
 
 public(package) fun virtual_liquidity<Meme>(self: &MemezConstantProduct<Meme>): u64 {
@@ -192,8 +219,8 @@ public(package) fun sui_balance<Meme>(self: &MemezConstantProduct<Meme>): &Balan
     &self.sui_balance
 }
 
-public(package) fun burn_model<Meme>(self: &MemezConstantProduct<Meme>): &BurnModel {
-    &self.burn_model
+public(package) fun burn_model<Meme>(self: &MemezConstantProduct<Meme>): BurnModel {
+    self.burn_model
 }
 
 public(package) fun meme_balance<Meme>(self: &MemezConstantProduct<Meme>): &Balance<Meme> {

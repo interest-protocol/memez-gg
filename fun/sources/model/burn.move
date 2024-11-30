@@ -28,7 +28,7 @@ public(package) fun new(values: vector<u64>): BurnModel {
 }
 
 public(package) fun calculate(self: BurnModel, liquidity: u64): u64 {
-    if (liquidity >= self.target_liquidity) return 0;
+    if (self.value == 0 || liquidity >= self.target_liquidity) return 0;
 
     if (self.start_liquidity >= liquidity) return self.value;
 

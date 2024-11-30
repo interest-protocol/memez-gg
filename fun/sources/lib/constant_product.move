@@ -76,10 +76,32 @@ public(package) fun pump<Meme>(
 
 public(package) fun dump<Meme>(
     self: &mut MemezConstantProduct<Meme>,
-    meme_coin: Coin<Meme>,
+    treasury_cap: &mut IPXTreasuryStandard,
+    mut meme_coin: Coin<Meme>,
     min_amount_out: u64,
     ctx: &mut TxContext,
 ): Coin<SUI> {
+    let meme_coin_value = assert_coin_has_value(&meme_coin);
+
+    let meme_balance_value = self.meme_balance.value();
+
+    let sui_balance_value = self.sui_balance.value();
+
+    let sui_virtual_liquidity = self.virtual_liquidity + sui_balance_value;
+
+    let pre_tax_sui_value_out = get_amount_out(
+        meme_coin_value,
+        meme_balance_value,
+        sui_virtual_liquidity,
+    );
+
+    let dynamic_burn_tax = self.burn_model.calculate(sui_virtual_liquidity - pre_tax_sui_value_out);
+
+    if (dynamic_burn_tax != 0) {
+        let meme_fee_value = u64::mul_div_up(meme_coin_value, dynamic_burn_tax, pow_9());
+        treasury_cap.burn(meme_coin.split(meme_fee_value, ctx));
+    };
+
     let meme_coin_value = assert_coin_has_value(&meme_coin);
 
     let meme_balance_value = self.meme_balance.value();
@@ -112,36 +134,6 @@ public(package) fun dump<Meme>(
     sui_coin
 }
 
-public(package) fun burn_and_dump<Meme>(
-    self: &mut MemezConstantProduct<Meme>,
-    treasury_cap: &mut IPXTreasuryStandard,
-    mut meme_coin: Coin<Meme>,
-    min_amount_out: u64,
-    ctx: &mut TxContext,
-): Coin<SUI> {
-    let meme_coin_value = assert_coin_has_value(&meme_coin);
-
-    let meme_balance_value = self.meme_balance.value();
-
-    let sui_balance_value = self.sui_balance.value();
-
-    let sui_virtual_liquidity = self.virtual_liquidity + sui_balance_value;
-
-    let pre_tax_sui_value_out = get_amount_out(
-        meme_coin_value,
-        meme_balance_value,
-        sui_virtual_liquidity,
-    );
-
-    let dynamic_burn_tax = self.burn_model.calculate(sui_virtual_liquidity - pre_tax_sui_value_out);
-
-    let meme_fee_value = u64::mul_div_up(meme_coin_value, dynamic_burn_tax, pow_9());
-
-    treasury_cap.burn(meme_coin.split(meme_fee_value, ctx));
-
-    dump(self, meme_coin, min_amount_out, ctx)
-}
-
 public(package) fun pump_amount<Meme>(
     self: &MemezConstantProduct<Meme>,
     amount_in: u64,
@@ -157,22 +149,6 @@ public(package) fun pump_amount<Meme>(
 }
 
 public(package) fun dump_amount<Meme>(
-    self: &MemezConstantProduct<Meme>,
-    amount_in: u64,
-    extra_meme_amount: u64,
-): u64 {
-    if (amount_in == 0) return 0;
-
-    let sui_balance_value = self.sui_balance.value();
-
-    get_amount_out(
-        amount_in,
-        self.meme_balance.value() + extra_meme_amount,
-        self.virtual_liquidity + sui_balance_value,
-    ).min(sui_balance_value)
-}
-
-public(package) fun burn_and_dump_amount<Meme>(
     self: &MemezConstantProduct<Meme>,
     amount_in: u64,
     extra_meme_amount: u64,

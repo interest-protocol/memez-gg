@@ -65,23 +65,28 @@ public fun destroy<Meme, Witness: drop>(
 
 // === Public Package Functions ===
 
-public(package) fun new<Curve, MigrationWitness, Meme>(
+public(package) fun new<Curve, Meme, ConfigKey, MigrationWitness>(
     migrator: &MemezMigratorList,
     state: Versioned,
     is_token: bool,
-    metadata_names: vector<String>,
-    metadata_values: vector<String>,
+    mut metadata_names: vector<String>,
+    mut metadata_values: vector<String>,
     ipx_meme_coin_treasury: address,
     ctx: &mut TxContext,
 ): MemezFun<Curve, Meme> {
+    let config_key = type_name::get<ConfigKey>();
     let migration_witness = type_name::get<MigrationWitness>();
 
     migrator.assert_is_whitelisted(migration_witness);
+
+    metadata_names.push_back(b"config_key".to_string());
+    metadata_values.push_back(config_key.into_string().to_string());
 
     let id = object::new(ctx);
 
     memez_events::new<Curve, Meme>(
         id.to_address(),
+        config_key,
         migration_witness,
         ipx_meme_coin_treasury,
     );

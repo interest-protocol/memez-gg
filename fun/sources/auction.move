@@ -65,7 +65,7 @@ public struct AuctionState<phantom Meme> has store {
 // === Public Mutative Functions ===
 
 #[allow(lint(share_owned))]
-public fun new<Meme, MigrationWitness, ConfigKey>(
+public fun new<Meme, ConfigKey, MigrationWitness>(
     config: &MemezConfig,
     migrator_list: &MemezMigratorList,
     clock: &Clock,
@@ -122,7 +122,7 @@ public fun new<Meme, MigrationWitness, ConfigKey>(
         migration_fee: fee_model.migration_fee(),
     };
 
-    let mut memez_fun = memez_fun::new<Auction, MigrationWitness, Meme>(
+    let mut memez_fun = memez_fun::new<Auction, Meme, ConfigKey, MigrationWitness>(
         migrator_list,
         versioned::create(AUCTION_STATE_VERSION_V1, auction_state, ctx),
         is_token,

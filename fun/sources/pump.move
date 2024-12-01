@@ -58,7 +58,7 @@ public struct PumpState<phantom Meme> has store {
 // === Public Mutative Functions ===
 
 #[allow(lint(share_owned))]
-public fun new<Meme, MigrationWitness, ConfigKey>(
+public fun new<Meme, ConfigKey, MigrationWitness>(
     config: &MemezConfig,
     migrator_list: &MemezMigratorList,
     meme_treasury_cap: TreasuryCap<Meme>,
@@ -106,7 +106,7 @@ public fun new<Meme, MigrationWitness, ConfigKey>(
         migration_fee: fee_model.migration_fee(),
     };
 
-    let mut memez_fun = memez_fun::new<Pump, MigrationWitness, Meme>(
+    let mut memez_fun = memez_fun::new<Pump, Meme, ConfigKey, MigrationWitness>(
         migrator_list,
         versioned::create(PUMP_STATE_VERSION_V1, pump_state, ctx),
         is_token,

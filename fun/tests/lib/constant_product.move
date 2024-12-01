@@ -431,52 +431,87 @@ fun test_pump_amount() {
     destroy(cp);
 }
 
-// #[test]
-// fun test_dump_amount() {
-//     let virtual_liquidity = 100;
-//     let target_sui_liquidity = 1100;
-//     let meme_balance_value = 5000;
-//     let burn_tax = 20;
+#[test]
+fun test_dump_amount() {
+    let virtual_liquidity = 100;
+    let target_sui_liquidity = 1100;
+    let meme_balance_value = 5000;
 
-//     let mut cp = memez_constant_product::new(
-//         virtual_liquidity,
-//         target_sui_liquidity,
-//         balance::create_for_testing<Meme>(meme_balance_value),
-//         burn_tax,
-//     );
+    let swap_fee = memez_fee_model::new_percentage_fee(30, vector[memez_fee_model::new_recipient(@0x0, BPS_MAX)]);
 
-//     let amount_in = 1000;
+    let burn_model = memez_burn_model::new(vector[BURN_TAX, virtual_liquidity, target_sui_liquidity]);
 
-//     let amount_out = get_amount_out(
-//         amount_in,
-//         meme_balance_value + 1200,
-//         virtual_liquidity,
-//     );
+    let mut cp = memez_constant_product::new(
+        virtual_liquidity,
+        target_sui_liquidity,
+        balance::create_for_testing<Meme>(meme_balance_value),
+        swap_fee,
+        BURN_TAX,
+    );
 
-//     let expected_amount_out = cp.dump_amount(amount_in, 1200);
+    let amount_in = 1000;
 
-//     assert_eq(expected_amount_out, 0);
-//     assert_eq(amount_out != 0, true);
-//     assert_eq(expected_amount_out, 0);
+    let swap_fee_amount = swap_fee.calculate(amount_in);
 
-//     cp.sui_balance_mut().join(balance::create_for_testing<SUI>(600));
+    let amount_out = get_amount_out(
+        amount_in - swap_fee_amount,
+        meme_balance_value + 1200,
+        virtual_liquidity,
+    );
 
-//     let amount_out = get_amount_out(
-//         amount_in,
-//         meme_balance_value + 1200,
-//         virtual_liquidity + 600,
-//     );
+    let dynamic_burn_tax = burn_model.calculate(virtual_liquidity - amount_out);
 
-//     let expected_amount_out = cp.dump_amount(amount_in, 1200);
+    let meme_burn_fee_value = u64::mul_div_up(amount_in - swap_fee_amount, dynamic_burn_tax, POW_9);
 
-//     assert_eq(expected_amount_out, amount_out);
+    let amount_out = get_amount_out(
+        amount_in - swap_fee_amount - meme_burn_fee_value,
+        meme_balance_value + 1200,
+        virtual_liquidity,
+    );
 
-//     let expected_amount_out = cp.dump_amount(0, 1200);
+    let amounts = cp.dump_amount(amount_in, 1200);
 
-//     assert_eq(expected_amount_out, 0);
+    assert_eq(amounts[0], 0);
+    assert_eq(amounts[1], amount_out);
+    assert_eq(amounts[1] != 0, true);
+    assert_eq(amounts[2], swap_fee_amount);
+    assert_eq(amounts[3], meme_burn_fee_value);
 
-//     destroy(cp);
-// }
+    cp.sui_balance_mut().join(balance::create_for_testing<SUI>(600));
+
+    let amount_out = get_amount_out(
+        amount_in - swap_fee_amount,
+        meme_balance_value + 1200,
+        virtual_liquidity + 600,
+    );
+
+    let dynamic_burn_tax = burn_model.calculate(virtual_liquidity + 600 - amount_out);
+
+    let meme_burn_fee_value = u64::mul_div_up(amount_in - swap_fee_amount, dynamic_burn_tax, POW_9);
+
+    let amount_out = get_amount_out(
+        amount_in - swap_fee_amount - meme_burn_fee_value,
+        meme_balance_value + 1200,
+        virtual_liquidity + 600,
+    );
+
+    let amounts = cp.dump_amount(amount_in, 1200);
+
+    assert_eq(amounts[0], amount_out);
+    assert_eq(amounts[0] != 0, true);
+    assert_eq(amounts[1], amount_out);
+    assert_eq(amounts[2], swap_fee_amount);
+    assert_eq(amounts[3], meme_burn_fee_value);
+
+    let amounts = cp.dump_amount(0, 1200);
+
+    assert_eq(amounts[0], 0);
+    assert_eq(amounts[1], 0);
+    assert_eq(amounts[2], 0);
+    assert_eq(amounts[3], 0);
+
+    destroy(cp);
+}
 
 // #[test]
 // fun test_burn_and_dump_amount() {

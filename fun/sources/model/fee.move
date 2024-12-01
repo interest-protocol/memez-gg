@@ -134,3 +134,20 @@ fun take_internal<T>(mut payment: Coin<T>, beneficiaries: vector<Recipient>, ctx
 
 use fun memez_utils::validate_bps as vector.validate;
 use fun memez_utils::destroy_or_return as Coin.destroy_or_return;
+
+// === Test Functions ===
+
+#[test_only]
+public fun new_recipient(addy: address, bps: u64): Recipient {
+    Recipient { addy, bps: bps::new(bps) }
+}
+
+#[test_only]
+public fun new_value_fee(value: u64, recipients: vector<Recipient>): Fee {
+    Fee::Value(value, recipients)
+}
+
+#[test_only]
+public fun new_percentage_fee(value: u64, recipients: vector<Recipient>): Fee {
+    Fee::Percentage(bps::new(value), recipients)
+}

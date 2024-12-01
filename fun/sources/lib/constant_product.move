@@ -174,27 +174,28 @@ public(package) fun dump_amount<Meme>(
 
     let swap_fee = self.swap_fee.calculate(amount_in);
 
+    let amount_in_minus_swap_fee = amount_in - swap_fee;
+
     let pre_tax_sui_value_out = get_amount_out(
-        amount_in - swap_fee,
+        amount_in_minus_swap_fee,
         meme_balance_value,
         sui_virtual_liquidity,
     );
 
     let dynamic_burn_tax = self.burn_model.calculate(sui_virtual_liquidity - pre_tax_sui_value_out);
 
-    let meme_burn_fee_value = u64::mul_div_up(amount_in, dynamic_burn_tax, pow_9());
+    let meme_burn_fee_value = u64::mul_div_up(amount_in_minus_swap_fee, dynamic_burn_tax, pow_9());
 
-    if (dynamic_burn_tax != 0) {
+    if (dynamic_burn_tax == 0)
         return vector[
             pre_tax_sui_value_out.min(sui_balance_value),
             pre_tax_sui_value_out,
             swap_fee,
             meme_burn_fee_value,
-        ]
-    };
+        ];
 
     let post_tax_sui_value_out = get_amount_out(
-        amount_in - meme_burn_fee_value,
+        amount_in_minus_swap_fee - meme_burn_fee_value,
         meme_balance_value,
         sui_virtual_liquidity,
     );

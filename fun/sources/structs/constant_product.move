@@ -4,9 +4,9 @@ use constant_product::constant_product::get_amount_out;
 use interest_math::u64;
 use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
 use memez_fun::{
-    memez_burn_model::{Self, BurnModel},
+    memez_burner::{Self, MemezBurner},
     memez_events,
-    memez_fee_model::Fee,
+    memez_fees::Fee,
     memez_utils::{assert_slippage, assert_coin_has_value, pow_9}
 };
 use sui::{balance::{Self, Balance}, coin::Coin, sui::SUI};
@@ -19,7 +19,7 @@ public struct MemezConstantProduct<phantom Meme> has store {
     target_sui_liquidity: u64,
     sui_balance: Balance<SUI>,
     meme_balance: Balance<Meme>,
-    burn_model: BurnModel,
+    burn_model: MemezBurner,
     swap_fee: Fee,
 }
 
@@ -38,7 +38,7 @@ public(package) fun new<Meme>(
         target_sui_liquidity,
         sui_balance: balance::zero(),
         meme_balance,
-        burn_model: memez_burn_model::new(vector[
+        burn_model: memez_burner::new(vector[
             burn_tax,
             virtual_liquidity,
             target_sui_liquidity,
@@ -220,7 +220,7 @@ public(package) fun sui_balance<Meme>(self: &MemezConstantProduct<Meme>): &Balan
     &self.sui_balance
 }
 
-public(package) fun burn_model<Meme>(self: &MemezConstantProduct<Meme>): BurnModel {
+public(package) fun burner<Meme>(self: &MemezConstantProduct<Meme>): MemezBurner {
     self.burn_model
 }
 

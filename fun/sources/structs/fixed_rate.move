@@ -3,7 +3,7 @@ module memez_fun::memez_fixed_rate;
 use interest_math::u64;
 use memez_fun::{
     memez_events,
-    memez_fee_model::Fee,
+    memez_fees::Fee,
     memez_utils::{assert_slippage, assert_coin_has_value}
 };
 use sui::{balance::{Self, Balance}, coin::{Self, Coin}, sui::SUI};

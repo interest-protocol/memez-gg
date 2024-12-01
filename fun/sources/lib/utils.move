@@ -1,8 +1,9 @@
 module memez_fun::memez_utils;
 
 use interest_bps::bps;
+use ipx_coin_standard::ipx_coin_standard::{Self, MetadataCap};
 use memez_fun::memez_errors;
-use sui::{balance::Balance, coin::Coin};
+use sui::{balance::Balance, coin::Coin, coin::TreasuryCap};
 
 // === Constants ===
 
@@ -44,4 +45,36 @@ public(package) fun validate_bps(percentages: vector<u64>) {
         percentages.fold!(0, |acc, bps| acc + bps) == bps::max_bps(),
         memez_errors::invalid_percentages(),
     );
+}
+
+#[allow(lint(share_owned))]
+public(package) fun new_treasury<Meme>(
+    mut meme_treasury_cap: TreasuryCap<Meme>,
+    total_supply: u64,
+    ctx: &mut TxContext,
+): (address, MetadataCap, Balance<Meme>) {
+    assert!(meme_treasury_cap.total_supply() == 0, memez_errors::pre_mint_not_allowed());
+
+    let meme_balance = meme_treasury_cap.mint_balance(
+        total_supply,
+    );
+
+    let (mut ipx_treasury_standard, mut cap_witness) = ipx_coin_standard::new(
+        meme_treasury_cap,
+        ctx,
+    );
+
+    cap_witness.add_burn_capability(
+        &mut ipx_treasury_standard,
+    );
+
+    let treasury_address = object::id_address(
+        &ipx_treasury_standard,
+    );
+
+    transfer::public_share_object(
+        ipx_treasury_standard,
+    );
+
+    (treasury_address, cap_witness.create_metadata_cap(ctx), meme_balance)
 }

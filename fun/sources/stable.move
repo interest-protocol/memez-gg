@@ -20,14 +20,14 @@ module memez_fun::memez_stable;
 
 use ipx_coin_standard::ipx_coin_standard::MetadataCap;
 use memez_fun::{
-    memez_config::{Self, MemezConfig},
+    memez_config::MemezConfig,
     memez_errors,
-    memez_fee_model::Fee,
+    memez_fees::Fee,
     memez_fixed_rate::{Self, FixedRate},
     memez_fun::{Self, MemezFun, MemezMigrator},
     memez_migrator_list::MemezMigratorList,
     memez_token_cap::{Self, MemezTokenCap},
-    memez_utils::{destroy_or_burn, destroy_or_return},
+    memez_utils::{destroy_or_burn, destroy_or_return, new_treasury},
     memez_version::CurrentVersion
 };
 use memez_vesting::memez_vesting::{Self, MemezVesting};
@@ -78,7 +78,7 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
 ): MetadataCap {
     version.assert_is_valid();
 
-    let fee_model = config.fee_model<ConfigKey>();
+    let fee_model = config.fees<ConfigKey>();
 
     fee_model.new_fee().take(&mut creation_fee, ctx);
 
@@ -93,7 +93,7 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
         ipx_meme_coin_treasury,
         metadata_cap,
         mut meme_reserve,
-    ) = memez_config::set_up_meme_treasury(meme_treasury_cap, total_supply, ctx);
+    ) = new_treasury(meme_treasury_cap, total_supply, ctx);
 
     let dev_allocation = meme_reserve.split(dev_payload[0]);
 

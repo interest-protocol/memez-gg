@@ -1,4 +1,4 @@
-module memez_fun::memez_fee_model;
+module memez_fun::memez_fees;
 
 use interest_bps::bps::{Self, BPS};
 use memez_fun::{memez_errors, memez_utils};
@@ -20,7 +20,7 @@ public enum Fee has copy, drop, store {
     Percentage(BPS, vector<Recipient>),
 }
 
-public struct FeeModel has copy, drop, store {
+public struct MemezFees has copy, drop, store {
     new: Fee,
     swap: Fee,
     migration: Fee,
@@ -31,7 +31,7 @@ public struct FeeModel has copy, drop, store {
 public(package) fun new(
     values: vector<vector<u64>>,
     recipients: vector<vector<address>>,
-): FeeModel {
+): MemezFees {
     assert!(values.length() == VALUES_LENGTH, memez_errors::invalid_model_config());
 
     let mut new_percentages = values[0];
@@ -46,7 +46,7 @@ public(package) fun new(
     swap_percentages.validate();
     migration_percentages.validate();
 
-    FeeModel {
+    MemezFees {
         new: Fee::Value(
             new_value,
             new_percentages.zip_map!(
@@ -102,15 +102,15 @@ public(package) fun take<T>(fee: Fee, asset: &mut Coin<T>, ctx: &mut TxContext):
     }
 }
 
-public(package) fun new_fee(self: FeeModel): Fee {
+public(package) fun new_fee(self: MemezFees): Fee {
     self.new
 }
 
-public(package) fun swap_fee(self: FeeModel): Fee {
+public(package) fun swap_fee(self: MemezFees): Fee {
     self.swap
 }
 
-public(package) fun migration_fee(self: FeeModel): Fee {
+public(package) fun migration_fee(self: MemezFees): Fee {
     self.migration
 }
 

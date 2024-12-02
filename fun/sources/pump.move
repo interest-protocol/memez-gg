@@ -85,11 +85,11 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
     let meme_token_cap = if (is_token) option::some(memez_token_cap::new(&meme_treasury_cap, ctx))
     else option::none();
 
-    let (
-        ipx_meme_coin_treasury,
-        metadata_cap,
-        mut meme_balance,
-    ) = new_treasury(meme_treasury_cap, total_supply, ctx);
+    let (ipx_meme_coin_treasury, metadata_cap, mut meme_balance) = new_treasury(
+        meme_treasury_cap,
+        total_supply,
+        ctx,
+    );
 
     let liquidity_provision = meme_balance.split(pump_config[3]);
 

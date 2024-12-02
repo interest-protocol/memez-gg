@@ -58,9 +58,15 @@ fun test_end_to_end() {
     destroy(auction);
 }
 
-#[test, expected_failure(abort_code = memez_errors::EInvalidModelConfig, location = memez_auction_model)]
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EInvalidModelConfig,
+        location = memez_auction_model,
+    ),
+]
 fun test_new_invalid_config() {
-    let _auction = memez_auction_model::new(vector[
+    let auction = memez_auction_model::new(vector[
         THIRTY_MINUTES_MS,
         DEV_ALLOCATION,
         BURN_TAX,
@@ -69,5 +75,5 @@ fun test_new_invalid_config() {
         LIQUIDITY_PROVISION,
     ]);
 
-    abort
+    destroy(auction);
 }

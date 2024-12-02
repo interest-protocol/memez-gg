@@ -3,7 +3,7 @@ module memez_fun::memez_utils;
 use interest_bps::bps;
 use ipx_coin_standard::ipx_coin_standard::{Self, MetadataCap};
 use memez_fun::memez_errors;
-use sui::{balance::Balance, coin::Coin, coin::TreasuryCap};
+use sui::{balance::Balance, coin::{Coin, TreasuryCap}};
 
 // === Constants ===
 
@@ -53,7 +53,7 @@ public(package) fun new_treasury<Meme>(
     total_supply: u64,
     ctx: &mut TxContext,
 ): (address, MetadataCap, Balance<Meme>) {
-    assert!(meme_treasury_cap.total_supply() == 0, memez_errors::pre_mint_not_allowed()); 
+    assert!(meme_treasury_cap.total_supply() == 0, memez_errors::pre_mint_not_allowed());
     assert!(total_supply != 0, memez_errors::zero_total_supply());
 
     let meme_balance = meme_treasury_cap.mint_balance(

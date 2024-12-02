@@ -101,21 +101,16 @@ public fun remove<T, Model: drop + store>(
 public(package) fun fees<T>(self: &MemezConfig): MemezFees {
     let key = type_name::get<FeesKey<T>>();
 
-    assert!(
-        df::exists_(&self.id, key),
-        memez_errors::model_key_not_supported(),
-    );
+    assert!(df::exists_(&self.id, key), memez_errors::model_key_not_supported());
 
     *df::borrow(&self.id, key)
 }
 
 public(package) fun burner<T>(self: &MemezConfig): MemezBurner {
-    let key = type_name::get<BurnerKey<T>>();       
+    let key = type_name::get<BurnerKey<T>>();
 
-    if (df::exists_(&self.id, key))
-        *df::borrow(&self.id, key)
-    else
-        memez_burner::zero()
+    if (df::exists_(&self.id, key)) *df::borrow(&self.id, key)
+    else memez_burner::zero()
 }
 
 public(package) fun get_auction<T>(self: &MemezConfig, total_supply: u64): vector<u64> {

@@ -2,9 +2,15 @@
 module memez_fun::memez_utils_tests;
 
 use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
-use std::unit_test::assert_eq;
 use memez_fun::{memez_errors, memez_utils};
-use sui::{balance, coin::{Self, Coin, mint_for_testing}, sui::SUI, test_utils::destroy, test_scenario as ts};
+use std::unit_test::assert_eq;
+use sui::{
+    balance,
+    coin::{Self, Coin, mint_for_testing},
+    sui::SUI,
+    test_scenario as ts,
+    test_utils::destroy
+};
 
 public struct Meme()
 
@@ -122,7 +128,7 @@ fun set_up_treasury() {
     destroy(meme_balance);
     destroy(meme_treasury);
     metadata_cap.destroy();
-    
+
     scenario.end();
 }
 

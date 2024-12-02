@@ -1,7 +1,7 @@
 #[test_only]
 module memez_fun::memez_pump_config_tests;
 
-use memez_fun::{memez_pump_model, memez_errors};
+use memez_fun::{memez_errors, memez_pump_model};
 use std::unit_test::assert_eq;
 use sui::test_utils::destroy;
 
@@ -13,7 +13,6 @@ const LIQUIDITY_PROVISION: u64 = 600;
 const VIRTUAL_LIQUIDITY: u64 = 1_000__000_000_000;
 
 const TARGET_SUI_LIQUIDITY: u64 = 10_000__000_000_000;
-
 
 #[test]
 fun test_end_to_end() {
@@ -34,15 +33,21 @@ fun test_end_to_end() {
     destroy(auction);
 }
 
-#[test, expected_failure(abort_code = memez_errors::EInvalidModelConfig, location = memez_pump_model)]
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EInvalidModelConfig,
+        location = memez_pump_model,
+    ),
+]
 fun test_new_invalid_config() {
-    let _auction = memez_pump_model::new(vector[
+    let auction = memez_pump_model::new(vector[
         BURN_TAX,
         VIRTUAL_LIQUIDITY,
         TARGET_SUI_LIQUIDITY,
         LIQUIDITY_PROVISION,
-        0
+        0,
     ]);
 
-    abort
+    destroy(auction);
 }

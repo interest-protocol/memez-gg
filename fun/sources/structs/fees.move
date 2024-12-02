@@ -115,14 +115,14 @@ public(package) fun take<T>(fee: Fee, asset: &mut Coin<T>, ctx: &mut TxContext):
 public(package) fun creation(self: MemezFees): Fee {
     Fee::Value(
         self.creation.value,
-        self.creation.percentages.zip_map!(
-            self.creation.recipients,
-            |bps, addy| Recipient { addy, bps: bps::new(bps) },
-        ),
+        self
+            .creation
+            .percentages
+            .zip_map!(self.creation.recipients, |bps, addy| Recipient { addy, bps: bps::new(bps) }),
     )
 }
 
-public(package) fun swap(self: MemezFees, dev: address,): Fee {
+public(package) fun swap(self: MemezFees, dev: address): Fee {
     let mut recipients = self.swap.recipients;
 
     recipients.push_back(dev);

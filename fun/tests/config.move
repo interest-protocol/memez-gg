@@ -56,52 +56,6 @@ module memez_fun::memez_config_tests;
 // }
 
 // #[test]
-// fun set_up_treasury() {
-//     let mut world = start();
-
-//     let treasury_cap = world.treasury_cap.pop_back();
-
-//     let (meme_treasury_address, metadata_cap, meme_balance) = memez_config::set_up_meme_treasury(
-//         treasury_cap,
-//         TOTAL_MEME_SUPPLY,
-//         world.scenario.ctx(),
-//     );
-
-//     world.scenario.next_epoch(ADMIN);
-
-//     let meme_treasury = world.scenario.take_shared<IPXTreasuryStandard>();
-
-//     assert_eq(object::id(&meme_treasury).to_address(), meme_treasury_address);
-
-//     assert_eq(metadata_cap.treasury(), meme_treasury_address);
-//     assert_eq(meme_balance.value(), TOTAL_MEME_SUPPLY);
-//     assert_eq(meme_treasury.total_supply<GG>(), TOTAL_MEME_SUPPLY);
-//     assert_eq(meme_treasury.can_burn(), true);
-
-//     destroy(meme_balance);
-//     destroy(meme_treasury);
-//     metadata_cap.destroy();
-//     world.end();
-// }
-
-// #[test, expected_failure(abort_code = memez_errors::EPreMintNotAllowed, location = memez_config)]
-// fun set_up_treasury_pre_mint() {
-//     let mut world = start();
-
-//     let mut treasury_cap = world.treasury_cap.pop_back();
-
-//     treasury_cap.mint(100, world.scenario.ctx()).burn_for_testing();
-
-//     let (_addy, _metadata_cap, _meme_balance) = memez_config::set_up_meme_treasury(
-//         treasury_cap,
-//         TOTAL_MEME_SUPPLY,
-//         world.scenario.ctx(),
-//     );
-
-//     abort
-// }
-
-// #[test]
 // fun test_take_fees() {
 //     let mut world = start();
 

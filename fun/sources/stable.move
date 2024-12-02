@@ -90,11 +90,11 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
     let meme_token_cap = if (is_token) option::some(memez_token_cap::new(&meme_treasury_cap, ctx))
     else option::none();
 
-    let (
-        ipx_meme_coin_treasury,
-        metadata_cap,
-        mut meme_reserve,
-    ) = new_treasury(meme_treasury_cap, total_supply, ctx);
+    let (ipx_meme_coin_treasury, metadata_cap, mut meme_reserve) = new_treasury(
+        meme_treasury_cap,
+        total_supply,
+        ctx,
+    );
 
     let dev_allocation = meme_reserve.split(dev_payload[0]);
 
@@ -123,7 +123,7 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
         metadata_names,
         metadata_values,
         ipx_meme_coin_treasury,
-        dev,    
+        dev,
         ctx,
     );
 

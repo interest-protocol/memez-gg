@@ -38,11 +38,7 @@ public(package) fun new<Meme>(
         target_sui_liquidity,
         sui_balance: balance::zero(),
         meme_balance,
-        burn_model: memez_burner::new(vector[
-            burn_tax,
-            virtual_liquidity,
-            target_sui_liquidity,
-        ]),
+        burn_model: memez_burner::new(vector[burn_tax, virtual_liquidity, target_sui_liquidity]),
         swap_fee,
     }
 }
@@ -186,13 +182,14 @@ public(package) fun dump_amount<Meme>(
 
     let meme_burn_fee_value = u64::mul_div_up(amount_in_minus_swap_fee, dynamic_burn_tax, pow_9());
 
-    if (dynamic_burn_tax == 0)
+    if (dynamic_burn_tax == 0) {
         return vector[
             pre_tax_sui_value_out.min(sui_balance_value),
             pre_tax_sui_value_out,
             swap_fee,
             meme_burn_fee_value,
-        ];
+        ]
+    };
 
     let post_tax_sui_value_out = get_amount_out(
         amount_in_minus_swap_fee - meme_burn_fee_value,

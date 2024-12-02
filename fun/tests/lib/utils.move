@@ -126,6 +126,21 @@ fun set_up_treasury() {
     scenario.end();
 }
 
+#[test, expected_failure(abort_code = memez_errors::EZeroTotalSupply, location = memez_utils)]
+fun set_up_treasury_zero_total_supply() {
+    let mut scenario = ts::begin(DEAD_ADDRESS);
+
+    let treasury_cap = coin::create_treasury_cap_for_testing<SUI>(scenario.ctx());
+
+    let (_meme_treasury_address, _metadata_cap, _meme_balance) = memez_utils::new_treasury(
+        treasury_cap,
+        0,
+        scenario.ctx(),
+    );
+
+    abort
+}
+
 #[test, expected_failure(abort_code = memez_errors::EPreMintNotAllowed, location = memez_utils)]
 fun set_up_treasury_pre_mint() {
     let mut scenario = ts::begin(DEAD_ADDRESS);

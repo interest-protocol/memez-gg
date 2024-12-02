@@ -17,5 +17,12 @@ fun test_emit_event() {
 
     assert_eq!(effects.num_user_events(), 1);
 
+    memez_events_wrapper::emit_event(TestEvent());
+    memez_events_wrapper::emit_event(TestEvent());
+
+    let effects = scenario.next_tx(@0x0);
+
+    assert_eq!(effects.num_user_events(), 2);
+
     scenario.end();
 }

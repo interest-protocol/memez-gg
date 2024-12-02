@@ -46,6 +46,8 @@ const EInvalidModelConfig: u64 = 20;
 
 const EModelKeyNotSupported: u64 = 21;
 
+const EWrongRecipientsLength: u64 = 22;
+
 // === Public Package Functions ===
 
 public(package) fun already_initialized(): u64 {
@@ -135,3 +137,8 @@ public(package) fun invalid_model_config(): u64 {
 public(package) fun model_key_not_supported(): u64 {
     EModelKeyNotSupported
 }
+
+public(package) fun wrong_recipients_length(): u64 {
+    EWrongRecipientsLength
+}
+    

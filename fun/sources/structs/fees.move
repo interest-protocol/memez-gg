@@ -20,10 +20,16 @@ public enum Fee has copy, drop, store {
     Percentage(BPS, vector<Recipient>),
 }
 
+public struct FeePayload has copy, drop, store {
+    value: u64,
+    percentages: vector<u64>,
+    recipients: vector<address>,
+}
+
 public struct MemezFees has copy, drop, store {
-    new: Fee,
-    swap: Fee,
-    migration: Fee,
+    creation: FeePayload,
+    swap: FeePayload,
+    migration: FeePayload,
 }
 
 // === Public Package Functions ===
@@ -32,42 +38,46 @@ public(package) fun new(
     values: vector<vector<u64>>,
     recipients: vector<vector<address>>,
 ): MemezFees {
-    assert!(values.length() == VALUES_LENGTH, memez_errors::invalid_model_config());
+    assert!(
+        values.length() == VALUES_LENGTH && recipients.length() == VALUES_LENGTH,
+        memez_errors::invalid_model_config(),
+    );
 
-    let mut new_percentages = values[0];
+    let mut creation_percentages = values[0];
     let mut swap_percentages = values[1];
     let mut migration_percentages = values[2];
 
-    let new_value = new_percentages.pop_back();
+    let creation_value = creation_percentages.pop_back();
     let swap_value = swap_percentages.pop_back();
     let migration_value = migration_percentages.pop_back();
 
-    new_percentages.validate();
+    creation_percentages.validate();
     swap_percentages.validate();
     migration_percentages.validate();
 
+    // @dev We need to add the deployer address to the end of the recipients vector as its a dynamic field
+    assert!(
+        recipients[1].length() == swap_percentages.length() &&
+            recipients[2].length() == migration_percentages.length(),
+        memez_errors::wrong_recipients_length(),
+    );
+
     MemezFees {
-        new: Fee::Value(
-            new_value,
-            new_percentages.zip_map!(
-                recipients[0],
-                |bps, addy| Recipient { addy, bps: bps::new(bps) },
-            ),
-        ),
-        swap: Fee::Percentage(
-            bps::new(swap_value),
-            swap_percentages.zip_map!(
-                recipients[1],
-                |bps, addy| Recipient { addy, bps: bps::new(bps) },
-            ),
-        ),
-        migration: Fee::Value(
-            migration_value,
-            migration_percentages.zip_map!(
-                recipients[2],
-                |bps, addy| Recipient { addy, bps: bps::new(bps) },
-            ),
-        ),
+        creation: FeePayload {
+            value: creation_value,
+            percentages: creation_percentages,
+            recipients: recipients[0],
+        },
+        swap: FeePayload {
+            value: swap_value,
+            percentages: swap_percentages,
+            recipients: recipients[1],
+        },
+        migration: FeePayload {
+            value: migration_value,
+            percentages: migration_percentages,
+            recipients: recipients[2],
+        },
     }
 }
 
@@ -102,16 +112,42 @@ public(package) fun take<T>(fee: Fee, asset: &mut Coin<T>, ctx: &mut TxContext):
     }
 }
 
-public(package) fun new_fee(self: MemezFees): Fee {
-    self.new
+public(package) fun creation(self: MemezFees): Fee {
+    Fee::Value(
+        self.creation.value,
+        self.creation.percentages.zip_map!(
+            self.creation.recipients,
+            |bps, addy| Recipient { addy, bps: bps::new(bps) },
+        ),
+    )
 }
 
-public(package) fun swap_fee(self: MemezFees): Fee {
-    self.swap
+public(package) fun swap(self: MemezFees, dev: address,): Fee {
+    let mut recipients = self.swap.recipients;
+
+    recipients.push_back(dev);
+
+    Fee::Percentage(
+        bps::new(self.swap.value),
+        recipients.zip_map!(
+            self.swap.percentages,
+            |addy, bps| Recipient { addy, bps: bps::new(bps) },
+        ),
+    )
 }
 
-public(package) fun migration_fee(self: MemezFees): Fee {
-    self.migration
+public(package) fun migration(self: MemezFees, dev: address): Fee {
+    let mut recipients = self.migration.recipients;
+
+    recipients.push_back(dev);
+
+    Fee::Value(
+        self.migration.value,
+        recipients.zip_map!(
+            self.migration.percentages,
+            |addy, bps| Recipient { addy, bps: bps::new(bps) },
+        ),
+    )
 }
 
 // === Private Functions ===

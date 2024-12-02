@@ -23,6 +23,10 @@ public(package) fun assert_coin_has_value<T>(coin: &Coin<T>): u64 {
     value
 }
 
+public(package) fun assert_slippage(amount: u64, minimum_expected: u64) {
+    assert!(amount >= minimum_expected, memez_errors::slippage());
+}
+
 public(package) fun destroy_or_burn<Meme>(balance: &mut Balance<Meme>, ctx: &mut TxContext) {
     let bal = balance.withdraw_all();
 
@@ -34,10 +38,6 @@ public(package) fun destroy_or_burn<Meme>(balance: &mut Balance<Meme>, ctx: &mut
 public(package) fun destroy_or_return<Meme>(coin: Coin<Meme>, ctx: &TxContext) {
     if (coin.value() == 0) coin.destroy_zero()
     else transfer::public_transfer(coin, ctx.sender());
-}
-
-public(package) fun assert_slippage(amount: u64, minimum_expected: u64) {
-    assert!(amount >= minimum_expected, memez_errors::slippage());
 }
 
 public(package) fun validate_bps(percentages: vector<u64>) {
@@ -72,9 +72,13 @@ public(package) fun new_treasury<Meme>(
         &ipx_treasury_standard,
     );
 
+    let metadata_cap = cap_witness.create_metadata_cap(ctx);
+
+    ipx_treasury_standard.destroy_cap_witness(cap_witness);
+
     transfer::public_share_object(
         ipx_treasury_standard,
     );
 
-    (treasury_address, cap_witness.create_metadata_cap(ctx), meme_balance)
+    (treasury_address, metadata_cap, meme_balance)
 }

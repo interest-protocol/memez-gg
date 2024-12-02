@@ -22,6 +22,10 @@ use memez_fun::{memez_errors, memez_events, memez_migrator_list::MemezMigratorLi
 use std::{string::String, type_name::{Self, TypeName}};
 use sui::{balance::Balance, sui::SUI, vec_map::{Self, VecMap}, versioned::Versioned};
 
+// === Constants ===
+
+const CONFIG_METADATA_KEY: vector<u8> = b"config_key";
+
 // === Structs ===
 
 public enum Progress has store, drop, copy {
@@ -37,7 +41,7 @@ public struct MemezMigrator<phantom Meme> {
     meme_balance: Balance<Meme>,
 }
 
-public struct MemezFun<phantom Curve, phantom Meme> has key, store {
+public struct MemezFun<phantom Curve, phantom Meme> has key {
     id: UID,
     dev: address,
     is_token: bool,
@@ -72,6 +76,7 @@ public(package) fun new<Curve, Meme, ConfigKey, MigrationWitness>(
     mut metadata_names: vector<String>,
     mut metadata_values: vector<String>,
     ipx_meme_coin_treasury: address,
+    dev: address,
     ctx: &mut TxContext,
 ): MemezFun<Curve, Meme> {
     let config_key = type_name::get<ConfigKey>();
@@ -79,7 +84,7 @@ public(package) fun new<Curve, Meme, ConfigKey, MigrationWitness>(
 
     migrator.assert_is_whitelisted(migration_witness);
 
-    metadata_names.push_back(b"config_key".to_string());
+    metadata_names.push_back(CONFIG_METADATA_KEY.to_string());
     metadata_values.push_back(config_key.into_string().to_string());
 
     let id = object::new(ctx);
@@ -93,7 +98,7 @@ public(package) fun new<Curve, Meme, ConfigKey, MigrationWitness>(
 
     MemezFun {
         id,
-        dev: ctx.sender(),
+        dev,
         is_token,
         ipx_meme_coin_treasury,
         metadata: vec_map::from_keys_values(metadata_names, metadata_values),
@@ -105,7 +110,7 @@ public(package) fun new<Curve, Meme, ConfigKey, MigrationWitness>(
 
 #[allow(lint(share_owned))]
 public(package) fun share<Curve, Meme>(self: MemezFun<Curve, Meme>) {
-    transfer::public_share_object(self);
+    transfer::share_object(self);
 }
 
 public(package) fun addy<Curve, Meme>(self: &MemezFun<Curve, Meme>): address {
@@ -114,10 +119,6 @@ public(package) fun addy<Curve, Meme>(self: &MemezFun<Curve, Meme>): address {
 
 public(package) fun migration_witness<Curve, Meme>(self: &MemezFun<Curve, Meme>): TypeName {
     self.migration_witness
-}
-
-public(package) fun dev<Curve, Meme>(self: &MemezFun<Curve, Meme>): address {
-    self.dev
 }
 
 public(package) fun versioned<Curve, Meme>(self: &MemezFun<Curve, Meme>): &Versioned {

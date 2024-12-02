@@ -73,14 +73,15 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
     metadata_names: vector<String>,
     metadata_values: vector<String>,
     dev_payload: vector<u64>,
+    dev: address,
     version: CurrentVersion,
     ctx: &mut TxContext,
 ): MetadataCap {
     version.assert_is_valid();
 
-    let fee_model = config.fees<ConfigKey>();
+    let fees = config.fees<ConfigKey>();
 
-    fee_model.new_fee().take(&mut creation_fee, ctx);
+    fees.creation().take(&mut creation_fee, ctx);
 
     creation_fee.destroy_or_return(ctx);
 
@@ -102,7 +103,7 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
     let fixed_rate = memez_fixed_rate::new(
         target_sui_liquidity.min(stable_config[0]),
         meme_reserve.split(stable_config[2]),
-        fee_model.swap_fee(),
+        fees.swap(dev),
     );
 
     let stable_state = StableState {
@@ -112,7 +113,7 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
         liquidity_provision,
         fixed_rate,
         meme_token_cap,
-        migration_fee: fee_model.migration_fee(),
+        migration_fee: fees.migration(dev),
     };
 
     let mut memez_fun = memez_fun::new<Stable, Meme, ConfigKey, MigrationWitness>(
@@ -122,6 +123,7 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
         metadata_names,
         metadata_values,
         ipx_meme_coin_treasury,
+        dev,    
         ctx,
     );
 

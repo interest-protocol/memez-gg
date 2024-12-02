@@ -1,13 +1,18 @@
 #[test_only]
 module memez_fun::memez_utils_tests;
 
+use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
 use std::unit_test::assert_eq;
 use memez_fun::{memez_errors, memez_utils};
-use sui::{balance, coin::{Coin, mint_for_testing}, test_scenario as ts};
+use sui::{balance, coin::{Self, Coin, mint_for_testing}, sui::SUI, test_utils::destroy, test_scenario as ts};
 
 public struct Meme()
 
 const DEAD_ADDRESS: address = @0x0;
+
+const ADMIN: address = @0x1;
+
+const TOTAL_MEME_SUPPLY: u64 = 1_000_000_000__000_000_000;
 
 #[test]
 fun test_pow_9() {
@@ -89,6 +94,53 @@ fun test_slippage() {
 fun test_validate_bps() {
     memez_utils::validate_bps(vector[2_500, 2_500, 2_500, 2_500]);
     memez_utils::validate_bps(vector[5_000, 5_000]);
+}
+
+#[test]
+fun set_up_treasury() {
+    let mut scenario = ts::begin(DEAD_ADDRESS);
+
+    let treasury_cap = coin::create_treasury_cap_for_testing<SUI>(scenario.ctx());
+
+    let (meme_treasury_address, metadata_cap, meme_balance) = memez_utils::new_treasury(
+        treasury_cap,
+        TOTAL_MEME_SUPPLY,
+        scenario.ctx(),
+    );
+
+    scenario.next_epoch(ADMIN);
+
+    let meme_treasury = scenario.take_shared<IPXTreasuryStandard>();
+
+    assert_eq!(object::id(&meme_treasury).to_address(), meme_treasury_address);
+
+    assert_eq!(metadata_cap.treasury(), meme_treasury_address);
+    assert_eq!(meme_balance.value(), TOTAL_MEME_SUPPLY);
+    assert_eq!(meme_treasury.total_supply<SUI>(), TOTAL_MEME_SUPPLY);
+    assert_eq!(meme_treasury.can_burn(), true);
+
+    destroy(meme_balance);
+    destroy(meme_treasury);
+    metadata_cap.destroy();
+    
+    scenario.end();
+}
+
+#[test, expected_failure(abort_code = memez_errors::EPreMintNotAllowed, location = memez_utils)]
+fun set_up_treasury_pre_mint() {
+    let mut scenario = ts::begin(DEAD_ADDRESS);
+
+    let mut treasury_cap = coin::create_treasury_cap_for_testing<SUI>(scenario.ctx());
+
+    treasury_cap.mint(100, scenario.ctx()).burn_for_testing();
+
+    let (_addy, _metadata_cap, _meme_balance) = memez_utils::new_treasury(
+        treasury_cap,
+        TOTAL_MEME_SUPPLY,
+        scenario.ctx(),
+    );
+
+    abort
 }
 
 #[test, expected_failure(abort_code = memez_errors::ESlippage, location = memez_utils)]

@@ -14,7 +14,7 @@ use sui::dynamic_field as df;
 
 // === Structs ===
 
-public struct DefaultModelKey() has copy, drop, store;
+public struct DefaultKey() has copy, drop, store;
 
 public struct FeesKey<phantom T>() has copy, drop, store;
 

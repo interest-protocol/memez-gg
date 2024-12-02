@@ -9,13 +9,7 @@ use sui::{balance::Balance, coin::{Coin, TreasuryCap}};
 
 const DEAD_ADDRESS: address = @0x0;
 
-const POW_9: u64 = 1__000_000_000;
-
 // === Public Package Functions ===
-
-public(package) fun pow_9(): u64 {
-    POW_9
-}
 
 public(package) fun assert_coin_has_value<T>(coin: &Coin<T>): u64 {
     let value = coin.value();

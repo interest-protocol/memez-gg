@@ -1,13 +1,12 @@
 module memez_fun::memez_constant_product;
 
 use constant_product::constant_product::get_amount_out;
-use interest_math::u64;
 use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
 use memez_fun::{
     memez_burner::{Self, MemezBurner},
     memez_events,
     memez_fees::Fee,
-    memez_utils::{assert_slippage, assert_coin_has_value, pow_9}
+    memez_utils::{assert_slippage, assert_coin_has_value}
 };
 use sui::{balance::{Self, Balance}, coin::Coin, sui::SUI};
 
@@ -100,9 +99,9 @@ public(package) fun dump<Meme>(
     );
 
     let dynamic_burn_tax = self.burn_model.calculate(sui_virtual_liquidity - pre_tax_sui_value_out);
-    let meme_burn_fee_value = u64::mul_div_up(meme_coin_value, dynamic_burn_tax, pow_9());
+    let meme_burn_fee_value = dynamic_burn_tax.calc(meme_coin_value);
 
-    if (dynamic_burn_tax != 0) treasury_cap.burn(meme_coin.split(meme_burn_fee_value, ctx));
+    if (dynamic_burn_tax.value() != 0) treasury_cap.burn(meme_coin.split(meme_burn_fee_value, ctx));
 
     let meme_coin_value = assert_coin_has_value(&meme_coin);
 
@@ -180,16 +179,16 @@ public(package) fun dump_amount<Meme>(
 
     let dynamic_burn_tax = self.burn_model.calculate(sui_virtual_liquidity - pre_tax_sui_value_out);
 
-    let meme_burn_fee_value = u64::mul_div_up(amount_in_minus_swap_fee, dynamic_burn_tax, pow_9());
-
-    if (dynamic_burn_tax == 0) {
+    if (dynamic_burn_tax.value() == 0) {
         return vector[
             pre_tax_sui_value_out.min(sui_balance_value),
             pre_tax_sui_value_out,
             swap_fee,
-            meme_burn_fee_value,
+            0,
         ]
     };
+
+    let meme_burn_fee_value = dynamic_burn_tax.calc(amount_in_minus_swap_fee);
 
     let post_tax_sui_value_out = get_amount_out(
         amount_in_minus_swap_fee - meme_burn_fee_value,

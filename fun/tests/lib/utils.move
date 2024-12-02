@@ -21,11 +21,6 @@ const ADMIN: address = @0x1;
 const TOTAL_MEME_SUPPLY: u64 = 1_000_000_000__000_000_000;
 
 #[test]
-fun test_pow_9() {
-    assert_eq!(memez_utils::pow_9(), 1__000_000_000);
-}
-
-#[test]
 fun test_assert_coin_has_value() {
     let mut ctx = tx_context::dummy();
 

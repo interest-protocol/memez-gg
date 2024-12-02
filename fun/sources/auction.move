@@ -19,6 +19,7 @@ G:::::G        G::::GG:::::G        G::::G
 module memez_fun::memez_auction;
 
 use interest_math::u64;
+use interest_bps::bps::{Self, max_bps};
 use ipx_coin_standard::ipx_coin_standard::{IPXTreasuryStandard, MetadataCap};
 use memez_fun::{
     memez_config::MemezConfig,
@@ -28,7 +29,7 @@ use memez_fun::{
     memez_fun::{Self, MemezFun, MemezMigrator},
     memez_migrator_list::MemezMigratorList,
     memez_token_cap::{Self, MemezTokenCap},
-    memez_utils::{destroy_or_burn, destroy_or_return, new_treasury, pow_9},
+    memez_utils::{destroy_or_burn, destroy_or_return, new_treasury},
     memez_version::CurrentVersion
 };
 use std::string::String;
@@ -358,11 +359,11 @@ fun new_liquidity_amount<Meme>(self: &AuctionState<Meme>, clock: &Clock): u64 {
 
     let progress = current_time - self.start_time;
 
-    let pow_9 = pow_9();
+    let max_bps = max_bps();
 
-    let percentage = u64::mul_div_up(progress, pow_9, self.auction_duration).min(pow_9);
+    let percentage = bps::new(u64::mul_div_up(progress, max_bps, self.auction_duration).min(max_bps));
 
-    let expected_meme_balance = u64::mul_div_up(self.initial_reserve, percentage, pow_9);
+    let expected_meme_balance = percentage.calc(self.initial_reserve);
 
     if (expected_meme_balance <= self.accrued_meme_balance) return 0;
 

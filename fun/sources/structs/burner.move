@@ -1,7 +1,7 @@
 module memez_fun::memez_burner;
 
-use interest_math::u64;
 use interest_bps::bps::{Self, max_bps, BPS};
+use interest_math::u64;
 use memez_fun::memez_errors;
 
 // === Constants ===

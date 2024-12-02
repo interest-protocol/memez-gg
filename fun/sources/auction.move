@@ -18,8 +18,8 @@ G:::::G        G::::GG:::::G        G::::G
 */
 module memez_fun::memez_auction;
 
-use interest_math::u64;
 use interest_bps::bps::{Self, max_bps};
+use interest_math::u64;
 use ipx_coin_standard::ipx_coin_standard::{IPXTreasuryStandard, MetadataCap};
 use memez_fun::{
     memez_config::MemezConfig,
@@ -361,7 +361,9 @@ fun new_liquidity_amount<Meme>(self: &AuctionState<Meme>, clock: &Clock): u64 {
 
     let max_bps = max_bps();
 
-    let percentage = bps::new(u64::mul_div_up(progress, max_bps, self.auction_duration).min(max_bps));
+    let percentage = bps::new(u64::mul_div_up(progress, max_bps, self.auction_duration).min(
+        max_bps,
+    ));
 
     let expected_meme_balance = percentage.calc(self.initial_reserve);
 

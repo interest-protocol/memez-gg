@@ -40,7 +40,7 @@ public(package) fun new(
 ): MemezFees {
     assert!(
         values.length() == VALUES_LENGTH && recipients.length() == VALUES_LENGTH,
-        memez_errors::invalid_model_config(),
+        memez_errors::invalid_config(),
     );
 
     let mut creation_percentages = values[0];

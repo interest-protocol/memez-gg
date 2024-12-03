@@ -18,7 +18,7 @@ public struct StableModel has copy, drop, store {
 // === Public Package Functions ===
 
 public(package) fun new(values: vector<u64>): StableModel {
-    assert!(values.length() == VALUES_LENGTH, memez_errors::invalid_model_config());
+    assert!(values.length() == VALUES_LENGTH, memez_errors::invalid_config());
 
     StableModel {
         max_target_sui_liquidity: values[0],

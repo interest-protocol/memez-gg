@@ -24,7 +24,7 @@ public struct AuctionModel has copy, drop, store {
 // === Public Package Functions ===
 
 public(package) fun new(values: vector<u64>): AuctionModel {
-    assert!(values.length() == VALUES_LENGTH, memez_errors::invalid_model_config());
+    assert!(values.length() == VALUES_LENGTH, memez_errors::invalid_config());
 
     AuctionModel {
         auction_duration: values[0],

@@ -18,7 +18,7 @@ public struct MemezConstantProduct<phantom Meme> has store {
     target_sui_liquidity: u64,
     sui_balance: Balance<SUI>,
     meme_balance: Balance<Meme>,
-    burn_model: MemezBurner,
+    burner: MemezBurner,
     swap_fee: Fee,
 }
 
@@ -37,7 +37,7 @@ public(package) fun new<Meme>(
         target_sui_liquidity,
         sui_balance: balance::zero(),
         meme_balance,
-        burn_model: memez_burner::new(vector[burn_tax, virtual_liquidity, target_sui_liquidity]),
+        burner: memez_burner::new(vector[burn_tax, virtual_liquidity, target_sui_liquidity]),
         swap_fee,
     }
 }
@@ -98,7 +98,7 @@ public(package) fun dump<Meme>(
         sui_virtual_liquidity,
     );
 
-    let dynamic_burn_tax = self.burn_model.calculate(sui_virtual_liquidity - pre_tax_sui_value_out);
+    let dynamic_burn_tax = self.burner.calculate(sui_virtual_liquidity - pre_tax_sui_value_out);
     let meme_burn_fee_value = dynamic_burn_tax.calc(meme_coin_value);
 
     if (dynamic_burn_tax.value() != 0) treasury_cap.burn(meme_coin.split(meme_burn_fee_value, ctx));
@@ -177,7 +177,7 @@ public(package) fun dump_amount<Meme>(
         sui_virtual_liquidity,
     );
 
-    let dynamic_burn_tax = self.burn_model.calculate(sui_virtual_liquidity - pre_tax_sui_value_out);
+    let dynamic_burn_tax = self.burner.calculate(sui_virtual_liquidity - pre_tax_sui_value_out);
 
     if (dynamic_burn_tax.value() == 0) {
         return vector[
@@ -217,7 +217,7 @@ public(package) fun sui_balance<Meme>(self: &MemezConstantProduct<Meme>): &Balan
 }
 
 public(package) fun burner<Meme>(self: &MemezConstantProduct<Meme>): MemezBurner {
-    self.burn_model
+    self.burner
 }
 
 public(package) fun meme_balance<Meme>(self: &MemezConstantProduct<Meme>): &Balance<Meme> {

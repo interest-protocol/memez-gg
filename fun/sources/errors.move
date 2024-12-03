@@ -42,7 +42,7 @@ const EOutdatedPackageVersion: u64 = 18;
 
 const EInvalidPercentages: u64 = 19;
 
-const EInvalidModelConfig: u64 = 20;
+const EInvalidConfig: u64 = 20;
 
 const EModelKeyNotSupported: u64 = 21;
 
@@ -132,8 +132,8 @@ public(package) fun invalid_percentages(): u64 {
     EInvalidPercentages
 }
 
-public(package) fun invalid_model_config(): u64 {
-    EInvalidModelConfig
+public(package) fun invalid_config(): u64 {
+    EInvalidConfig
 }
 
 public(package) fun model_key_not_supported(): u64 {

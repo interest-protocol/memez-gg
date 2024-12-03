@@ -36,7 +36,7 @@ fun test_end_to_end() {
 #[
     test,
     expected_failure(
-        abort_code = memez_errors::EInvalidModelConfig,
+        abort_code = memez_errors::EInvalidConfig,
         location = memez_pump_model,
     ),
 ]

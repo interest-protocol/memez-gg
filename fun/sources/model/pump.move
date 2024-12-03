@@ -19,7 +19,7 @@ public struct PumpModel has copy, drop, store {
 // === Public Package Functions ===
 
 public(package) fun new(values: vector<u64>): PumpModel {
-    assert!(values.length() == VALUES_LENGTH, memez_errors::invalid_model_config());
+    assert!(values.length() == VALUES_LENGTH, memez_errors::invalid_config());
 
     PumpModel {
         burn_tax: values[0],

@@ -177,6 +177,11 @@ public(package) fun migrate<Curve, Meme>(
 }
 
 #[test_only]
+public fun dev<Curve, Meme>(self: &MemezFun<Curve, Meme>): address {
+    self.dev
+}
+
+#[test_only]
 public fun metadata<Curve, Meme>(self: &MemezFun<Curve, Meme>): &VecMap<String, String> {
     &self.metadata
 }

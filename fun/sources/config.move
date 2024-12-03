@@ -153,3 +153,8 @@ fun add<ModelKey, Model: drop + store>(self: &mut MemezConfig, model: Model) {
 public fun init_for_testing(ctx: &mut TxContext) {
     init(ctx);
 }
+
+#[test_only]
+public fun exists_for_testing<T>(self: &MemezConfig): bool {
+    df::exists_(&self.id, type_name::get<T>())
+}

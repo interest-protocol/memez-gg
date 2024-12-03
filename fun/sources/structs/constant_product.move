@@ -105,12 +105,6 @@ public(package) fun dump<Meme>(
 
     let meme_coin_value = assert_coin_has_value(&meme_coin);
 
-    let meme_balance_value = self.meme_balance.value();
-
-    let sui_balance_value = self.sui_balance.value();
-
-    let sui_virtual_liquidity = self.virtual_liquidity + sui_balance_value;
-
     let sui_value_out = get_amount_out(
         meme_coin_value,
         meme_balance_value,

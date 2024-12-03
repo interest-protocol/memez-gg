@@ -187,3 +187,11 @@ public fun new_value_fee(value: u64, recipients: vector<Recipient>): Fee {
 public fun new_percentage_fee(value: u64, recipients: vector<Recipient>): Fee {
     Fee::Percentage(bps::new(value), recipients)
 }
+
+#[test_only]
+public fun value(fee: Fee): u64 {
+    match (fee) {
+        Fee::Percentage(bps, _) => bps.value(),
+        Fee::Value(value, _) => value,
+    }
+}

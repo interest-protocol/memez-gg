@@ -184,3 +184,8 @@ public(package) fun meme_sale_amount<Meme>(self: &FixedRate<Meme>): u64 {
 public fun memez_fun<Meme>(self: &FixedRate<Meme>): address {
     self.memez_fun
 }
+
+#[test_only]
+public fun swap_fee<Meme>(self: &FixedRate<Meme>): Fee {
+    self.swap_fee
+}

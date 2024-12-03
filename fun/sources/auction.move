@@ -160,7 +160,7 @@ public fun pump<Meme>(
 
     let state = self.state_mut();
 
-    state.provide_liquidity(clock);
+    state.drip(clock);
 
     let (start_migrating, meme_coin) = state
         .constant_product
@@ -189,7 +189,7 @@ public fun pump_token<Meme>(
 
     let state = self.state_mut();
 
-    state.provide_liquidity(clock);
+    state.drip(clock);
 
     let (start_migrating, meme_coin) = state
         .constant_product
@@ -221,7 +221,7 @@ public fun dump<Meme>(
 
     let state = self.state_mut();
 
-    state.provide_liquidity(clock);
+    state.drip(clock);
 
     state
         .constant_product
@@ -248,7 +248,7 @@ public fun dump_token<Meme>(
 
     let state = self.state_mut();
 
-    state.provide_liquidity(clock);
+    state.drip(clock);
 
     let meme_coin = state.token_cap().to_coin(meme_token, ctx);
 
@@ -320,7 +320,7 @@ fun pump_amount<Meme>(
 ): vector<u64> {
     let state = self.state();
 
-    let amount = new_liquidity_amount(state, clock);
+    let amount = state.expected_drip_amount(clock);
 
     state
         .constant_product
@@ -338,7 +338,7 @@ fun dump_amount<Meme>(
 ): vector<u64> {
     let state = self.state();
 
-    let amount = new_liquidity_amount(state, clock);
+    let amount = state.expected_drip_amount(clock);
 
     state.constant_product.dump_amount(amount_in, amount)
 }
@@ -347,14 +347,14 @@ fun dump_amount<Meme>(
 fun meme_balance<Meme>(self: &mut MemezFun<Auction, Meme>, clock: &Clock): u64 {
     let state = self.state();
 
-    let amount = new_liquidity_amount(state, clock);
+    let amount = state.expected_drip_amount(clock);
 
     state.constant_product.meme_balance().value() + amount
 }
 
 // === Private Functions ===
 
-fun new_liquidity_amount<Meme>(self: &AuctionState<Meme>, clock: &Clock): u64 {
+fun expected_drip_amount<Meme>(self: &AuctionState<Meme>, clock: &Clock): u64 {
     let current_time = clock.timestamp_ms();
 
     let progress = current_time - self.start_time;
@@ -378,8 +378,8 @@ fun new_liquidity_amount<Meme>(self: &AuctionState<Meme>, clock: &Clock): u64 {
     meme_delta.min(current_meme_reserve)
 }
 
-fun provide_liquidity<Meme>(state: &mut AuctionState<Meme>, clock: &Clock) {
-    let amount = new_liquidity_amount(state, clock);
+fun drip<Meme>(state: &mut AuctionState<Meme>, clock: &Clock) {
+    let amount = state.expected_drip_amount( clock);
 
     state.accrued_meme_balance = state.accrued_meme_balance + amount;
     state.constant_product.meme_balance_mut().join(state.meme_reserve.split(amount));

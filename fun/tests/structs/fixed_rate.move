@@ -226,6 +226,77 @@ fun test_dump() {
     destroy(fixed_rate);
 }
 
+#[test]
+fun test_pump_and_dump_amounts() {
+    let swap_fee = memez_fees::new_percentage_fee(30, vector[memez_fees::new_recipient(@0x0, BPS_MAX)]);
+
+    let mut fixed_rate = memez_fixed_rate::new(
+        1000,
+        balance::create_for_testing<Meme>(5000),
+        swap_fee,
+    );
+
+    let amounts = fixed_rate.pump_amount(400);
+
+    assert_eq(amounts[0], 0);
+    assert_eq(amounts[1], 5000 * (400 - swap_fee.calculate(400)) / 1000);
+    assert_eq(amounts[2], swap_fee.calculate(400));
+
+    let amounts = fixed_rate.pump_amount(0);
+
+    assert_eq(amounts, vector[0, 0, 0]);
+
+    let amounts = fixed_rate.dump_amount(0);
+
+    assert_eq(amounts, vector[0, 0]);
+
+    let amounts = fixed_rate.dump_amount(1000);
+
+    assert_eq(amounts[0], 0);
+    assert_eq(amounts[1], swap_fee.calculate(1000));
+
+    fixed_rate.sui_balance_mut().join(balance::create_for_testing<SUI>(1000));
+
+    let amounts = fixed_rate.dump_amount(1000);
+
+    assert_eq(amounts[0], 1000 * (1000 - swap_fee.calculate(1000)) / 5000);
+    assert_eq(amounts[1], swap_fee.calculate(1000));
+
+    destroy(fixed_rate);
+
+    let mut fixed_rate = memez_fixed_rate::new(
+        1000,
+        balance::create_for_testing<Meme>(5000),
+        memez_fees::new_percentage_fee(0, vector[memez_fees::new_recipient(@0x0, BPS_MAX)]),
+    );
+
+    let amounts = fixed_rate.pump_amount(500);
+
+    assert_eq(amounts[0], 0);
+    assert_eq(amounts[1], 5000 * 500 / 1000);
+    assert_eq(amounts[2], 0);
+
+    let amounts = fixed_rate.pump_amount(1100);
+
+    assert_eq(amounts[0], 100);
+    assert_eq(amounts[1], 5000);
+    assert_eq(amounts[2], 0);
+
+    let amounts = fixed_rate.dump_amount(1000);
+
+    assert_eq(amounts[0], 0);
+    assert_eq(amounts[1], 0);
+
+    fixed_rate.sui_balance_mut().join(balance::create_for_testing<SUI>(1000));
+
+    let amounts = fixed_rate.dump_amount(1000);
+
+    assert_eq(amounts[0], 1000 * 1000 / 5000);
+    assert_eq(amounts[1], 0);
+
+    destroy(fixed_rate);
+}
+
 #[test, expected_failure(abort_code = memez_errors::EZeroCoin, location = memez_utils)]
 fun test_pump_zero_coin() {
     let mut ctx = tx_context::dummy();

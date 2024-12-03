@@ -57,8 +57,9 @@ public(package) fun new(
 
     // @dev We need to add the deployer address to the end of the recipients vector as its a dynamic field
     assert!(
-        recipients[1].length() == swap_percentages.length() &&
-            recipients[2].length() == migration_percentages.length(),
+        recipients[0].length() == creation_percentages.length() &&
+        recipients[1].length() == swap_percentages.length() - 1 &&
+            recipients[2].length() == migration_percentages.length() - 1,
         memez_errors::wrong_recipients_length(),
     );
 
@@ -189,9 +190,41 @@ public fun new_percentage_fee(value: u64, recipients: vector<Recipient>): Fee {
 }
 
 #[test_only]
+public fun recipients(fee: Fee): vector<Recipient> {
+    match (fee) {
+        Fee::Percentage(_, recipients) => recipients,
+        Fee::Value(_, recipients) => recipients,
+    }
+}
+
+#[test_only]
 public fun value(fee: Fee): u64 {
     match (fee) {
         Fee::Percentage(bps, _) => bps.value(),
         Fee::Value(value, _) => value,
     }
+}
+
+#[test_only]
+public fun payloads(fees: MemezFees): vector<FeePayload> {
+    vector[fees.creation, fees.swap, fees.migration]
+}
+
+#[test_only]
+public fun payload_value(payload: FeePayload): u64 {
+    payload.value
+}
+
+#[test_only]
+public fun payload_percentages(payload: FeePayload): vector<u64> {
+    payload.percentages
+}
+#[test_only]
+public fun payload_recipients(payload: FeePayload): vector<address> {
+    payload.recipients
+}
+
+#[test_only]
+public fun recipient_data(recipient: Recipient): (address, BPS) {
+    (recipient.addy, recipient.bps)
 }

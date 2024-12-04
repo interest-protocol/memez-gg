@@ -54,12 +54,12 @@ public(package) fun new_treasury<Meme>(
         total_supply,
     );
 
-    let (mut ipx_treasury_standard, mut cap_witness) = ipx_coin_standard::new(
+    let (mut ipx_treasury_standard, mut witness) = ipx_coin_standard::new(
         meme_treasury_cap,
         ctx,
     );
 
-    cap_witness.add_burn_capability(
+    witness.add_burn_capability(
         &mut ipx_treasury_standard,
     );
 
@@ -67,9 +67,9 @@ public(package) fun new_treasury<Meme>(
         &ipx_treasury_standard,
     );
 
-    let metadata_cap = cap_witness.create_metadata_cap(ctx);
+    let metadata_cap = witness.create_metadata_cap(ctx);
 
-    ipx_treasury_standard.destroy_cap_witness(cap_witness);
+    ipx_treasury_standard.destroy_witness(witness);
 
     transfer::public_share_object(
         ipx_treasury_standard,

@@ -32,7 +32,7 @@ const MAX_BPS: u64 = 10_000;
 const THIRTY_MINUTES_MS: u64 = 30 * 60 * 1_000;
 
 const DEV_ALLOCATION: u64 = 100;
-const BURN_TAKE: u64 = 2000;
+const BURN_TAX: u64 = 2000;
 const VIRTUAL_LIQUIDITY: u64 = 1_000 * POW_9;
 const TARGET_LIQUIDITY: u64 = 10_000 * POW_9;
 const PROVISION_LIQUIDITY: u64 = 500;
@@ -295,7 +295,10 @@ fun test_coin_end_to_end() {
     let meme_coin = memez_auction::pump(
         &mut memez_fun,
         &world.clock,
-        mint_for_testing(remaining_amount_to_migrate * 10_000 / (10_000 - 30), world.scenario.ctx()),
+        mint_for_testing(
+            remaining_amount_to_migrate * 10_000 / (10_000 - 30),
+            world.scenario.ctx(),
+        ),
         expected_meme_amount_out,
         memez_version::get_version_for_testing(1),
         world.scenario.ctx(),
@@ -454,7 +457,10 @@ fun test_token_end_to_end() {
     let meme_token = memez_auction::pump_token(
         &mut memez_fun,
         &world.clock,
-        mint_for_testing(remaining_amount_to_migrate * 10_000 / (10_000 - 30), world.scenario.ctx()),
+        mint_for_testing(
+            remaining_amount_to_migrate * 10_000 / (10_000 - 30),
+            world.scenario.ctx(),
+        ),
         expected_meme_amount_out,
         memez_version::get_version_for_testing(1),
         world.scenario.ctx(),
@@ -540,13 +546,7 @@ fun new_invalid_version() {
     world.end();
 }
 
-#[
-    test,
-    expected_failure(
-        abort_code = memez_errors::ENotEnoughSuiToPayFee,
-        location = memez_fees,
-    ),
-]
+#[test, expected_failure(abort_code = memez_errors::ENotEnoughSuiToPayFee, location = memez_fees)]
 fun new_low_creation_fee() {
     let mut world = start();
 
@@ -1044,30 +1044,28 @@ fun start(): World {
 
     migrator_list.add<MigrationWitness>(&witness);
 
-    let witness = acl::sign_in_for_testing(); 
+    let witness = acl::sign_in_for_testing();
 
-    config
-        .set_fees<DefaultKey>(
-            &witness,
-            vector[vector[MAX_BPS, 2 * POW_9], vector[MAX_BPS, 0, 30], vector[MAX_BPS, 0, 200 * POW_9]],
-            vector[vector[ADMIN], vector[ADMIN], vector[ADMIN]],
-            scenario.ctx(),
-        );
+    config.set_fees<DefaultKey>(
+        &witness,
+        vector[vector[MAX_BPS, 2 * POW_9], vector[MAX_BPS, 0, 30], vector[MAX_BPS, 0, 200 * POW_9]],
+        vector[vector[ADMIN], vector[ADMIN], vector[ADMIN]],
+        scenario.ctx(),
+    );
 
-    config
-        .set_auction<DefaultKey>(
-            &witness,
-            vector[
-                THIRTY_MINUTES_MS,
-                DEV_ALLOCATION,
-                BURN_TAKE,
-                VIRTUAL_LIQUIDITY,
-                TARGET_LIQUIDITY,
-                PROVISION_LIQUIDITY,
-                SEED_LIQUIDITY,
-            ],
-            scenario.ctx(),
-        );
+    config.set_auction<DefaultKey>(
+        &witness,
+        vector[
+            THIRTY_MINUTES_MS,
+            DEV_ALLOCATION,
+            BURN_TAX,
+            VIRTUAL_LIQUIDITY,
+            TARGET_LIQUIDITY,
+            PROVISION_LIQUIDITY,
+            SEED_LIQUIDITY,
+        ],
+        scenario.ctx(),
+    );
 
     let clock = clock::create_for_testing(scenario.ctx());
 

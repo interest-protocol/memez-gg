@@ -1,131 +1,234 @@
 #[test_only]
 module memez_fun::memez_config_tests;
 
-// use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
-// use memez_acl::acl;
-// use memez_fun::{gg::{Self, GG}, memez_config::{Self, MemezConfig}, memez_errors};
-// use sui::{
-//     coin::{TreasuryCap, Coin, mint_for_testing},
-//     sui::SUI,
-//     test_scenario::{Self as ts, Scenario},
-//     test_utils::{assert_eq, destroy}
-// };
+use std::unit_test::assert_eq;
+use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
+use memez_acl::acl;
+use memez_fun::{gg::{Self, GG}, memez_config::{Self, MemezConfig, DefaultKey, FeesKey, BurnerKey, AuctionKey, PumpKey, StableKey}, memez_errors, memez_fees::MemezFees, memez_burner::MemezBurner, memez_auction_model::AuctionModel, memez_pump_model::PumpModel, memez_stable_model::StableModel};
+use sui::{
+    coin::{TreasuryCap, Coin, mint_for_testing},
+    sui::SUI,
+    test_scenario::{Self as ts, Scenario},
+    test_utils::destroy
+};
 
-// const ADMIN: address = @0x1;
+public struct World {
+    scenario: Scenario,
+    config: MemezConfig,
+    treasury_cap: vector<TreasuryCap<GG>>,
+}
 
-// const CREATION_FEE: u64 = 2__000_000_000;
+const ADMIN: address = @0x0;
 
-// const MIGRATION_FEE: u64 = 200__000_000_000;
+#[test]
+fun test_fees() {
+    let mut world = start();
 
-// const TOTAL_MEME_SUPPLY: u64 = 1_000_000_000__000_000_000;
+    assert_eq!(memez_config::exists_for_testing<FeesKey<DefaultKey>>(&world.config), false);
 
-// const TREASURY: address = @0xdd224f2287f0b38693555c6077abe85fcb4aa13e355ad54bc167611896b007e6;
+    let witness = acl::sign_in_for_testing();
 
-// public struct World {
-//     scenario: Scenario,
-//     config: MemezConfig,
-//     treasury_cap: vector<TreasuryCap<GG>>,
-// }
+    world.config.set_fees<DefaultKey>(
+        &witness,
+        vector[
+            vector[7_000, 3_000, 2],
+            vector[5_000, 5_000, 30],
+            vector[10_000, 0, 6],
+        ],
+        vector[
+            vector[@0x0, @0x1],
+            vector[@0x1],
+            vector[@0x2],
+        ],
+        world.scenario.ctx(),
+    );
 
-// #[test]
-// fun test_init() {
-//     let world = start();
+    assert_eq!(memez_config::exists_for_testing<FeesKey<DefaultKey>>(&world.config), true);
 
-//     assert_eq(memez_config::treasury(&world.config), TREASURY);
-//     assert_eq(memez_config::creation_fee(&world.config), CREATION_FEE);
-//     assert_eq(memez_config::migration_fee(&world.config), MIGRATION_FEE);
+    let fees = world.config.fees<DefaultKey>();
 
-//     world.end();
-// }
+    let payloads = fees.payloads();
 
-// #[test]
-// fun test_setters() {
-//     let mut world = start();
+    assert_eq!(payloads[0].payload_value(), 2);
+    assert_eq!(payloads[1].payload_value(), 30);
+    assert_eq!(payloads[2].payload_value(), 6);
 
-//     let witness = acl::sign_in_for_testing();
+    assert_eq!(payloads[0].payload_percentages(), vector[7_000, 3_000]);
+    assert_eq!(payloads[1].payload_percentages(), vector[5_000, 5_000]);
+    assert_eq!(payloads[2].payload_percentages(), vector[10_000, 0]);
 
-//     world.config.set_creation_fee(&witness, CREATION_FEE * 3);
-//     world.config.set_migration_fee(&witness, MIGRATION_FEE * 2);
-//     world.config.set_treasury(&witness, @0x0);
+    assert_eq!(payloads[0].payload_recipients(), vector[@0x0, @0x1]);
+    assert_eq!(payloads[1].payload_recipients(), vector[@0x1]);
+    assert_eq!(payloads[2].payload_recipients(), vector[@0x2]);
 
-//     assert_eq(memez_config::creation_fee(&world.config), CREATION_FEE * 3);
-//     assert_eq(memez_config::migration_fee(&world.config), MIGRATION_FEE * 2);
-//     assert_eq(memez_config::treasury(&world.config), @0x0);
+    world.config.remove<FeesKey<DefaultKey>, MemezFees>(&witness, world.scenario.ctx());
 
-//     world.end();
-// }
+    assert_eq!(memez_config::exists_for_testing<FeesKey<DefaultKey>>(&world.config), false);
 
-// #[test]
-// fun test_take_fees() {
-//     let mut world = start();
+    world.end();
+}
 
-//     world.config.take_creation_fee(mint_for_testing(CREATION_FEE, world.scenario.ctx()));
+#[test]
+fun test_burner() {
+    let mut world = start();
 
-//     world.scenario.next_epoch(ADMIN);
+    let witness = acl::sign_in_for_testing();
 
-//     let creation_fee_coin = world.scenario.take_from_address<Coin<SUI>>(TREASURY);
+    let expected_tax = 20;
+    let expected_start_liquidity = 100;
+    let expected_target_liquidity = 1100;
 
-//     assert_eq(creation_fee_coin.burn_for_testing(), CREATION_FEE);
+    world.config.set_burner<DefaultKey>(
+        &witness,
+        vector[expected_tax, expected_start_liquidity, expected_target_liquidity],
+        world.scenario.ctx(),
+    );
 
-//     world.config.take_migration_fee(mint_for_testing(MIGRATION_FEE, world.scenario.ctx()));
+    let burner = world.config.burner<DefaultKey>();
 
-//     world.scenario.next_epoch(ADMIN);
+    assert_eq!(burner.fee().value(), expected_tax);
+    assert_eq!(burner.start_liquidity(), expected_start_liquidity);
+    assert_eq!(burner.target_liquidity(), expected_target_liquidity);
 
-//     let migration_fee_coin = world.scenario.take_from_address<Coin<SUI>>(TREASURY);
+    assert_eq!(memez_config::exists_for_testing<BurnerKey<DefaultKey>>(&world.config), true);
 
-//     assert_eq(migration_fee_coin.burn_for_testing(), MIGRATION_FEE);
+    world.config.remove<BurnerKey<DefaultKey>, MemezBurner>(&witness, world.scenario.ctx());
 
-//     world.end();
-// }
+    assert_eq!(memez_config::exists_for_testing<BurnerKey<DefaultKey>>(&world.config), false);
 
-// #[
-//     test,
-//     expected_failure(
-//         abort_code = memez_errors::ENotEnoughSuiForCreationFee,
-//         location = memez_config,
-//     ),
-// ]
-// fun test_take_creation_fee_wrong_value() {
-//     let mut world = start();
+    world.end();
+}
 
-//     world.config.take_creation_fee(mint_for_testing(CREATION_FEE - 1, world.scenario.ctx()));
+#[test]
+fun test_auction() {
+    let mut world = start();
 
-//     world.end();
-// }
+    let witness = acl::sign_in_for_testing();
 
-// #[
-//     test,
-//     expected_failure(
-//         abort_code = memez_errors::ENotEnoughSuiForMigrationFee,
-//         location = memez_config,
-//     ),
-// ]
-// fun test_take_migration_fee_wrong_value() {
-//     let mut world = start();
+    let third_minutes_ms = 3 * 60 * 1_000_000;
+    let dev_allocation = 100;
+    let burn_take = 2000;
+    let virtual_liquidity = 1000;
+    let target_liquidity = 10_000; 
+    let provision_liquidity = 500;
+    let seed_liquidity = 100    ;
 
-//     world.config.take_migration_fee(mint_for_testing(MIGRATION_FEE - 1, world.scenario.ctx()));
 
-//     world.end();
-// }
+    world.config.set_auction<DefaultKey>(
+        &witness,
+        vector[
+            third_minutes_ms,
+            dev_allocation,
+            burn_take,
+            virtual_liquidity,
+            target_liquidity,
+            provision_liquidity,
+            seed_liquidity,
+        ],
+        world.scenario.ctx(),
+    );
 
-// fun start(): World {
-//     let mut scenario = ts::begin(ADMIN);
+    let amounts = world.config.get_auction<DefaultKey>(1_000);
 
-//     memez_config::init_for_testing(scenario.ctx());
-//     gg::init_for_testing(scenario.ctx());
+    assert_eq!(amounts[0], third_minutes_ms);
+    assert_eq!(amounts[1], 10);
+    assert_eq!(amounts[2], burn_take);
+    assert_eq!(amounts[3], virtual_liquidity);
+    assert_eq!(amounts[4], target_liquidity);
+    assert_eq!(amounts[5], 50);
+    assert_eq!(amounts[6], seed_liquidity);
 
-//     scenario.next_epoch(ADMIN);
+    assert_eq!(memez_config::exists_for_testing<AuctionKey<DefaultKey>>(&world.config), true);
 
-//     let config = scenario.take_shared<MemezConfig>();
-//     let treasury_cap = scenario.take_from_sender<TreasuryCap<GG>>();
+    world.config.remove<AuctionKey<DefaultKey>, AuctionModel>(&witness, world.scenario.ctx());
 
-//     World {
-//         scenario,
-//         config,
-//         treasury_cap: vector[treasury_cap],
-//     }
-// }
+    assert_eq!(memez_config::exists_for_testing<AuctionKey<DefaultKey>>(&world.config), false);
 
-// fun end(world: World) {
-//     destroy(world);
-// }
+    world.end();
+}   
+
+#[test]
+fun test_pump() {
+    let mut world = start();
+
+    let witness = acl::sign_in_for_testing();
+
+    let burn_take = 2000;
+    let virtual_liquidity = 1000;
+    let target_liquidity = 10_000;
+    let provision_liquidity = 700;
+
+    world.config.set_pump<DefaultKey>(
+        &witness,
+        vector[burn_take, virtual_liquidity, target_liquidity, provision_liquidity],
+        world.scenario.ctx(),
+    );
+
+    let amounts = world.config.get_pump<DefaultKey>(1_000);
+
+    assert_eq!(amounts[0], burn_take);
+    assert_eq!(amounts[1], virtual_liquidity);
+    assert_eq!(amounts[2], target_liquidity);
+    assert_eq!(amounts[3], 70);
+
+    assert_eq!(memez_config::exists_for_testing<PumpKey<DefaultKey>>(&world.config), true);
+
+    world.config.remove<PumpKey<DefaultKey>, PumpModel>(&witness, world.scenario.ctx());
+
+    assert_eq!(memez_config::exists_for_testing<PumpKey<DefaultKey>>(&world.config), false);
+
+    world.end();
+}
+
+#[test]
+fun test_stable() {
+    let mut world = start();
+
+    let witness = acl::sign_in_for_testing();
+
+    let max_target_sui_liquidity = 10_000;
+    let liquidity_provision = 100;
+    let meme_sale_amount = 5_000;
+
+    world.config.set_stable<DefaultKey>(
+        &witness,
+        vector[max_target_sui_liquidity, liquidity_provision, meme_sale_amount],
+        world.scenario.ctx(),
+    );
+
+    let amounts = world.config.get_stable<DefaultKey>(1_000);
+
+    assert_eq!(amounts[0], max_target_sui_liquidity);
+    assert_eq!(amounts[1], 10);
+    assert_eq!(amounts[2], 500);
+
+    assert_eq!(memez_config::exists_for_testing<StableKey<DefaultKey>>(&world.config), true);
+
+    world.config.remove<StableKey<DefaultKey>, StableModel>(&witness, world.scenario.ctx());
+
+    assert_eq!(memez_config::exists_for_testing<StableKey<DefaultKey>>(&world.config), false);
+
+    world.end();
+}
+
+fun start(): World {
+    let mut scenario = ts::begin(ADMIN);
+
+    memez_config::init_for_testing(scenario.ctx());
+    gg::init_for_testing(scenario.ctx());
+
+    scenario.next_epoch(ADMIN);
+
+    let config = scenario.take_shared<MemezConfig>();
+    let treasury_cap = scenario.take_from_sender<TreasuryCap<GG>>();
+
+    World {
+        scenario,
+        config,
+        treasury_cap: vector[treasury_cap],
+    }
+}
+
+fun end(world: World) {
+    destroy(world);
+}

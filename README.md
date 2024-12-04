@@ -10,7 +10,7 @@
 -   **Auction**
 -   **Stable**
 
-The launchpad is designed to help Meme coins bootstrap liquidity and distribute the tokens to early adopters. The different modes offer different pricing and distribution mechanisms. All the modes revolve around achieving a certain amount of Sui in the pool to bond the coin from the launchpad to a DEX. 
+The launchpad is designed to help Meme coins bootstrap liquidity and distribute the tokens to early adopters. The different modes offer different pricing and distribution mechanisms. All the modes revolve around achieving a certain amount of Sui in the pool to bond the coin from the launchpad to a DEX.
 All the pools in Memez.GG use Sui as the quote coin and the Meme Coin as the base coin and have no swap fees.
 Pools have a creation fee and a bonding fee.
 
@@ -38,7 +38,7 @@ This mode supports the following features:
 <img width="300px"height="300px" alt="Pump Mode" src="./assets/auction-model.png" />
 </p>
 
-This mode mimics a dutch auction. The protocol provides liquidity to the pool linearly. By increasing the amount of the Meme coin in the pool, it lowers its price as defined by the constant product invariant - `k = x * y`. In this mechanism, the price starts at a very high price and decreases over time linearly for 30 minutes until it hits a floor price based on the virtual liquidity set by the protocol. In this mode, the traders have the opportunity to decide at which
+This mode mimics a dutch auction. The protocol provides liquidity to the pool linearly. By increasing the amount of the Meme coin in the pool, it lowers its price as defined by the constant product invariant - `k = x * y`. In this mechanism, the price starts at a very high price and decreases over time linearly for 30 minutes until it hits a floor price based on the virtual liquidity set by the protocol. In this mode, the traders have the opportunity to decide at which market the coin should bond.
 
 This mode supports the following features:
 

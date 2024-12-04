@@ -1,21 +1,30 @@
 #[test_only]
 module memez_fun::memez_config_tests;
 
-use std::unit_test::assert_eq;
-use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
 use memez_acl::acl;
-use memez_fun::{gg::{Self, GG}, memez_config::{Self, MemezConfig, DefaultKey, FeesKey, BurnerKey, AuctionKey, PumpKey, StableKey}, memez_errors, memez_fees::MemezFees, memez_burner::MemezBurner, memez_auction_model::AuctionModel, memez_pump_model::PumpModel, memez_stable_model::StableModel};
-use sui::{
-    coin::{TreasuryCap, Coin, mint_for_testing},
-    sui::SUI,
-    test_scenario::{Self as ts, Scenario},
-    test_utils::destroy
+use memez_fun::{
+    memez_auction_model::AuctionModel,
+    memez_burner::MemezBurner,
+    memez_config::{
+        Self,
+        MemezConfig,
+        DefaultKey,
+        FeesKey,
+        BurnerKey,
+        AuctionKey,
+        PumpKey,
+        StableKey
+    },
+    memez_fees::MemezFees,
+    memez_pump_model::PumpModel,
+    memez_stable_model::StableModel
 };
+use std::unit_test::assert_eq;
+use sui::{test_scenario::{Self as ts, Scenario}, test_utils::destroy};
 
 public struct World {
     scenario: Scenario,
     config: MemezConfig,
-    treasury_cap: vector<TreasuryCap<GG>>,
 }
 
 const ADMIN: address = @0x0;
@@ -28,20 +37,14 @@ fun test_fees() {
 
     let witness = acl::sign_in_for_testing();
 
-    world.config.set_fees<DefaultKey>(
-        &witness,
-        vector[
-            vector[7_000, 3_000, 2],
-            vector[5_000, 5_000, 30],
-            vector[10_000, 0, 6],
-        ],
-        vector[
-            vector[@0x0, @0x1],
-            vector[@0x1],
-            vector[@0x2],
-        ],
-        world.scenario.ctx(),
-    );
+    world
+        .config
+        .set_fees<DefaultKey>(
+            &witness,
+            vector[vector[7_000, 3_000, 2], vector[5_000, 5_000, 30], vector[10_000, 0, 6]],
+            vector[vector[@0x0, @0x1], vector[@0x1], vector[@0x2]],
+            world.scenario.ctx(),
+        );
 
     assert_eq!(memez_config::exists_for_testing<FeesKey<DefaultKey>>(&world.config), true);
 
@@ -78,11 +81,13 @@ fun test_burner() {
     let expected_start_liquidity = 100;
     let expected_target_liquidity = 1100;
 
-    world.config.set_burner<DefaultKey>(
-        &witness,
-        vector[expected_tax, expected_start_liquidity, expected_target_liquidity],
-        world.scenario.ctx(),
-    );
+    world
+        .config
+        .set_burner<DefaultKey>(
+            &witness,
+            vector[expected_tax, expected_start_liquidity, expected_target_liquidity],
+            world.scenario.ctx(),
+        );
 
     let burner = world.config.burner<DefaultKey>();
 
@@ -109,24 +114,25 @@ fun test_auction() {
     let dev_allocation = 100;
     let burn_take = 2000;
     let virtual_liquidity = 1000;
-    let target_liquidity = 10_000; 
+    let target_liquidity = 10_000;
     let provision_liquidity = 500;
-    let seed_liquidity = 100    ;
+    let seed_liquidity = 100;
 
-
-    world.config.set_auction<DefaultKey>(
-        &witness,
-        vector[
-            third_minutes_ms,
-            dev_allocation,
-            burn_take,
-            virtual_liquidity,
-            target_liquidity,
-            provision_liquidity,
-            seed_liquidity,
-        ],
-        world.scenario.ctx(),
-    );
+    world
+        .config
+        .set_auction<DefaultKey>(
+            &witness,
+            vector[
+                third_minutes_ms,
+                dev_allocation,
+                burn_take,
+                virtual_liquidity,
+                target_liquidity,
+                provision_liquidity,
+                seed_liquidity,
+            ],
+            world.scenario.ctx(),
+        );
 
     let amounts = world.config.get_auction<DefaultKey>(1_000);
 
@@ -145,7 +151,7 @@ fun test_auction() {
     assert_eq!(memez_config::exists_for_testing<AuctionKey<DefaultKey>>(&world.config), false);
 
     world.end();
-}   
+}
 
 #[test]
 fun test_pump() {
@@ -158,11 +164,13 @@ fun test_pump() {
     let target_liquidity = 10_000;
     let provision_liquidity = 700;
 
-    world.config.set_pump<DefaultKey>(
-        &witness,
-        vector[burn_take, virtual_liquidity, target_liquidity, provision_liquidity],
-        world.scenario.ctx(),
-    );
+    world
+        .config
+        .set_pump<DefaultKey>(
+            &witness,
+            vector[burn_take, virtual_liquidity, target_liquidity, provision_liquidity],
+            world.scenario.ctx(),
+        );
 
     let amounts = world.config.get_pump<DefaultKey>(1_000);
 
@@ -190,11 +198,13 @@ fun test_stable() {
     let liquidity_provision = 100;
     let meme_sale_amount = 5_000;
 
-    world.config.set_stable<DefaultKey>(
-        &witness,
-        vector[max_target_sui_liquidity, liquidity_provision, meme_sale_amount],
-        world.scenario.ctx(),
-    );
+    world
+        .config
+        .set_stable<DefaultKey>(
+            &witness,
+            vector[max_target_sui_liquidity, liquidity_provision, meme_sale_amount],
+            world.scenario.ctx(),
+        );
 
     let amounts = world.config.get_stable<DefaultKey>(1_000);
 
@@ -215,17 +225,14 @@ fun start(): World {
     let mut scenario = ts::begin(ADMIN);
 
     memez_config::init_for_testing(scenario.ctx());
-    gg::init_for_testing(scenario.ctx());
 
     scenario.next_epoch(ADMIN);
 
     let config = scenario.take_shared<MemezConfig>();
-    let treasury_cap = scenario.take_from_sender<TreasuryCap<GG>>();
 
     World {
         scenario,
         config,
-        treasury_cap: vector[treasury_cap],
     }
 }
 

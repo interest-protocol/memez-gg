@@ -6,7 +6,7 @@ use std::unit_test::assert_eq;
 use sui::test_utils::destroy;
 
 // @dev 50,000,000 = 5%
-const LIQUIDITY_PROVISION: u64 = 500;
+const LIQUIDITY_PROVISION: u64 = 600;
 
 const MEME_SALE_AMOUNT: u64 = 2_000;
 

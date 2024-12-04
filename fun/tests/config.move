@@ -4,13 +4,11 @@ module memez_fun::memez_config_tests;
 use memez_acl::acl;
 use memez_fun::{
     memez_auction_model::AuctionModel,
-    memez_burner::MemezBurner,
     memez_config::{
         Self,
         MemezConfig,
         DefaultKey,
         FeesKey,
-        BurnerKey,
         AuctionKey,
         PumpKey,
         StableKey
@@ -67,39 +65,6 @@ fun test_fees() {
     world.config.remove<FeesKey<DefaultKey>, MemezFees>(&witness, world.scenario.ctx());
 
     assert_eq!(memez_config::exists_for_testing<FeesKey<DefaultKey>>(&world.config), false);
-
-    world.end();
-}
-
-#[test]
-fun test_burner() {
-    let mut world = start();
-
-    let witness = acl::sign_in_for_testing();
-
-    let expected_tax = 20;
-    let expected_start_liquidity = 100;
-    let expected_target_liquidity = 1100;
-
-    world
-        .config
-        .set_burner<DefaultKey>(
-            &witness,
-            vector[expected_tax, expected_start_liquidity, expected_target_liquidity],
-            world.scenario.ctx(),
-        );
-
-    let burner = world.config.burner<DefaultKey>();
-
-    assert_eq!(burner.fee().value(), expected_tax);
-    assert_eq!(burner.start_liquidity(), expected_start_liquidity);
-    assert_eq!(burner.target_liquidity(), expected_target_liquidity);
-
-    assert_eq!(memez_config::exists_for_testing<BurnerKey<DefaultKey>>(&world.config), true);
-
-    world.config.remove<BurnerKey<DefaultKey>, MemezBurner>(&witness, world.scenario.ctx());
-
-    assert_eq!(memez_config::exists_for_testing<BurnerKey<DefaultKey>>(&world.config), false);
 
     world.end();
 }

@@ -3,7 +3,6 @@ module memez_fun::memez_config;
 use memez_acl::acl::AuthWitness;
 use memez_fun::{
     memez_auction_model::{Self, AuctionModel},
-    memez_burner::{Self, MemezBurner},
     memez_errors,
     memez_fees::{Self, MemezFees},
     memez_pump_model::{Self, PumpModel},
@@ -17,8 +16,6 @@ use sui::dynamic_field as df;
 public struct DefaultKey() has copy, drop, store;
 
 public struct FeesKey<phantom T>() has copy, drop, store;
-
-public struct BurnerKey<phantom T>() has copy, drop, store;
 
 public struct AuctionKey<phantom T>() has copy, drop, store;
 
@@ -50,15 +47,6 @@ public fun set_fees<T>(
     _ctx: &mut TxContext,
 ) {
     add<FeesKey<T>, _>(self, memez_fees::new(values, recipients));
-}
-
-public fun set_burner<T>(
-    self: &mut MemezConfig,
-    _: &AuthWitness,
-    values: vector<u64>,
-    _ctx: &mut TxContext,
-) {
-    add<BurnerKey<T>, _>(self, memez_burner::new(values));
 }
 
 public fun set_auction<T>(
@@ -104,13 +92,6 @@ public(package) fun fees<T>(self: &MemezConfig): MemezFees {
     assert!(df::exists_(&self.id, key), memez_errors::model_key_not_supported());
 
     *df::borrow(&self.id, key)
-}
-
-public(package) fun burner<T>(self: &MemezConfig): MemezBurner {
-    let key = type_name::get<BurnerKey<T>>();
-
-    if (df::exists_(&self.id, key)) *df::borrow(&self.id, key)
-    else memez_burner::zero()
 }
 
 public(package) fun get_auction<T>(self: &MemezConfig, total_supply: u64): vector<u64> {

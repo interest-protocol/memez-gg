@@ -93,6 +93,8 @@ public(package) fun take<T>(fee: Fee, asset: &mut Coin<T>, ctx: &mut TxContext):
     match (fee) {
         Fee::Value(value, beneficiaries) => {
             if (value == 0) return 0;
+            
+            assert!(asset.value() >= value, memez_errors::not_enough_sui_to_pay_fee());
 
             let payment = asset.split(value, ctx);
             let payment_value = payment.value();
@@ -104,8 +106,11 @@ public(package) fun take<T>(fee: Fee, asset: &mut Coin<T>, ctx: &mut TxContext):
             if (bps.value() == 0) return 0;
 
             let asset_value = asset.value();
-            let payment = asset.split(bps.calc(asset_value), ctx);
-            let payment_value = payment.value();
+            let payment_value = bps.calc(asset_value);
+            
+            assert!(asset_value >= payment_value, memez_errors::not_enough_sui_to_pay_fee());
+
+            let payment = asset.split(payment_value, ctx);
             take_internal(payment, beneficiaries, ctx);
 
             payment_value

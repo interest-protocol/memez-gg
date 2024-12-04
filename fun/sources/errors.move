@@ -8,47 +8,45 @@ const EBurnTaxExceedsMax: u64 = 1;
 
 const EInvalidTargetSuiLiquidity: u64 = 2;
 
-const ENotEnoughSuiForCreationFee: u64 = 3;
+const ENotEnoughSuiToPayFee: u64 = 3;
 
-const ENotEnoughSuiForMigrationFee: u64 = 4;
+const EPreMintNotAllowed: u64 = 4;
 
-const EPreMintNotAllowed: u64 = 5;
+const EZeroCoin: u64 = 5;
 
-const EZeroCoin: u64 = 6;
+const ESlippage: u64 = 6;
 
-const ESlippage: u64 = 7;
+const EOutdatedAuctionStateVersion: u64 = 7;
 
-const EOutdatedAuctionStateVersion: u64 = 8;
+const ENotBonding: u64 = 8;
 
-const ENotBonding: u64 = 9;
+const ENotMigrating: u64 = 9;
 
-const ENotMigrating: u64 = 10;
+const ENotMigrated: u64 = 10;
 
-const ENotMigrated: u64 = 11;
+const EInvalidWitness: u64 = 11;
 
-const EInvalidWitness: u64 = 12;
+const EInvalidDev: u64 = 12;
 
-const EInvalidDev: u64 = 13;
+const ETokenNotSupported: u64 = 13;
 
-const ETokenNotSupported: u64 = 14;
+const ETokenSupported: u64 = 14;
 
-const ETokenSupported: u64 = 15;
+const EOutdatedPumpStateVersion: u64 = 15;
 
-const EOutdatedPumpStateVersion: u64 = 16;
+const EOutdatedStableStateVersion: u64 = 16;
 
-const EOutdatedStableStateVersion: u64 = 17;
+const EOutdatedPackageVersion: u64 = 17;
 
-const EOutdatedPackageVersion: u64 = 18;
+const EInvalidPercentages: u64 = 18;
 
-const EInvalidPercentages: u64 = 19;
+const EInvalidConfig: u64 = 19; 
 
-const EInvalidConfig: u64 = 20;
+const EModelKeyNotSupported: u64 = 20;
 
-const EModelKeyNotSupported: u64 = 21;
+const EWrongRecipientsLength: u64 = 21;
 
-const EWrongRecipientsLength: u64 = 22;
-
-const EZeroTotalSupply: u64 = 23;
+const EZeroTotalSupply: u64 = 22;
 
 // === Public Package Functions ===
 
@@ -64,12 +62,8 @@ public(package) fun invalid_target_sui_liquidity(): u64 {
     EInvalidTargetSuiLiquidity
 }
 
-public(package) fun not_enough_sui_for_creation_fee(): u64 {
-    ENotEnoughSuiForCreationFee
-}
-
-public(package) fun not_enough_sui_for_migration_fee(): u64 {
-    ENotEnoughSuiForMigrationFee
+public(package) fun not_enough_sui_to_pay_fee(): u64 {
+    ENotEnoughSuiToPayFee
 }
 
 public(package) fun pre_mint_not_allowed(): u64 {

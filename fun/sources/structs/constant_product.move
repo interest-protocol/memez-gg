@@ -236,3 +236,8 @@ public(package) fun meme_balance_mut<Meme>(
 public fun memez_fun<Meme>(self: &MemezConstantProduct<Meme>): address {
     self.memez_fun
 }
+
+#[test_only]
+public fun swap_fee<Meme>(self: &MemezConstantProduct<Meme>): Fee {
+    self.swap_fee
+}

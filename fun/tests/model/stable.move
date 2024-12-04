@@ -5,8 +5,8 @@ use memez_fun::{memez_errors, memez_stable_model};
 use std::unit_test::assert_eq;
 use sui::test_utils::destroy;
 
-// @dev 50,000,000 = 6%
-const LIQUIDITY_PROVISION: u64 = 600;
+// @dev 50,000,000 = 5%
+const LIQUIDITY_PROVISION: u64 = 500;
 
 const MEME_SALE_AMOUNT: u64 = 2_000;
 

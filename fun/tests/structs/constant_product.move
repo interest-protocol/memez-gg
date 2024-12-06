@@ -250,7 +250,9 @@ fun test_dump() {
 
     let (mut ipx_treasury, mut witness) = ipx_coin_standard::new(meme_treasury_cap, &mut ctx);
 
-    witness.add_burn_capability(&mut ipx_treasury);
+    witness.allow_public_burn(
+        &mut ipx_treasury,
+    );
 
     let sui_amount_in = 500;
 
@@ -362,7 +364,9 @@ fun test_dump_with_fee() {
 
     let (mut ipx_treasury, mut witness) = ipx_coin_standard::new(meme_treasury_cap, &mut ctx);
 
-    witness.add_burn_capability(&mut ipx_treasury);
+    witness.allow_public_burn(
+        &mut ipx_treasury,
+    );
 
     let sui_amount_in = 500;
 
@@ -739,7 +743,9 @@ fun test_dump_slippage() {
 
     let (mut ipx_treasury, mut witness) = ipx_coin_standard::new(meme_treasury_cap, &mut ctx);
 
-    witness.add_burn_capability(&mut ipx_treasury);
+    witness.allow_public_burn(
+        &mut ipx_treasury,
+    );
 
     let sui_amount_in = 500;
 

@@ -59,7 +59,7 @@ public(package) fun new_treasury<Meme>(
         ctx,
     );
 
-    witness.add_burn_capability(
+    witness.allow_public_burn(
         &mut ipx_treasury_standard,
     );
 

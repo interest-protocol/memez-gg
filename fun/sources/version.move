@@ -27,6 +27,12 @@ fun init(ctx: &mut TxContext) {
     transfer::share_object(version);
 }
 
+// === Public View Functions ===
+
+public fun get_version(self: &Version): CurrentVersion {
+    CurrentVersion(self.version)
+}
+
 // === Admin Functions ===
 
 public fun update(self: &mut Version, _: &AuthWitness) {
@@ -34,10 +40,6 @@ public fun update(self: &mut Version, _: &AuthWitness) {
 }
 
 // === Public Package Functions ===
-
-public(package) fun get_version(self: &Version): CurrentVersion {
-    CurrentVersion(self.version)
-}
 
 public(package) fun assert_is_valid(self: &CurrentVersion) {
     assert!(self.0 == VERSION, memez_errors::outdated_package_version());

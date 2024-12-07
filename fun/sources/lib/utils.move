@@ -59,6 +59,8 @@ public(package) fun new_treasury<Meme>(
         ctx,
     );
 
+    witness.set_maximum_supply(total_supply);
+
     witness.allow_public_burn(
         &mut ipx_treasury_standard,
     );
@@ -69,7 +71,7 @@ public(package) fun new_treasury<Meme>(
 
     let metadata_cap = witness.create_metadata_cap(ctx);
 
-    ipx_treasury_standard.destroy_witness(witness);
+    ipx_treasury_standard.destroy_witness<Meme>(witness);
 
     transfer::public_share_object(
         ipx_treasury_standard,

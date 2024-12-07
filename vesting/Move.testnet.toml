@@ -2,10 +2,11 @@
 name = "MemezVesting"
 edition = "2024.beta" 
 license = "MIT"          
-authors = ["Jose Cerqueira (jose@interestprotocol.com)"]     
+authors = ["Jose Cerqueira (jose@interestprotocol.com)"] 
+published-at = "0x8f5393f347cdc7afb58bedec29853904c8e625fd5a23109563f851f127bce450"    
 
 [dependencies]
 Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet" }
 
 [addresses]
-memez_vesting = "0x0887"
+memez_vesting = "0x8f5393f347cdc7afb58bedec29853904c8e625fd5a23109563f851f127bce450"

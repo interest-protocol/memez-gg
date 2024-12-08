@@ -16,4 +16,4 @@ MemezACL = { local = "../acl" }
 MemezVesting = { local = "../vesting" }
 
 [addresses]
-memez_fun = "0x0123456789abcdef"
+memez_fun = "0x0"

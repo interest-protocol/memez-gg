@@ -1,7 +1,7 @@
 #[test_only]
 module memez_acl::memez_acl_tests;
 
-use memez_acl::acl::{Self, ACL, MemezSuperAdmin};
+use memez_acl::acl::{Self, MemezACL, MemezSuperAdmin};
 use std::u64;
 use sui::{test_scenario::{Self, Scenario}, test_utils::{destroy, assert_eq}};
 
@@ -10,7 +10,7 @@ const NEW_ADMIN: address = @0xdead;
 
 public struct World {
     scenario: Scenario,
-    acl: ACL,
+    acl: MemezACL,
     super_admin: MemezSuperAdmin,
 }
 
@@ -202,7 +202,7 @@ fun start(): World {
 
     scenario.next_tx(ADMIN);
 
-    let acl = scenario.take_shared<ACL>();
+    let acl = scenario.take_shared<MemezACL>();
     let super_admin = scenario.take_from_sender<MemezSuperAdmin>();
 
     World {

@@ -37,7 +37,7 @@ public struct MemezAdmin has key, store {
     id: UID,
 }
 
-public struct ACL has key {
+public struct MemezACL has key {
     id: UID,
     admins: VecSet<address>,
 }
@@ -51,7 +51,7 @@ fun init(ctx: &mut TxContext) {
         start: u64::max_value!(),
     };
 
-    let acl = ACL {
+    let acl = MemezACL {
         id: object::new(ctx),
         admins: vec_set::empty(),
     };
@@ -62,7 +62,7 @@ fun init(ctx: &mut TxContext) {
 
 // === Admin Operations ===
 
-public fun new(acl: &mut ACL, _: &MemezSuperAdmin, ctx: &mut TxContext): MemezAdmin {
+public fun new(acl: &mut MemezACL, _: &MemezSuperAdmin, ctx: &mut TxContext): MemezAdmin {
     let admin = MemezAdmin {
         id: object::new(ctx),
     };
@@ -75,7 +75,7 @@ public fun new(acl: &mut ACL, _: &MemezSuperAdmin, ctx: &mut TxContext): MemezAd
 }
 
 public fun new_and_transfer(
-    acl: &mut ACL,
+    acl: &mut MemezACL,
     super_admin: &MemezSuperAdmin,
     new_admin: address,
     ctx: &mut TxContext,
@@ -83,23 +83,23 @@ public fun new_and_transfer(
     transfer::public_transfer(new(acl, super_admin, ctx), new_admin);
 }
 
-public fun revoke(acl: &mut ACL, _: &MemezSuperAdmin, old_admin: address) {
+public fun revoke(acl: &mut MemezACL, _: &MemezSuperAdmin, old_admin: address) {
     acl.admins.remove(&old_admin);
 
     events::revoke_admin(old_admin);
 }
 
-public fun is_admin(acl: &ACL, admin: address): bool {
+public fun is_admin(acl: &MemezACL, admin: address): bool {
     acl.admins.contains(&admin)
 }
 
-public fun sign_in(acl: &ACL, admin: &MemezAdmin): AuthWitness {
+public fun sign_in(acl: &MemezACL, admin: &MemezAdmin): AuthWitness {
     assert!(is_admin(acl, admin.id.to_address()), InvalidAdmin);
 
     AuthWitness()
 }
 
-public fun destroy_admin(acl: &mut ACL, admin: MemezAdmin) {
+public fun destroy_admin(acl: &mut MemezACL, admin: MemezAdmin) {
     let MemezAdmin { id } = admin;
 
     if (acl.admins.contains(&id.to_address())) acl.admins.remove(&id.to_address());
@@ -154,7 +154,7 @@ public fun sign_in_for_testing(): AuthWitness {
 }
 
 #[test_only]
-public fun admins(acl: &ACL): &VecSet<address> {
+public fun admins(acl: &MemezACL): &VecSet<address> {
     &acl.admins
 }
 

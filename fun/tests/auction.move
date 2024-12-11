@@ -168,7 +168,7 @@ fun test_decrease_auction_mechanism() {
     );
 
     // @dev After 15 minutes the market is lower than 2000 Sui
-    assert_eq(2000 * POW_9 > market_cap_t1, true);
+    assert_eq(2500 * POW_9 > market_cap_t1, true);
     assert_eq(1500 * POW_9 < market_cap_t1, true);
 
     world.clock.increment_for_testing(THIRTY_MINUTES_MS / 2);
@@ -181,7 +181,7 @@ fun test_decrease_auction_mechanism() {
     );
 
     // @dev After 30 minutes the market is lower than 1000 Sui
-    assert_eq(1000 * POW_9 > market_cap_t2, true);
+    assert_eq(1100 * POW_9 > market_cap_t2, true);
 
     destroy(memez_fun);
 

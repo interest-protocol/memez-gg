@@ -8,7 +8,7 @@ const EBurnTaxExceedsMax: u64 = 1;
 
 const EInvalidTargetSuiLiquidity: u64 = 2;
 
-const ENotEnoughSuiToPayFee: u64 = 3;
+const EInsufficientValue: u64 = 3;
 
 const EPreMintNotAllowed: u64 = 4;
 
@@ -62,8 +62,8 @@ public(package) fun invalid_target_sui_liquidity(): u64 {
     EInvalidTargetSuiLiquidity
 }
 
-public(package) fun not_enough_sui_to_pay_fee(): u64 {
-    ENotEnoughSuiToPayFee
+public(package) fun insufficient_value(): u64 {
+    EInsufficientValue
 }
 
 public(package) fun pre_mint_not_allowed(): u64 {

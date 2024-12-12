@@ -30,7 +30,6 @@ use memez_fun::{
     memez_utils::{destroy_or_burn, destroy_or_return, new_treasury},
     memez_version::CurrentVersion
 };
-use memez_vesting::memez_vesting::{Self, MemezVesting};
 use std::string::String;
 use sui::{
     balance::{Self, Balance},
@@ -51,12 +50,13 @@ public struct Pump()
 
 public struct PumpState<phantom Meme> has store {
     dev_purchase: Balance<Meme>,
-    dev_allocation: Balance<Meme>,
-    dev_vesting_period: u64,
+    stake_holders_allocation: Balance<Meme>,
+    stake_holders_vesting_period: u64,
     liquidity_provision: Balance<Meme>,
     constant_product: MemezConstantProduct<Meme>,
     meme_token_cap: Option<MemezTokenCap<Meme>>,
     migration_fee: Fee,
+    allocation_fee: Fee,
 }
 
 // === Public Mutative Functions ===
@@ -72,6 +72,7 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
     first_purchase: Coin<SUI>,
     metadata_names: vector<String>,
     metadata_values: vector<String>,
+    stake_holders: vector<address>,
     dev: address,
     version: CurrentVersion,
     ctx: &mut TxContext,
@@ -95,24 +96,25 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
         ctx,
     );
 
-    let dev_allocation = meme_balance.split(pump_config[4]);
+    let stake_holders_allocation = meme_balance.split(pump_config[4]);
 
     let liquidity_provision = meme_balance.split(pump_config[3]);
 
     let pump_state = PumpState<Meme> {
         dev_purchase: balance::zero(),
         liquidity_provision,
-        dev_allocation,
-        dev_vesting_period: pump_config[5],
+        stake_holders_allocation,
+        stake_holders_vesting_period: pump_config[5],
         constant_product: memez_constant_product::new(
             pump_config[1],
             pump_config[2],
             meme_balance,
-            fees.swap(dev),
+            fees.swap(stake_holders),
             pump_config[0],
         ),
         meme_token_cap,
-        migration_fee: fees.migration(dev),
+        migration_fee: fees.migration(stake_holders),
+        allocation_fee: fees.allocation(stake_holders),
     };
 
     let mut memez_fun = memez_fun::new<Pump, Meme, ConfigKey, MigrationWitness>(
@@ -280,26 +282,21 @@ public fun dev_purchase_claim<Meme>(
     state.dev_purchase.withdraw_all().into_coin(ctx)
 }
 
-public fun dev_allocation_claim<Meme>(
+public fun distribute_stake_holders_allocation<Meme>(
     self: &mut MemezFun<Pump, Meme>,
     clock: &Clock,
     version: CurrentVersion,
     ctx: &mut TxContext,
-): MemezVesting<Meme> {
+) {
     version.assert_is_valid();
 
     self.assert_migrated();
-    self.assert_is_dev(ctx);
 
     let state = self.state_mut();
 
-    memez_vesting::new(
-        clock,
-        state.dev_allocation.withdraw_all().into_coin(ctx),
-        clock.timestamp_ms(),
-        state.dev_vesting_period,
-        ctx,
-    )
+    let stake_holders_allocation = &mut state.stake_holders_allocation;
+
+    state.allocation_fee.take_allocation(stake_holders_allocation, clock, ctx);
 }
 
 public fun to_coin<Meme>(

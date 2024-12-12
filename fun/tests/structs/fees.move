@@ -2,8 +2,13 @@
 module memez_fun::memez_fees_tests;
 
 use memez_fun::{memez_errors, memez_fees::{Self, MemezFees}, memez_utils};
-use sui::test_utils::assert_eq;
+use sui::test_utils::{assert_eq, destroy};
 use sui::{coin::{mint_for_testing, Coin}, test_scenario as ts};
+use sui::clock;
+use memez_fun::memez_test_helpers;
+use memez_vesting::memez_vesting::MemezVesting;
+
+use fun memez_test_helpers::do as vector.do;
 
 const POW_9: u64 = 1_000_000_000;
 
@@ -60,193 +65,169 @@ fun test_calculate() {
     assert_eq(migration_fee.value(), 200 * POW_9);
     assert_eq(allocation_fee.value(), 200);
 
-    // Test Recipient Percentages
+    // Test Recipient Percentages 
 
-    let (first_creation_recipient_addy, first_creation_recipient_bps) = creation_fee
-        .recipients()[0]
-        .recipient_data();
+    let expected_creation_recipients = vector[INTEGRATOR, INTEREST];
+    let expected_creation_percentages = vector[7_000, 3_000];
+    let expected_creation_values = vector[2 * POW_9 * 7_000 / 10_000, 2 * POW_9 * 3_000 / 10_000];
 
-    assert_eq(first_creation_recipient_addy, INTEGRATOR);
-    assert_eq(first_creation_recipient_bps.value(), 7_000);
-    assert_eq(first_creation_recipient_bps.calc(10), 7);
+    creation_fee.recipients().do!(|recipient, i| {
+        let (recipient_addy, recipient_bps) = recipient.recipient_data();
 
-    let (last_creation_recipient_addy, last_creation_recipient_bps) = creation_fee
-        .recipients()[1]
-        .recipient_data();
+        assert_eq(recipient_addy, expected_creation_recipients[i]);
+        assert_eq(recipient_bps.value(), expected_creation_percentages[i]);
+        assert_eq(recipient_bps.calc(2 * POW_9), expected_creation_values[i]);
+    });
 
-    assert_eq(last_creation_recipient_addy, INTEREST);
-    assert_eq(last_creation_recipient_bps.value(), 3_000);
-    assert_eq(last_creation_recipient_bps.calc(10), 3);
+    let expected_swap_recipients = vector[INTEGRATOR, STAKE_HOLDER_1, STAKE_HOLDER_2];
+    let expected_swap_percentages = vector[5_000, 2_500, 2_500];
+    let expected_swap_values = vector[100 * 5_000 / 10_000, 100 * 2_500 / 10_000, 100 * 2_500 / 10_000];
 
-    let (first_swap_recipient_addy, first_swap_recipient_bps) = swap_fee
-        .recipients()[0]
-        .recipient_data();
+    swap_fee.recipients().do!(|recipient, i| {
+        let (recipient_addy, recipient_bps) = recipient.recipient_data();
 
-    assert_eq(first_swap_recipient_addy, INTEGRATOR);
-    assert_eq(first_swap_recipient_bps.value(), 5_000);
-    assert_eq(first_swap_recipient_bps.calc(100), 50);
+        assert_eq(recipient_addy, expected_swap_recipients[i]);
+        assert_eq(recipient_bps.value(), expected_swap_percentages[i]);
+        assert_eq(recipient_bps.calc(100), expected_swap_values[i]);
+    });
 
-    let (second_swap_recipient_addy, second_swap_recipient_bps) = swap_fee
-        .recipients()[1]
-        .recipient_data();
+    let expected_migration_recipients = vector[INTEGRATOR, INTEREST, STAKE_HOLDER_1, STAKE_HOLDER_2];
+    let expected_migration_percentages = vector[4_000, 1_000, 2_500, 2_500];
+    let expected_migration_values = vector[200 * POW_9 * 4_000 / 10_000, 200 * POW_9 * 1_000 / 10_000, 200 * POW_9 * 2_500 / 10_000, 200 * POW_9 * 2_500 / 10_000];
 
-    assert_eq(second_swap_recipient_addy, STAKE_HOLDER_1);
-    assert_eq(second_swap_recipient_bps.value(), 2_500);
-    assert_eq(second_swap_recipient_bps.calc(100), 25);
-    
-    let (third_swap_recipient_addy, third_swap_recipient_bps) = swap_fee
-        .recipients()[2]
-        .recipient_data();
+    migration_fee.recipients().do!(|recipient, i| {
+        let (recipient_addy, recipient_bps) = recipient.recipient_data();
 
-    assert_eq(third_swap_recipient_addy, STAKE_HOLDER_2);
-    assert_eq(third_swap_recipient_bps.value(), 2_500);
-    assert_eq(third_swap_recipient_bps.calc(100), 25);
+        assert_eq(recipient_addy, expected_migration_recipients[i]);
+        assert_eq(recipient_bps.value(), expected_migration_percentages[i]);
+        assert_eq(recipient_bps.calc(200 * POW_9), expected_migration_values[i]);
+    });
 
-    let (first_migration_recipient_addy, first_migration_recipient_bps) = migration_fee
-        .recipients()[0]
-        .recipient_data();
+    let expected_allocation_recipients = vector[INTEGRATOR, STAKE_HOLDER_1, STAKE_HOLDER_2];
+    let expected_allocation_percentages = vector[3_000, 3_500, 3_500];
+    let expected_allocation_values = vector[100 * 3_000 / 10_000, 100 * 3_500 / 10_000, 100 * 3_500 / 10_000];
 
-    assert_eq(first_migration_recipient_addy, INTEGRATOR);
-    assert_eq(first_migration_recipient_bps.value(), 4_000);
-    assert_eq(first_migration_recipient_bps.calc(100), 40);
+    allocation_fee.recipients().do!(|recipient, i| {
+        let (recipient_addy, recipient_bps) = recipient.recipient_data();
 
-    let (second_migration_recipient_addy, second_migration_recipient_bps) = migration_fee
-        .recipients()[1]
-        .recipient_data();
-
-    assert_eq(second_migration_recipient_addy, INTEREST);
-    assert_eq(second_migration_recipient_bps.value(), 1_000);
-    assert_eq(second_migration_recipient_bps.calc(100), 10);
-
-    let (third_migration_recipient_addy, third_migration_recipient_bps) = migration_fee
-        .recipients()[2]
-        .recipient_data();
-
-    assert_eq(third_migration_recipient_addy, STAKE_HOLDER_1);
-    assert_eq(third_migration_recipient_bps.value(), 2_500);
-    assert_eq(third_migration_recipient_bps.calc(100), 25);
-
-    let (fourth_migration_recipient_addy, fourth_migration_recipient_bps) = migration_fee
-        .recipients()[3]
-        .recipient_data();
-
-    assert_eq(fourth_migration_recipient_addy, STAKE_HOLDER_2);
-    assert_eq(fourth_migration_recipient_bps.value(), 2_500);
-    assert_eq(fourth_migration_recipient_bps.calc(100), 25);
-
-    let (first_allocation_recipient_addy, first_allocation_recipient_bps) = allocation_fee
-        .recipients()[0]
-        .recipient_data();
-
-    assert_eq(first_allocation_recipient_addy, INTEGRATOR);
-    assert_eq(first_allocation_recipient_bps.value(), 3_000);
-
-    assert_eq(first_allocation_recipient_bps.calc(100), 30);
-
-    let (second_allocation_recipient_addy, second_allocation_recipient_bps) = allocation_fee
-        .recipients()[1]
-        .recipient_data();
-
-    assert_eq(second_allocation_recipient_addy, STAKE_HOLDER_1);
-    assert_eq(second_allocation_recipient_bps.value(), 3_500);
-    assert_eq(second_allocation_recipient_bps.calc(100), 35);
-
-    let (third_allocation_recipient_addy, third_allocation_recipient_bps) = allocation_fee
-        .recipients()[2]
-        .recipient_data();
-
-    assert_eq(third_allocation_recipient_addy, STAKE_HOLDER_2);
-    assert_eq(third_allocation_recipient_bps.value(), 3_500);
-    assert_eq(third_allocation_recipient_bps.calc(100), 35);
+        assert_eq(recipient_addy, expected_allocation_recipients[i]);
+        assert_eq(recipient_bps.value(), expected_allocation_percentages[i]);
+        assert_eq(recipient_bps.calc(100), expected_allocation_values[i]);
+    });
 
     assert_eq(allocation_fee.vesting_period(), VESTING_PERIOD);
 }
 
-// #[test]
-// fun test_take() {
-//     let alice = @0x0;
-//     let bob = @0x1;
-//     let charlie = @0x2;
-//     let jose = @0x3;
+#[test]
+fun test_take() {
+    let fees = default_fees();
 
-//     let fees = memez_fees::new(
-//         vector[
-//             vector[7_000, 3_000, 20],
-//             vector[5_000, 2_000, 3_000, 300],
-//             vector[2_500, 2_500, 2_500, 2_500, 60],
-//         ],
-//         vector[vector[alice, bob], vector[bob, alice], vector[charlie, jose, alice]],
-//     );
+    let mut scenario = ts::begin(@0x9);
 
-//     let mut scenario = ts::begin(@0x9);
+    let mut asset = mint_for_testing<Meme>(5 * POW_9, scenario.ctx());
 
-//     let mut asset = mint_for_testing<Meme>(1000, scenario.ctx());
+    fees.creation().take(&mut asset, scenario.ctx());
 
-//     fees.creation().take(&mut asset, scenario.ctx());
+    assert_eq(asset.burn_for_testing(), 3 * POW_9);
 
-//     assert_eq(asset.burn_for_testing(), 980);
+    scenario.next_tx(@0x0);
 
-//     scenario.next_tx(@0x0);
+    let integrator_creation_coin = scenario.take_from_address<Coin<Meme>>(INTEGRATOR);
+    let interest_creation_coin = scenario.take_from_address<Coin<Meme>>(INTEREST);
 
-//     let alice_creation_coin = scenario.take_from_address<Coin<Meme>>(alice);
-//     let bob_creation_coin = scenario.take_from_address<Coin<Meme>>(bob);
+    assert_eq(integrator_creation_coin.burn_for_testing(), 2 * POW_9 * 7_000 / 10_000);
+    assert_eq(interest_creation_coin.burn_for_testing(), 2 * POW_9 * 3_000 / 10_000);
 
-//     assert_eq(alice_creation_coin.burn_for_testing(), 14);
-//     assert_eq(bob_creation_coin.burn_for_testing(), 6);
+    let mut asset = mint_for_testing<Meme>(10_000, scenario.ctx());
 
-//     let mut asset = mint_for_testing<Meme>(1000, scenario.ctx());
+    fees.swap(vector[STAKE_HOLDER_1, STAKE_HOLDER_2]).take(&mut asset, scenario.ctx());
 
-//     fees.swap(vector[@0x7]).take(&mut asset, scenario.ctx());
+    assert_eq(asset.burn_for_testing(), 9_900);
 
-//     assert_eq(asset.burn_for_testing(), 970);
+    scenario.next_tx(@0x0);
 
-//     scenario.next_tx(@0x0);
+    let integrator_swap_coin = scenario.take_from_address<Coin<Meme>>(INTEGRATOR);
+    let stake_holder_1_swap_coin = scenario.take_from_address<Coin<Meme>>(STAKE_HOLDER_1);
+    let stake_holder_2_swap_coin = scenario.take_from_address<Coin<Meme>>(STAKE_HOLDER_2);
 
-//     let bob_swap_coin = scenario.take_from_address<Coin<Meme>>(bob);
-//     let alice_swap_coin = scenario.take_from_address<Coin<Meme>>(alice);
-//     let charlie_swap_coin = scenario.take_from_address<Coin<Meme>>(charlie);
+    assert_eq(integrator_swap_coin.burn_for_testing(), 100 * 5_000 / 10_000);
+    assert_eq(stake_holder_1_swap_coin.burn_for_testing(), 100 * 2_500 / 10_000);
+    assert_eq(stake_holder_2_swap_coin.burn_for_testing(), 100 * 2_500 / 10_000);
 
-//     assert_eq(bob_swap_coin.burn_for_testing(), 15);
-//     assert_eq(alice_swap_coin.burn_for_testing(), 6);
-//     assert_eq(charlie_swap_coin.burn_for_testing(), 9);
+    let mut asset = mint_for_testing<Meme>(200 * POW_9, scenario.ctx());
 
-//     let mut asset = mint_for_testing<Meme>(1000, scenario.ctx());
+    fees.migration(vector[STAKE_HOLDER_1, STAKE_HOLDER_2]).take(&mut asset, scenario.ctx());
 
-//     fees.migration(vector[@0x7]).take(&mut asset, scenario.ctx());
+    assert_eq(asset.burn_for_testing(), 0);
 
-//     assert_eq(asset.burn_for_testing(), 940);
+    scenario.next_tx(@0x0);
 
-//     scenario.next_tx(@0x0);
+    let integrator_migration_coin = scenario.take_from_address<Coin<Meme>>(INTEGRATOR);
+    let interest_migration_coin = scenario.take_from_address<Coin<Meme>>(INTEREST);
+    let stake_holder_1_migration_coin = scenario.take_from_address<Coin<Meme>>(STAKE_HOLDER_1);
+    let stake_holder_2_migration_coin = scenario.take_from_address<Coin<Meme>>(STAKE_HOLDER_2);
 
-//     let bob_swap_coin = scenario.take_from_address<Coin<Meme>>(bob);
-//     let alice_swap_coin = scenario.take_from_address<Coin<Meme>>(alice);
-//     let charlie_swap_coin = scenario.take_from_address<Coin<Meme>>(charlie);
-//     let jose_swap_coin = scenario.take_from_address<Coin<Meme>>(jose);
+    assert_eq(integrator_migration_coin.burn_for_testing(), 200 * POW_9 * 4_000 / 10_000);
+    assert_eq(interest_migration_coin.burn_for_testing(), 200 * POW_9 * 1_000 / 10_000);
+    assert_eq(stake_holder_1_migration_coin.burn_for_testing(), 200 * POW_9 * 2_500 / 10_000);
+    assert_eq(stake_holder_2_migration_coin.burn_for_testing(), 200 * POW_9 * 2_500 / 10_000);
 
-//     assert_eq(bob_swap_coin.burn_for_testing(), 15);
-//     assert_eq(alice_swap_coin.burn_for_testing(), 15);
-//     assert_eq(charlie_swap_coin.burn_for_testing(), 15);
-//     assert_eq(jose_swap_coin.burn_for_testing(), 15);
+    scenario.next_tx(@0x0);
 
-//     let fees = memez_fees::new(
-//         vector[
-//             vector[7_000, 3_000, 0],
-//             vector[5_000, 2_000, 3_000, 0],
-//             vector[2_500, 2_500, 2_500, 2_500, 0],
-//         ],
-//         vector[vector[alice, bob], vector[bob, alice], vector[charlie, jose, alice]],
-//     );
+    let mut asset = mint_for_testing<Meme>(200, scenario.ctx()).into_balance();
 
-//     let mut asset = mint_for_testing<Meme>(1000, scenario.ctx());
+    let clock = clock::create_for_testing(scenario.ctx());
 
-//     fees.creation().take(&mut asset, scenario.ctx());
-//     fees.swap(vector[@0x7]).take(&mut asset, scenario.ctx());
-//     fees.migration(vector[@0x8]).take(&mut asset, scenario.ctx());
+    fees.allocation(vector[STAKE_HOLDER_1, STAKE_HOLDER_2], 101).take_allocation(
+        &mut asset, &clock, scenario.ctx());
 
-//     assert_eq(asset.burn_for_testing(), 1000);
+    asset.destroy_zero();
 
-//     scenario.end();
-// }
+    scenario.next_tx(@0x0);
+
+    let integrator_allocation_vesting = scenario.take_from_address<MemezVesting<Meme>>(INTEGRATOR);
+    let stake_holder_1_allocation_vesting = scenario.take_from_address<MemezVesting<Meme>>(STAKE_HOLDER_1);
+    let stake_holder_2_allocation_vesting = scenario.take_from_address<MemezVesting<Meme>>(STAKE_HOLDER_2);
+
+    assert_eq(integrator_allocation_vesting.duration(), 101);
+    assert_eq(stake_holder_1_allocation_vesting.duration(), 101);
+    assert_eq(stake_holder_2_allocation_vesting.duration(), 101);
+
+    assert_eq(integrator_allocation_vesting.balance(), 200 * 3_000 / 10_000);
+    assert_eq(stake_holder_1_allocation_vesting.balance(), 200 * 3_500 / 10_000);
+    assert_eq(stake_holder_2_allocation_vesting.balance(), 200 * 3_500 / 10_000);
+
+    destroy(integrator_allocation_vesting);
+    destroy(stake_holder_1_allocation_vesting);
+    destroy(stake_holder_2_allocation_vesting);
+
+    let fees = memez_fees::new(
+        vector[
+            vector[7_000, 3_000, 0],
+            vector[5_000, 2_000, 3_000, 0],
+            vector[2_500, 2_500, 2_500, 2_500, 0],
+            vector[5_000, 5_000, 0],
+        ],
+        vector[vector[INTEGRATOR, INTEREST], vector[INTEGRATOR, STAKE_HOLDER_1, STAKE_HOLDER_2], vector[INTEGRATOR, INTEREST, STAKE_HOLDER_1, STAKE_HOLDER_2], vector[ STAKE_HOLDER_1, STAKE_HOLDER_2]],
+    );
+
+    let mut asset = mint_for_testing<Meme>(1000, scenario.ctx());
+
+    fees.creation().take(&mut asset, scenario.ctx());
+    fees.swap(vector[]).take(&mut asset, scenario.ctx());
+    fees.migration(vector[]).take(&mut asset, scenario.ctx());
+
+    let mut asset = asset.into_balance();
+    
+    fees.allocation(vector[], 101).take_allocation(&mut asset, &clock, scenario.ctx());
+
+    assert_eq(asset.value(), 1000);
+
+    destroy(asset);
+    destroy(clock);
+
+    scenario.end();
+}
 
 // #[test, expected_failure(abort_code = memez_errors::EInvalidConfig, location = memez_fees)]
 // fun test_new_invalid_config() {

@@ -1,6 +1,7 @@
 #[test_only]
 module memez_fun::memez_pump_tests;
 
+use interest_bps::bps;
 use constant_product::constant_product::get_amount_out;
 use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
 use memez_acl::acl;
@@ -16,6 +17,7 @@ use memez_fun::{
 use sui::{
     coin::{Self, mint_for_testing, create_treasury_cap_for_testing, Coin},
     sui::SUI,
+    clock,
     test_scenario::{Self as ts, Scenario},
     test_utils::{assert_eq, destroy},
     token
@@ -453,6 +455,90 @@ fun test_token_end_to_end() {
 
     destroy(memez_fun);
     destroy(treasury);
+
+    world.end();
+}
+
+#[test]
+fun dev_allocation_claim() {
+    let mut world = start();
+
+    let witness = acl::sign_in_for_testing();
+
+    let dev_allocation = 200;
+
+    let dev_vesting_period = 100;
+
+    world.config
+        .set_pump<DefaultKey>(
+            &witness,
+            vector[BURN_TAX, VIRTUAL_LIQUIDITY, TARGET_LIQUIDITY, PROVISION_LIQUIDITY, dev_allocation, dev_vesting_period],
+            world.scenario.ctx(),
+        );
+
+    let total_supply = 1_000_000_000_000_000_000;
+
+    let first_purchase = mint_for_testing(0, world.scenario.ctx());
+
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        first_purchase,
+        true,
+        total_supply,
+    );
+
+    let ctx = world.scenario.ctx();
+
+    let purchase_sui_value = TARGET_LIQUIDITY * 2;
+
+    let meme_token = memez_pump::pump_token(
+        &mut memez_fun,
+        mint_for_testing(purchase_sui_value, ctx),
+        0,
+        memez_version::get_version_for_testing(1),
+        ctx,
+    );
+
+    meme_token.burn_for_testing();
+
+    let migrator = memez_pump::migrate(
+        &mut memez_fun,
+        memez_version::get_version_for_testing(1),
+        ctx,
+    );
+
+    let (sui_balance, meme_balance) = migrator.destroy(MigrationWitness());
+
+    sui_balance.destroy_for_testing();
+    meme_balance.destroy_for_testing();
+
+    world.scenario.next_tx(DEV);
+
+    let ctx = world.scenario.ctx();
+
+    let mut clock = clock::create_for_testing(ctx);
+
+    let mut vested_allocation = memez_pump::dev_allocation_claim(
+        &mut memez_fun,
+        &clock,
+        memez_version::get_version_for_testing(1),
+        ctx,
+    );
+
+    let dev_allocation_amount = bps::new(dev_allocation).calc(total_supply);
+
+    assert_eq(vested_allocation.balance(), dev_allocation_amount);
+
+    clock.set_for_testing( dev_vesting_period);
+
+    let meme_coin = vested_allocation.claim(&clock, ctx);
+
+    vested_allocation.destroy_zero();
+
+    assert_eq(meme_coin.burn_for_testing(), dev_allocation_amount);
+
+    destroy(memez_fun);
+    clock.destroy_for_testing();
 
     world.end();
 }

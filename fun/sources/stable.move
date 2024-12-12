@@ -58,8 +58,7 @@ public struct StableState<phantom Meme> has store {
     meme_token_cap: Option<MemezTokenCap<Meme>>,
     migration_fee: Fee,
     allocation_fee: Fee,
-    stake_holders_allocation: Balance<Meme>,
-    stake_holders_vesting_period: u64,
+    stake_holders_allocation: Balance<Meme>
 }
 
 // === Public Mutative Functions ===
@@ -120,9 +119,8 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
         fixed_rate,
         meme_token_cap,
         migration_fee: fees.migration(stake_holders),
-        allocation_fee: fees.allocation(stake_holders),
+        allocation_fee: fees.allocation(stake_holders, stable_config[4]),
         stake_holders_allocation,
-        stake_holders_vesting_period: stable_config[4],
     };
 
     let mut memez_fun = memez_fun::new<Stable, Meme, ConfigKey, MigrationWitness>(

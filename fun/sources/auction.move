@@ -61,7 +61,6 @@ public struct AuctionState<phantom Meme> has store {
     dev_allocation: Balance<Meme>,
     liquidity_provision: Balance<Meme>,
     stake_holders_allocation: Balance<Meme>,
-    stake_holders_vesting_period: u64,
     constant_product: MemezConstantProduct<Meme>,
     meme_token_cap: Option<MemezTokenCap<Meme>>,
 }
@@ -121,7 +120,7 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
         meme_reserve,
         dev_allocation,
         liquidity_provision,
-        allocation_fee: fees.allocation(stake_holders),
+        allocation_fee: fees.allocation(stake_holders, stake_holders_vesting_period),
         constant_product: memez_constant_product::new(
             auction_config[3],
             auction_config[4],
@@ -130,7 +129,6 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
             auction_config[2],
         ),
         stake_holders_allocation,
-        stake_holders_vesting_period,
         meme_token_cap,
         migration_fee: fees.migration(stake_holders),
     };

@@ -51,7 +51,6 @@ public struct Pump()
 public struct PumpState<phantom Meme> has store {
     dev_purchase: Balance<Meme>,
     stake_holders_allocation: Balance<Meme>,
-    stake_holders_vesting_period: u64,
     liquidity_provision: Balance<Meme>,
     constant_product: MemezConstantProduct<Meme>,
     meme_token_cap: Option<MemezTokenCap<Meme>>,
@@ -104,7 +103,6 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
         dev_purchase: balance::zero(),
         liquidity_provision,
         stake_holders_allocation,
-        stake_holders_vesting_period: pump_config[5],
         constant_product: memez_constant_product::new(
             pump_config[1],
             pump_config[2],
@@ -114,7 +112,7 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
         ),
         meme_token_cap,
         migration_fee: fees.migration(stake_holders),
-        allocation_fee: fees.allocation(stake_holders),
+        allocation_fee: fees.allocation(stake_holders, pump_config[5]),
     };
 
     let mut memez_fun = memez_fun::new<Pump, Meme, ConfigKey, MigrationWitness>(

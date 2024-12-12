@@ -190,17 +190,22 @@ public(package) fun migration(self: MemezFees, stake_holders: vector<address>): 
     )
 }
 
-public(package) fun allocation(self: MemezFees, stake_holders: vector<address>): Fee {
+public(package) fun allocation(
+    self: MemezFees,
+    stake_holders: vector<address>,
+    vesting_period: u64,
+): Fee {
     let mut recipients = self.allocation.recipients;
 
     recipients.append(stake_holders);
 
-    Fee::Percentage(
+    Fee::VestedPercentage(
         bps::new(self.allocation.value),
         recipients.zip_map!(
             self.allocation.percentages,
             |addy, bps| Recipient { addy, bps: bps::new(bps) },
         ),
+        vesting_period,
     )
 }
 

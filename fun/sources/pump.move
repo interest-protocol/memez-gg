@@ -135,12 +135,7 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
     state.constant_product.set_memez_fun(memez_fun_address);
 
     if (first_purchase.value() != 0) {
-        let meme_coin = pump_unchecked(
-            &mut memez_fun,
-            first_purchase,
-            0,
-            ctx,
-        );
+        let meme_coin = memez_fun.cp_pump_unchecked!(|self| self.state_mut(), first_purchase, 0, ctx);
 
         let state = memez_fun.state_mut();
 
@@ -159,11 +154,7 @@ public fun pump<Meme>(
     version: CurrentVersion,
     ctx: &mut TxContext,
 ): Coin<Meme> {
-    version.assert_is_valid();
-    self.assert_uses_coin();
-    self.assert_is_bonding();
-
-    pump_unchecked(self, sui_coin, min_amount_out, ctx)
+    self.cp_pump!<Pump, Meme, PumpState<Meme>>(|self| self.state_mut(), sui_coin, min_amount_out, version, ctx)
 }
 
 public fun pump_token<Meme>(
@@ -173,25 +164,7 @@ public fun pump_token<Meme>(
     version: CurrentVersion,
     ctx: &mut TxContext,
 ): Token<Meme> {
-    version.assert_is_valid();
-    self.assert_uses_token();
-    self.assert_is_bonding();
-
-    let state = self.state_mut();
-
-    let (start_migrating, meme_coin) = state
-        .constant_product
-        .pump(
-            sui_coin,
-            min_amount_out,
-            ctx,
-        );
-
-    let meme_token = state.token_cap().from_coin(meme_coin, ctx);
-
-    if (start_migrating) self.set_progress_to_migrating();
-
-    meme_token
+    self.cp_pump_token!(|self| self.state_mut(), sui_coin, min_amount_out, version, ctx)
 }
 
 public fun dump<Meme>(
@@ -202,20 +175,7 @@ public fun dump<Meme>(
     version: CurrentVersion,
     ctx: &mut TxContext,
 ): Coin<SUI> {
-    version.assert_is_valid();
-    self.assert_uses_coin();
-    self.assert_is_bonding();
-
-    let state = self.state_mut();
-
-    state
-        .constant_product
-        .dump(
-            treasury_cap,
-            meme_coin,
-            min_amount_out,
-            ctx,
-        )
+    self.cp_dump!(|self| self.state_mut(), treasury_cap, meme_coin, min_amount_out, version, ctx)
 }
 
 public fun dump_token<Meme>(
@@ -226,22 +186,7 @@ public fun dump_token<Meme>(
     version: CurrentVersion,
     ctx: &mut TxContext,
 ): Coin<SUI> {
-    version.assert_is_valid();
-    self.assert_uses_token();
-    self.assert_is_bonding();
-
-    let state = self.state_mut();
-
-    let meme_coin = state.token_cap().to_coin(meme_token, ctx);
-
-    state
-        .constant_product
-        .dump(
-            treasury_cap,
-            meme_coin,
-            min_amount_out,
-            ctx,
-        )
+    self.cp_dump_token!(|self| self.state_mut(), treasury_cap, meme_token, min_amount_out, version, ctx)
 }
 
 public fun migrate<Meme>(
@@ -288,15 +233,7 @@ public fun distribute_stake_holders_allocation<Meme>(
     version: CurrentVersion,
     ctx: &mut TxContext,
 ) {
-    version.assert_is_valid();
-
-    self.assert_migrated();
-
-    let state = self.state_mut();
-
-    let stake_holders_allocation = &mut state.stake_holders_allocation;
-
-    state.allocation_fee.take_allocation(stake_holders_allocation, clock, ctx);
+    self.distribute_stake_holders_allocation!(|self| self.state_mut(), clock, version, ctx)
 }
 
 public fun to_coin<Meme>(
@@ -304,8 +241,7 @@ public fun to_coin<Meme>(
     meme_token: Token<Meme>,
     ctx: &mut TxContext,
 ): Coin<Meme> {
-    self.assert_migrated();
-    self.state_mut().token_cap().to_coin(meme_token, ctx)
+    self.to_coin!(|self| self.state_mut(), meme_token, ctx)
 }
 
 // === View Functions for FE ===
@@ -330,27 +266,6 @@ fun dump_amount<Meme>(self: &mut MemezFun<Pump, Meme>, amount_in: u64): vector<u
 }
 
 // === Private Functions ===
-
-fun pump_unchecked<Meme>(
-    self: &mut MemezFun<Pump, Meme>,
-    sui_coin: Coin<SUI>,
-    min_amount_out: u64,
-    ctx: &mut TxContext,
-): Coin<Meme> {
-    let state = self.state_mut();
-
-    let (start_migrating, meme_coin) = state
-        .constant_product
-        .pump(
-            sui_coin,
-            min_amount_out,
-            ctx,
-        );
-
-    if (start_migrating) self.set_progress_to_migrating();
-
-    meme_coin
-}
 
 fun token_cap<Meme>(state: &PumpState<Meme>): &MemezTokenCap<Meme> {
     state.meme_token_cap.borrow()

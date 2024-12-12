@@ -18,9 +18,13 @@ G:::::G        G::::GG:::::G        G::::G
 */
 module memez_fun::memez_fun;
 
-use memez_fun::{memez_errors, memez_events, memez_migrator_list::MemezMigratorList};
+use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
+use memez_fun::{memez_errors, memez_events, memez_migrator_list::MemezMigratorList, memez_version::CurrentVersion};
 use std::{string::String, type_name::{Self, TypeName}};
 use sui::{balance::Balance, sui::SUI, vec_map::{Self, VecMap}, versioned::Versioned};
+use sui::coin::Coin;
+use sui::token::Token;
+use sui::clock::Clock;
 
 // === Constants ===
 
@@ -106,6 +110,193 @@ public(package) fun new<Curve, Meme, ConfigKey, MigrationWitness>(
         progress: Progress::Bonding,
         state,
     }
+}
+
+public(package) macro fun cp_pump<$Curve, $Meme, $State>(
+    $self: &mut MemezFun<$Curve, $Meme>,
+    $f: |&mut MemezFun<$Curve, $Meme>| -> &mut $State,
+    $sui_coin: Coin<SUI>,
+    $min_amount_out: u64,
+    $version: CurrentVersion,
+    $ctx: &mut TxContext,
+): Coin<$Meme> {
+    let self = $self;
+    let version = $version;
+
+    version.assert_is_valid();
+    self.assert_uses_coin();
+    self.assert_is_bonding();   
+
+    self.cp_pump_unchecked!($f, $sui_coin, $min_amount_out, $ctx)
+}
+
+public(package) macro fun cp_pump_unchecked<$Curve, $Meme, $State>(
+    $self: &mut MemezFun<$Curve, $Meme>,
+    $f: |&mut MemezFun<$Curve, $Meme>| -> &mut $State,
+    $sui_coin: Coin<SUI>,
+    $min_amount_out: u64,
+    $ctx: &mut TxContext,
+): Coin<$Meme> {
+    let self = $self;
+    let sui_coin = $sui_coin;
+    let min_amount_out = $min_amount_out;
+    let ctx = $ctx;
+
+    let state = $f(self);
+
+    let (start_migrating, meme_coin) = state
+        .constant_product
+        .pump(
+            sui_coin,
+            min_amount_out,
+            ctx,
+        );
+
+    if (start_migrating) self.set_progress_to_migrating();
+
+    meme_coin
+}
+
+public(package) macro fun cp_pump_token<$Curve, $Meme, $State>(
+    $self: &mut MemezFun<$Curve, $Meme>,
+    $f: |&mut MemezFun<$Curve, $Meme>| -> &mut $State,
+    $sui_coin: Coin<SUI>,
+    $min_amount_out: u64,
+    $version: CurrentVersion,
+    $ctx: &mut TxContext,
+): Token<$Meme> {
+    let self = $self;
+    let version = $version;
+    let ctx = $ctx;
+
+    let sui_coin = $sui_coin;
+    let min_amount_out = $min_amount_out;
+
+    version.assert_is_valid();
+    self.assert_uses_token();
+    self.assert_is_bonding();
+
+    let state = $f(self);
+
+    let (start_migrating, meme_coin) = state
+        .constant_product
+        .pump(
+            sui_coin,
+            min_amount_out,
+            ctx,
+        );
+
+    let meme_token = state.token_cap().from_coin(meme_coin, ctx);
+
+    if (start_migrating) self.set_progress_to_migrating();
+
+    meme_token
+}
+
+public(package) macro fun cp_dump<$Curve, $Meme, $State>(
+    $self: &mut MemezFun<$Curve, $Meme>,
+    $f: |&mut MemezFun<$Curve, $Meme>| -> &mut $State,
+    $treasury_cap: &mut IPXTreasuryStandard,
+    $meme_coin: Coin<$Meme>,
+    $min_amount_out: u64,
+    $version: CurrentVersion,
+    $ctx: &mut TxContext,
+): Coin<SUI> {
+    let self = $self;
+    let version = $version;
+    let ctx = $ctx;
+
+    version.assert_is_valid();
+    self.assert_uses_coin();
+    self.assert_is_bonding();
+
+    let treasury_cap = $treasury_cap;
+    let meme_coin = $meme_coin;
+    let min_amount_out = $min_amount_out;
+
+    let state = $f(self);
+
+    state
+        .constant_product
+        .dump(
+            treasury_cap,
+            meme_coin,
+            min_amount_out,
+            ctx,
+        )
+}
+
+public(package) macro fun cp_dump_token<$Curve, $Meme, $State>(
+    $self: &mut MemezFun<$Curve, $Meme>,
+    $f: |&mut MemezFun<$Curve, $Meme>| -> &mut $State,
+    $treasury_cap: &mut IPXTreasuryStandard,
+    $meme_token: Token<$Meme>,
+    $min_amount_out: u64,
+    $version: CurrentVersion,
+    $ctx: &mut TxContext,
+): Coin<SUI> {
+    let self = $self;
+    let version = $version;
+    let ctx = $ctx;
+
+    version.assert_is_valid();
+    self.assert_uses_token();
+    self.assert_is_bonding();
+
+    let treasury_cap = $treasury_cap;
+    let meme_token = $meme_token;
+    let min_amount_out = $min_amount_out;
+
+    let state = $f(self);
+
+    let meme_coin = state.token_cap().to_coin(meme_token, ctx);
+
+    state
+        .constant_product
+        .dump(
+            treasury_cap,
+            meme_coin,
+            min_amount_out,
+            ctx,
+        )
+}
+
+public(package) macro fun to_coin<$Curve, $Meme, $State>(
+    $self: &mut MemezFun<$Curve, $Meme>,
+    $f: |&mut MemezFun<$Curve, $Meme>| -> &mut $State,
+    $meme_token: Token<$Meme>,
+    $ctx: &mut TxContext,
+): Coin<$Meme> {
+    let self = $self;
+    let meme_token = $meme_token;
+    let ctx = $ctx;
+
+    self.assert_migrated();
+
+    $f(self).token_cap().to_coin(meme_token, ctx)
+}
+
+public(package) macro fun distribute_stake_holders_allocation<$Curve, $Meme, $State>(
+    $self: &mut MemezFun<$Curve, $Meme>,
+    $f: |&mut MemezFun<$Curve, $Meme>| -> &mut $State,
+    $clock: &Clock,
+    $version: CurrentVersion,
+    $ctx: &mut TxContext,
+) {
+    let self = $self;
+    let clock = $clock;
+    let version = $version;
+    let ctx = $ctx;
+
+    version.assert_is_valid();
+
+    self.assert_migrated();
+
+    let state = $f(self);
+
+    let stake_holders_allocation = &mut state.stake_holders_allocation;
+
+    state.allocation_fee.take_allocation(stake_holders_allocation, clock, ctx);
 }
 
 #[allow(lint(share_owned))]

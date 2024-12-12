@@ -297,15 +297,7 @@ public fun distribute_stake_holders_allocation<Meme>(
     version: CurrentVersion,
     ctx: &mut TxContext,
 ) {
-    version.assert_is_valid();
-
-    self.assert_migrated();
-
-    let state = self.state_mut();
-
-    let stake_holders_allocation = &mut state.stake_holders_allocation;
-
-    state.allocation_fee.take_allocation(stake_holders_allocation, clock, ctx);
+    self.distribute_stake_holders_allocation!(|self| self.state_mut(), clock, version, ctx)
 }
 
 public fun to_coin<Meme>(
@@ -313,8 +305,7 @@ public fun to_coin<Meme>(
     meme_token: Token<Meme>,
     ctx: &mut TxContext,
 ): Coin<Meme> {
-    self.assert_migrated();
-    self.state_mut().token_cap().to_coin(meme_token, ctx)
+    self.to_coin!(|self| self.state_mut(), meme_token, ctx)
 }
 
 // === View Functions for FE ===

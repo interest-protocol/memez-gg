@@ -281,7 +281,7 @@ fun test_coin_end_to_end() {
 
     let ctx = world.scenario.ctx();
 
-    let sui_dev_coin = memez_pump::dev_claim(
+    let sui_dev_coin = memez_pump::dev_purchase_claim(
         &mut memez_fun,
         memez_version::get_version_for_testing(1),
         ctx,
@@ -439,7 +439,7 @@ fun test_token_end_to_end() {
 
     let ctx = world.scenario.ctx();
 
-    let sui_dev_coin = memez_pump::dev_claim(
+    let sui_dev_coin = memez_pump::dev_purchase_claim(
         &mut memez_fun,
         memez_version::get_version_for_testing(1),
         ctx,
@@ -834,7 +834,7 @@ fun migrate_is_not_migrating() {
         location = memez_version,
     ),
 ]
-fun dev_claim_invalid_version() {
+fun dev_purchase_claim_invalid_version() {
     let mut world = start();
 
     let first_purchase_value = 10_000_000_000_000;
@@ -860,7 +860,7 @@ fun dev_claim_invalid_version() {
 
     let (sui_balance, meme_balance) = migrator.destroy(MigrationWitness());
 
-    memez_pump::dev_claim(
+    memez_pump::dev_purchase_claim(
         &mut memez_fun,
         memez_version::get_version_for_testing(2),
         world.scenario.ctx(),
@@ -874,7 +874,7 @@ fun dev_claim_invalid_version() {
 }
 
 #[test, expected_failure(abort_code = memez_errors::ENotMigrated, location = memez_fun)]
-fun dev_claim_has_not_migrated() {
+fun dev_purchase_claim_has_not_migrated() {
     let mut world = start();
 
     let first_purchase_value = 10_000_000_000_000;
@@ -892,7 +892,7 @@ fun dev_claim_has_not_migrated() {
 
     world.scenario.next_tx(ADMIN);
 
-    memez_pump::dev_claim(
+    memez_pump::dev_purchase_claim(
         &mut memez_fun,
         memez_version::get_version_for_testing(1),
         world.scenario.ctx(),
@@ -911,7 +911,7 @@ fun dev_claim_has_not_migrated() {
 }
 
 #[test, expected_failure(abort_code = memez_errors::EInvalidDev, location = memez_fun)]
-fun dev_claim_is_not_dev() {
+fun dev_purchase_claim_is_not_dev() {
     let mut world = start();
 
     let first_purchase_value = 10_000_000_000_000;
@@ -939,7 +939,7 @@ fun dev_claim_is_not_dev() {
 
     world.scenario.next_tx(DEAD_ADDRESS);
 
-    memez_pump::dev_claim(
+    memez_pump::dev_purchase_claim(
         &mut memez_fun,
         memez_version::get_version_for_testing(1),
         world.scenario.ctx(),
@@ -1252,7 +1252,7 @@ fun start(): World {
     config
         .set_pump<DefaultKey>(
             &witness,
-            vector[BURN_TAX, VIRTUAL_LIQUIDITY, TARGET_LIQUIDITY, PROVISION_LIQUIDITY],
+            vector[BURN_TAX, VIRTUAL_LIQUIDITY, TARGET_LIQUIDITY, PROVISION_LIQUIDITY, 0, 0],
             scenario.ctx(),
         );
 

@@ -72,7 +72,7 @@ fun test_new_coin() {
 
     assert_eq(memez_stable::dev_allocation(&mut memez_fun), dev_allocation);
     assert_eq(memez_stable::liquidity_provision(&mut memez_fun), stable_config[1]);
-    assert_eq(memez_stable::vesting_period(&mut memez_fun), DAY);
+    assert_eq(memez_stable::dev_vesting_period(&mut memez_fun), DAY);
 
     let fr = memez_stable::fixed_rate(&mut memez_fun);
 
@@ -115,7 +115,7 @@ fun test_new_token() {
 
     assert_eq(memez_stable::dev_allocation(&mut memez_fun), dev_allocation);
     assert_eq(memez_stable::liquidity_provision(&mut memez_fun), stable_config[1]);
-    assert_eq(memez_stable::vesting_period(&mut memez_fun), DAY);
+    assert_eq(memez_stable::dev_vesting_period(&mut memez_fun), DAY);
 
     let fr = memez_stable::fixed_rate(&mut memez_fun);
 
@@ -433,7 +433,7 @@ fun test_token_end_to_end() {
 
     world.scenario.next_tx(DEV);
 
-    let mut memez_vesting = memez_stable::dev_claim(
+    let mut memez_vesting = memez_stable::dev_allocation_claim(
         &mut memez_fun,
         &clock,
         memez_version::get_version_for_testing(1),
@@ -883,7 +883,7 @@ fun dev_claim_invalid_version() {
 
     let clock = clock::create_for_testing(world.scenario.ctx());
 
-    let memez_vesting = memez_stable::dev_claim(
+    let memez_vesting = memez_stable::dev_allocation_claim(
         &mut memez_fun,
         &clock,
         memez_version::get_version_for_testing(2),
@@ -925,7 +925,7 @@ fun dev_claim_has_not_migrated() {
 
     let clock = clock::create_for_testing(world.scenario.ctx());
 
-    let memez_vesting = memez_stable::dev_claim(
+    let memez_vesting = memez_stable::dev_allocation_claim(
         &mut memez_fun,
         &clock,
         memez_version::get_version_for_testing(1),
@@ -992,7 +992,7 @@ fun dev_claim_is_not_dev() {
 
     let clock = clock::create_for_testing(world.scenario.ctx());
 
-    let memez_vesting = memez_stable::dev_claim(
+    let memez_vesting = memez_stable::dev_allocation_claim(
         &mut memez_fun,
         &clock,
         memez_version::get_version_for_testing(1),

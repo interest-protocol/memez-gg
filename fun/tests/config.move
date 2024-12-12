@@ -128,12 +128,14 @@ fun test_pump() {
     let virtual_liquidity = 1000;
     let target_liquidity = 10_000;
     let provision_liquidity = 700;
+    let dev_allocation = 200;
+    let dev_vesting_period = 100;
 
     world
         .config
         .set_pump<DefaultKey>(
             &witness,
-            vector[burn_take, virtual_liquidity, target_liquidity, provision_liquidity],
+            vector[burn_take, virtual_liquidity, target_liquidity, provision_liquidity, dev_allocation, dev_vesting_period],
             world.scenario.ctx(),
         );
 
@@ -143,6 +145,8 @@ fun test_pump() {
     assert_eq!(amounts[1], virtual_liquidity);
     assert_eq!(amounts[2], target_liquidity);
     assert_eq!(amounts[3], 70);
+    assert_eq!(amounts[4], 20);
+    assert_eq!(amounts[5], dev_vesting_period);
 
     assert_eq!(memez_config::exists_for_testing<PumpKey<DefaultKey>>(&world.config), true);
 

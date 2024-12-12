@@ -50,9 +50,9 @@ const STABLE_STATE_VERSION_V1: u64 = 1;
 public struct Stable()
 
 public struct StableState<phantom Meme> has store {
-    vesting_period: u64,
     meme_reserve: Balance<Meme>,
     dev_allocation: Balance<Meme>,
+    dev_vesting_period: u64,
     liquidity_provision: Balance<Meme>,
     fixed_rate: FixedRate<Meme>,
     meme_token_cap: Option<MemezTokenCap<Meme>>,
@@ -107,9 +107,9 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
     );
 
     let stable_state = StableState {
-        vesting_period: dev_payload[1],
         meme_reserve,
         dev_allocation,
+        dev_vesting_period: dev_payload[1],
         liquidity_provision,
         fixed_rate,
         meme_token_cap,
@@ -262,7 +262,7 @@ public fun migrate<Meme>(
     self.migrate(sui_coin.into_balance(), liquidity_provision)
 }
 
-public fun dev_claim<Meme>(
+public fun dev_allocation_claim<Meme>(
     self: &mut MemezFun<Stable, Meme>,
     clock: &Clock,
     version: CurrentVersion,
@@ -279,7 +279,7 @@ public fun dev_claim<Meme>(
         clock,
         state.dev_allocation.withdraw_all().into_coin(ctx),
         clock.timestamp_ms(),
-        state.vesting_period,
+        state.dev_vesting_period,
         ctx,
     )
 }
@@ -367,6 +367,6 @@ public fun meme_reserve<Meme>(self: &mut MemezFun<Stable, Meme>): &Balance<Meme>
 }
 
 #[test_only]
-public fun vesting_period<Meme>(self: &mut MemezFun<Stable, Meme>): u64 {
-    self.state().vesting_period
+public fun dev_vesting_period<Meme>(self: &mut MemezFun<Stable, Meme>): u64 {
+    self.state().dev_vesting_period
 }

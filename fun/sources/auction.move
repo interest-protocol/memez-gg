@@ -286,7 +286,7 @@ public fun migrate<Meme>(
     self.migrate(sui_coin.into_balance(), liquidity_provision)
 }
 
-public fun dev_claim<Meme>(
+public fun dev_allocation_claim<Meme>(
     self: &mut MemezFun<Auction, Meme>,
     version: CurrentVersion,
     ctx: &mut TxContext,

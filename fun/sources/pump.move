@@ -30,13 +30,15 @@ use memez_fun::{
     memez_utils::{destroy_or_burn, destroy_or_return, new_treasury},
     memez_version::CurrentVersion
 };
+use memez_vesting::memez_vesting::{Self, MemezVesting};
 use std::string::String;
 use sui::{
     balance::{Self, Balance},
     coin::{Coin, TreasuryCap},
     sui::SUI,
     token::Token,
-    versioned::{Self, Versioned}
+    versioned::{Self, Versioned},
+    clock::Clock,
 };
 
 // === Constants ===
@@ -49,6 +51,8 @@ public struct Pump()
 
 public struct PumpState<phantom Meme> has store {
     dev_purchase: Balance<Meme>,
+    dev_allocation: Balance<Meme>,
+    dev_vesting_period: u64,
     liquidity_provision: Balance<Meme>,
     constant_product: MemezConstantProduct<Meme>,
     meme_token_cap: Option<MemezTokenCap<Meme>>,
@@ -91,11 +95,15 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
         ctx,
     );
 
+    let dev_allocation = meme_balance.split(pump_config[4]);
+
     let liquidity_provision = meme_balance.split(pump_config[3]);
 
     let pump_state = PumpState<Meme> {
         dev_purchase: balance::zero(),
         liquidity_provision,
+        dev_allocation,
+        dev_vesting_period: pump_config[5],
         constant_product: memez_constant_product::new(
             pump_config[1],
             pump_config[2],
@@ -257,7 +265,7 @@ public fun migrate<Meme>(
     self.migrate(sui_coin.into_balance(), liquidity_provision)
 }
 
-public fun dev_claim<Meme>(
+public fun dev_purchase_claim<Meme>(
     self: &mut MemezFun<Pump, Meme>,
     version: CurrentVersion,
     ctx: &mut TxContext,
@@ -270,6 +278,28 @@ public fun dev_claim<Meme>(
     let state = self.state_mut();
 
     state.dev_purchase.withdraw_all().into_coin(ctx)
+}
+
+public fun dev_allocation_claim<Meme>(
+    self: &mut MemezFun<Pump, Meme>,
+    clock: &Clock,
+    version: CurrentVersion,
+    ctx: &mut TxContext,
+): MemezVesting<Meme> {
+    version.assert_is_valid();
+
+    self.assert_migrated();
+    self.assert_is_dev(ctx);
+
+    let state = self.state_mut();
+
+    memez_vesting::new(
+        clock,
+        state.dev_allocation.withdraw_all().into_coin(ctx),
+        clock.timestamp_ms(),
+        state.dev_vesting_period,
+        ctx,
+    )
 }
 
 public fun to_coin<Meme>(

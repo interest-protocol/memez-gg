@@ -332,7 +332,7 @@ fun test_coin_end_to_end() {
 
     assert_eq(migration_fee.burn_for_testing(), 200 * POW_9);
 
-    let dev_allocation = memez_auction::dev_claim(
+    let dev_allocation = memez_auction::dev_allocation_claim(
         &mut memez_fun,
         memez_version::get_version_for_testing(1),
         world.scenario.ctx(),
@@ -494,7 +494,7 @@ fun test_token_end_to_end() {
 
     assert_eq(migration_fee.burn_for_testing(), 200 * POW_9);
 
-    let dev_allocation = memez_auction::dev_claim(
+    let dev_allocation = memez_auction::dev_allocation_claim(
         &mut memez_fun,
         memez_version::get_version_for_testing(1),
         world.scenario.ctx(),
@@ -773,7 +773,7 @@ fun migrate_is_not_migrating() {
         location = memez_version,
     ),
 ]
-fun dev_claim_invalid_version() {
+fun dev_allocation_claim_invalid_version() {
     let mut world = start();
 
     let mut memez_fun = set_up_pool(&mut world, false, 1_000_000_000 * POW_9);
@@ -800,7 +800,7 @@ fun dev_claim_invalid_version() {
 
     world.scenario.next_tx(DEV);
 
-    memez_auction::dev_claim(
+    memez_auction::dev_allocation_claim(
         &mut memez_fun,
         memez_version::get_version_for_testing(2),
         world.scenario.ctx(),
@@ -811,7 +811,7 @@ fun dev_claim_invalid_version() {
 }
 
 #[test, expected_failure(abort_code = memez_errors::EInvalidDev, location = memez_fun)]
-fun dev_claim_is_not_dev() {
+fun dev_allocation_claim_is_not_dev() {
     let mut world = start();
 
     let mut memez_fun = set_up_pool(&mut world, false, 1_000_000_000 * POW_9);
@@ -838,7 +838,7 @@ fun dev_claim_is_not_dev() {
 
     world.scenario.next_tx(@0x7);
 
-    memez_auction::dev_claim(
+    memez_auction::dev_allocation_claim(
         &mut memez_fun,
         memez_version::get_version_for_testing(1),
         world.scenario.ctx(),

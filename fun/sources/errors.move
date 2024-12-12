@@ -40,7 +40,7 @@ const EOutdatedPackageVersion: u64 = 17;
 
 const EInvalidPercentages: u64 = 18;
 
-const EInvalidConfig: u64 = 19; 
+const EInvalidConfig: u64 = 19;
 
 const EModelKeyNotSupported: u64 = 20;
 

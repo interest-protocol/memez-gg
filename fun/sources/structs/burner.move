@@ -37,7 +37,9 @@ public(package) fun zero(): MemezBurner {
 }
 
 public(package) fun calculate(self: MemezBurner, liquidity: u64): BPS {
-    if (self.fee.value() == 0 || liquidity >= self.target_liquidity || self.start_liquidity >= liquidity) return bps::new(0);
+    if (
+        self.fee.value() == 0 || liquidity >= self.target_liquidity || self.start_liquidity >= liquidity
+    ) return bps::new(0);
 
     let total_range = self.target_liquidity - self.start_liquidity;
 

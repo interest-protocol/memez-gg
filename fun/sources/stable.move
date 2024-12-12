@@ -104,6 +104,8 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
 
     let liquidity_provision = meme_reserve.split(stable_config[1]);
 
+    let stake_holders_allocation = meme_reserve.split(stable_config[3]);
+
     let fixed_rate = memez_fixed_rate::new(
         target_sui_liquidity.min(stable_config[0]),
         meme_reserve.split(stable_config[2]),
@@ -119,7 +121,7 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
         meme_token_cap,
         migration_fee: fees.migration(stake_holders),
         allocation_fee: fees.allocation(stake_holders),
-        stake_holders_allocation: meme_reserve.split(stable_config[3]),
+        stake_holders_allocation,
         stake_holders_vesting_period: stable_config[4],
     };
 

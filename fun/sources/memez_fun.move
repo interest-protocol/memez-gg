@@ -19,12 +19,22 @@ G:::::G        G::::GG:::::G        G::::G
 module memez_fun::memez_fun;
 
 use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
-use memez_fun::{memez_errors, memez_events, memez_migrator_list::MemezMigratorList, memez_version::CurrentVersion};
+use memez_fun::{
+    memez_errors,
+    memez_events,
+    memez_migrator_list::MemezMigratorList,
+    memez_version::CurrentVersion
+};
 use std::{string::String, type_name::{Self, TypeName}};
-use sui::{balance::Balance, sui::SUI, vec_map::{Self, VecMap}, versioned::Versioned};
-use sui::coin::Coin;
-use sui::token::Token;
-use sui::clock::Clock;
+use sui::{
+    balance::Balance,
+    clock::Clock,
+    coin::Coin,
+    sui::SUI,
+    token::Token,
+    vec_map::{Self, VecMap},
+    versioned::Versioned
+};
 
 // === Constants ===
 
@@ -125,7 +135,7 @@ public(package) macro fun cp_pump<$Curve, $Meme, $State>(
 
     version.assert_is_valid();
     self.assert_uses_coin();
-    self.assert_is_bonding();   
+    self.assert_is_bonding();
 
     self.cp_pump_unchecked!($f, $sui_coin, $min_amount_out, $ctx)
 }
@@ -289,7 +299,6 @@ public(package) macro fun distribute_stake_holders_allocation<$Curve, $Meme, $St
     let ctx = $ctx;
 
     version.assert_is_valid();
-
     self.assert_migrated();
 
     let state = $f(self);

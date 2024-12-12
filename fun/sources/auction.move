@@ -344,7 +344,7 @@ fun expected_drip_amount<Meme>(self: &AuctionState<Meme>, clock: &Clock): u64 {
 }
 
 fun drip<Meme>(state: &mut AuctionState<Meme>, clock: &Clock) {
-    let amount = state.expected_drip_amount( clock);
+    let amount = state.expected_drip_amount(clock);
 
     state.accrued_meme_balance = state.accrued_meme_balance + amount;
     state.constant_product.meme_balance_mut().join(state.meme_reserve.split(amount));

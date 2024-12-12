@@ -2,14 +2,12 @@ module memez_fun::memez_fees;
 
 use interest_bps::bps::{Self, BPS};
 use memez_fun::{memez_errors, memez_utils};
-use sui::coin::Coin;
-use sui::balance::Balance;
-use sui::clock::Clock;
 use memez_vesting::memez_vesting;
+use sui::{balance::Balance, clock::Clock, coin::Coin};
 
 // === Constants ===
 
-const VALUES_LENGTH: u64 = 3;
+const VALUES_LENGTH: u64 = 4;
 
 // === Structs ===
 
@@ -64,7 +62,7 @@ public(package) fun new(
     allocation_percentages.validate();
     // @dev We need to add the deployer address to the end of the recipients vector as its a dynamic field
     assert!(
-        recipients[0].length() == creation_percentages.length(), 
+        recipients[0].length() == creation_percentages.length(),
         memez_errors::wrong_recipients_length(),
     );
 
@@ -96,7 +94,7 @@ public(package) fun calculate(fee: Fee, amount_in: u64): u64 {
     match (fee) {
         Fee::Value(value, _) => value,
         Fee::Percentage(bps, _) => bps.calc(amount_in),
-        Fee::VestedPercentage(bps, _, _) =>  bps.calc(amount_in)
+        Fee::VestedPercentage(bps, _, _) => bps.calc(amount_in),
     }
 }
 
@@ -104,7 +102,7 @@ public(package) fun take<T>(fee: Fee, asset: &mut Coin<T>, ctx: &mut TxContext):
     match (fee) {
         Fee::Value(value, beneficiaries) => {
             if (value == 0) return 0;
-            
+
             assert!(asset.value() >= value, memez_errors::insufficient_value());
 
             let payment = asset.split(value, ctx);
@@ -118,7 +116,7 @@ public(package) fun take<T>(fee: Fee, asset: &mut Coin<T>, ctx: &mut TxContext):
 
             let asset_value = asset.value();
             let payment_value = bps.calc(asset_value);
-            
+
             assert!(asset_value >= payment_value, memez_errors::insufficient_value());
 
             let payment = asset.split(payment_value, ctx);
@@ -127,25 +125,30 @@ public(package) fun take<T>(fee: Fee, asset: &mut Coin<T>, ctx: &mut TxContext):
 
             payment_value
         },
-        _ => abort
+        _ => abort ,
     }
 }
 
-public(package) fun take_allocation<T>(fee: Fee, asset: &mut Balance<T>, clock: &Clock, ctx: &mut TxContext) {
+public(package) fun take_allocation<T>(
+    fee: Fee,
+    asset: &mut Balance<T>,
+    clock: &Clock,
+    ctx: &mut TxContext,
+) {
     match (fee) {
         Fee::VestedPercentage(bps, beneficiaries, vesting_period) => {
             if (bps.value() == 0) return;
 
             let asset_value = asset.value();
             let payment_value = bps.calc(asset_value);
-            
+
             assert!(asset_value >= payment_value, memez_errors::insufficient_value());
 
             let payment = asset.split(payment_value);
 
             take_internal_vested(payment.into_coin(ctx), clock, beneficiaries, vesting_period, ctx)
         },
-        _ => abort
+        _ => abort ,
     }
 }
 
@@ -203,7 +206,6 @@ public(package) fun allocation(self: MemezFees, stake_holders: vector<address>):
 
 // === Private Functions ===
 
-
 fun take_internal<T>(mut payment: Coin<T>, beneficiaries: vector<Recipient>, ctx: &mut TxContext) {
     let payment_value = payment.value();
 
@@ -218,7 +220,13 @@ fun take_internal<T>(mut payment: Coin<T>, beneficiaries: vector<Recipient>, ctx
     payment.destroy_or_return(ctx);
 }
 
-fun take_internal_vested<T>(mut payment: Coin<T>, clock: &Clock, beneficiaries: vector<Recipient>, vesting_period: u64, ctx: &mut TxContext) {
+fun take_internal_vested<T>(
+    mut payment: Coin<T>,
+    clock: &Clock,
+    beneficiaries: vector<Recipient>,
+    vesting_period: u64,
+    ctx: &mut TxContext,
+) {
     let payment_value = payment.value();
 
     beneficiaries.do_ref!(|beneficiary| {
@@ -293,7 +301,7 @@ public fun vesting_period(fee: Fee): u64 {
 
 #[test_only]
 public fun payloads(fees: MemezFees): vector<FeePayload> {
-    vector[fees.creation, fees.swap, fees.migration]
+    vector[fees.creation, fees.swap, fees.migration, fees.allocation]
 }
 
 #[test_only]

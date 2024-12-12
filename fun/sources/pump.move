@@ -33,11 +33,11 @@ use memez_fun::{
 use std::string::String;
 use sui::{
     balance::{Self, Balance},
+    clock::Clock,
     coin::{Coin, TreasuryCap},
     sui::SUI,
     token::Token,
-    versioned::{Self, Versioned},
-    clock::Clock,
+    versioned::{Self, Versioned}
 };
 
 // === Constants ===
@@ -135,7 +135,12 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
     state.constant_product.set_memez_fun(memez_fun_address);
 
     if (first_purchase.value() != 0) {
-        let meme_coin = memez_fun.cp_pump_unchecked!(|self| self.state_mut(), first_purchase, 0, ctx);
+        let meme_coin = memez_fun.cp_pump_unchecked!(
+            |self| self.state_mut(),
+            first_purchase,
+            0,
+            ctx,
+        );
 
         let state = memez_fun.state_mut();
 
@@ -154,7 +159,13 @@ public fun pump<Meme>(
     version: CurrentVersion,
     ctx: &mut TxContext,
 ): Coin<Meme> {
-    self.cp_pump!<Pump, Meme, PumpState<Meme>>(|self| self.state_mut(), sui_coin, min_amount_out, version, ctx)
+    self.cp_pump!<Pump, Meme, PumpState<Meme>>(
+        |self| self.state_mut(),
+        sui_coin,
+        min_amount_out,
+        version,
+        ctx,
+    )
 }
 
 public fun pump_token<Meme>(
@@ -186,7 +197,14 @@ public fun dump_token<Meme>(
     version: CurrentVersion,
     ctx: &mut TxContext,
 ): Coin<SUI> {
-    self.cp_dump_token!(|self| self.state_mut(), treasury_cap, meme_token, min_amount_out, version, ctx)
+    self.cp_dump_token!(
+        |self| self.state_mut(),
+        treasury_cap,
+        meme_token,
+        min_amount_out,
+        version,
+        ctx,
+    )
 }
 
 public fun migrate<Meme>(

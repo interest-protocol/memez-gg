@@ -1280,6 +1280,187 @@ fun dump_token_is_not_bonding() {
     world.end();
 }
 
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EOutdatedPackageVersion,
+        location = memez_version,
+    ),
+]
+fun dev_allocation_claim_invalid_version() {
+    let mut world = start();
+
+    let witness = acl::sign_in_for_testing();
+
+    let dev_allocation = 200;
+
+    let dev_vesting_period = 100;
+
+    world.config
+        .set_pump<DefaultKey>(
+            &witness,
+            vector[BURN_TAX, VIRTUAL_LIQUIDITY, TARGET_LIQUIDITY, PROVISION_LIQUIDITY, dev_allocation, dev_vesting_period],
+            world.scenario.ctx(),
+        );
+
+    let total_supply = 1_000_000_000_000_000_000;
+
+    let first_purchase = mint_for_testing(0, world.scenario.ctx());
+
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        first_purchase,
+        true,
+        total_supply,
+    );
+
+    let ctx = world.scenario.ctx();
+
+    let clock = clock::create_for_testing(ctx);
+
+    let vested_allocation = memez_pump::dev_allocation_claim(
+        &mut memez_fun,
+        &clock,
+        memez_version::get_version_for_testing(2),
+        ctx,
+    );
+
+    destroy(memez_fun);
+    destroy(vested_allocation);
+    destroy(clock);
+
+    world.end();
+}
+
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::ENotMigrated,
+        location = memez_fun,
+    ),
+]
+fun dev_allocation_claim_not_migrated() {
+    let mut world = start();
+
+    let witness = acl::sign_in_for_testing();
+
+    let dev_allocation = 200;
+
+    let dev_vesting_period = 100;
+
+    world.config
+        .set_pump<DefaultKey>(
+            &witness,
+            vector[BURN_TAX, VIRTUAL_LIQUIDITY, TARGET_LIQUIDITY, PROVISION_LIQUIDITY, dev_allocation, dev_vesting_period],
+            world.scenario.ctx(),
+        );
+
+    let total_supply = 1_000_000_000_000_000_000;
+
+    let first_purchase = mint_for_testing(0, world.scenario.ctx());
+
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        first_purchase,
+        true,
+        total_supply,
+    );
+
+    let ctx = world.scenario.ctx();
+
+    let clock = clock::create_for_testing(ctx);
+
+    let vested_allocation = memez_pump::dev_allocation_claim(
+        &mut memez_fun,
+        &clock,
+        memez_version::get_version_for_testing(1),
+        ctx,
+    );
+
+    destroy(memez_fun);
+    destroy(vested_allocation);
+    destroy(clock);
+
+    world.end();
+}
+
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EInvalidDev,
+        location = memez_fun,
+    ),
+]
+fun dev_allocation_claim_invalid_dev() {
+    let mut world = start();
+
+    let witness = acl::sign_in_for_testing();
+
+    let dev_allocation = 200;
+
+    let dev_vesting_period = 100;
+
+    world.config
+        .set_pump<DefaultKey>(
+            &witness,
+            vector[BURN_TAX, VIRTUAL_LIQUIDITY, TARGET_LIQUIDITY, PROVISION_LIQUIDITY, dev_allocation, dev_vesting_period],
+            world.scenario.ctx(),
+        );
+
+    let total_supply = 1_000_000_000_000_000_000;
+
+    let first_purchase = mint_for_testing(0, world.scenario.ctx());
+
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        first_purchase,
+        true,
+        total_supply,
+    );
+
+    let ctx = world.scenario.ctx();
+
+    let purchase_sui_value = TARGET_LIQUIDITY * 2;
+
+    let meme_token = memez_pump::pump_token(
+        &mut memez_fun,
+        mint_for_testing(purchase_sui_value, ctx),
+        0,
+        memez_version::get_version_for_testing(1),
+        ctx,
+    );
+
+    meme_token.burn_for_testing();
+
+    let migrator = memez_pump::migrate(
+        &mut memez_fun,
+        memez_version::get_version_for_testing(1),
+        ctx,
+    );
+
+    let (sui_balance, meme_balance) = migrator.destroy(MigrationWitness());
+
+    sui_balance.destroy_for_testing();
+    meme_balance.destroy_for_testing();
+
+    let ctx = world.scenario.ctx();
+
+    let clock = clock::create_for_testing(ctx);
+
+    let vested_allocation = memez_pump::dev_allocation_claim(
+        &mut memez_fun,
+        &clock,
+        memez_version::get_version_for_testing(1),
+        ctx,
+    );
+
+    destroy(memez_fun);
+    destroy(vested_allocation);
+    destroy(clock);
+
+    world.end();
+}
+
 fun set_up_pool(
     world: &mut World,
     first_purchase: Coin<SUI>,

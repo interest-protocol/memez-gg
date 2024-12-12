@@ -56,9 +56,12 @@ public struct AuctionState<phantom Meme> has store {
     auction_duration: u64,
     initial_reserve: u64,
     accrued_meme_balance: u64,
+    allocation_fee: Fee,
     meme_reserve: Balance<Meme>,
     dev_allocation: Balance<Meme>,
     liquidity_provision: Balance<Meme>,
+    stake_holders_allocation: Balance<Meme>,
+    stake_holders_vesting_period: u64,
     constant_product: MemezConstantProduct<Meme>,
     meme_token_cap: Option<MemezTokenCap<Meme>>,
 }
@@ -76,6 +79,7 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
     is_token: bool,
     metadata_names: vector<String>,
     metadata_values: vector<String>,
+    stake_holders: vector<address>,
     dev: address,
     version: CurrentVersion,
     ctx: &mut TxContext,
@@ -105,6 +109,10 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
 
     let meme_balance = meme_reserve.split(auction_config[6]);
 
+    let stake_holders_allocation = meme_reserve.split(auction_config[7]);
+
+    let stake_holders_vesting_period = auction_config[8];
+
     let auction_state = AuctionState<Meme> {
         start_time: clock.timestamp_ms(),
         auction_duration: auction_config[0],
@@ -113,15 +121,18 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
         meme_reserve,
         dev_allocation,
         liquidity_provision,
+        allocation_fee: fees.allocation(stake_holders),
         constant_product: memez_constant_product::new(
             auction_config[3],
             auction_config[4],
             meme_balance,
-            fees.swap(dev),
+            fees.swap(stake_holders),
             auction_config[2],
         ),
+        stake_holders_allocation,
+        stake_holders_vesting_period,
         meme_token_cap,
-        migration_fee: fees.migration(dev),
+        migration_fee: fees.migration(stake_holders),
     };
 
     let mut memez_fun = memez_fun::new<Auction, Meme, ConfigKey, MigrationWitness>(
@@ -299,6 +310,23 @@ public fun dev_allocation_claim<Meme>(
     let state = self.state_mut();
 
     state.dev_allocation.withdraw_all().into_coin(ctx)
+}
+
+public fun distribute_stake_holders_allocation<Meme>(
+    self: &mut MemezFun<Auction, Meme>,
+    clock: &Clock,
+    version: CurrentVersion,
+    ctx: &mut TxContext,
+) {
+    version.assert_is_valid();
+
+    self.assert_migrated();
+
+    let state = self.state_mut();
+
+    let stake_holders_allocation = &mut state.stake_holders_allocation;
+
+    state.allocation_fee.take_allocation(stake_holders_allocation, clock, ctx);
 }
 
 public fun to_coin<Meme>(

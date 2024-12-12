@@ -57,6 +57,9 @@ public struct StableState<phantom Meme> has store {
     fixed_rate: FixedRate<Meme>,
     meme_token_cap: Option<MemezTokenCap<Meme>>,
     migration_fee: Fee,
+    allocation_fee: Fee,
+    stake_holders_allocation: Balance<Meme>,
+    stake_holders_vesting_period: u64,
 }
 
 // === Public Mutative Functions ===
@@ -74,6 +77,7 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
     metadata_values: vector<String>,
     dev_payload: vector<u64>,
     dev: address,
+    stake_holders: vector<address>,
     version: CurrentVersion,
     ctx: &mut TxContext,
 ): MetadataCap {
@@ -103,7 +107,7 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
     let fixed_rate = memez_fixed_rate::new(
         target_sui_liquidity.min(stable_config[0]),
         meme_reserve.split(stable_config[2]),
-        fees.swap(dev),
+        fees.swap(stake_holders),
     );
 
     let stable_state = StableState {
@@ -113,7 +117,10 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
         liquidity_provision,
         fixed_rate,
         meme_token_cap,
-        migration_fee: fees.migration(dev),
+        migration_fee: fees.migration(stake_holders),
+        allocation_fee: fees.allocation(stake_holders),
+        stake_holders_allocation: meme_reserve.split(stable_config[3]),
+        stake_holders_vesting_period: stable_config[4],
     };
 
     let mut memez_fun = memez_fun::new<Stable, Meme, ConfigKey, MigrationWitness>(
@@ -282,6 +289,23 @@ public fun dev_allocation_claim<Meme>(
         state.dev_vesting_period,
         ctx,
     )
+}
+
+public fun distribute_stake_holders_allocation<Meme>(
+    self: &mut MemezFun<Stable, Meme>,
+    clock: &Clock,
+    version: CurrentVersion,
+    ctx: &mut TxContext,
+) {
+    version.assert_is_valid();
+
+    self.assert_migrated();
+
+    let state = self.state_mut();
+
+    let stake_holders_allocation = &mut state.stake_holders_allocation;
+
+    state.allocation_fee.take_allocation(stake_holders_allocation, clock, ctx);
 }
 
 public fun to_coin<Meme>(

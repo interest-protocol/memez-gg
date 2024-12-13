@@ -7,7 +7,7 @@ use memez_fun::memez_errors;
 
 const MIN_SEED_LIQUIDITY: u64 = 100;
 
-const VALUES_LENGTH: u64 = 7;
+const VALUES_LENGTH: u64 = 6;
 
 // === Structs ===
 
@@ -27,11 +27,11 @@ public(package) fun new(values: vector<u64>): AuctionModel {
 
     AuctionModel {
         auction_duration: values[0],
-        burn_tax: values[2],
-        virtual_liquidity: values[3],
-        target_sui_liquidity: values[4],
-        liquidity_provision: bps::new(values[5]),
-        seed_liquidity: bps::new(values[6]),
+        burn_tax: values[1],
+        virtual_liquidity: values[2],
+        target_sui_liquidity: values[3],
+        liquidity_provision: bps::new(values[4]),
+        seed_liquidity: bps::new(values[5]),
     }
 }
 

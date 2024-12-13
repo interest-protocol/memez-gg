@@ -3,7 +3,7 @@ module memez_fun::memez_distributor;
 use interest_bps::bps::{Self, BPS};
 use memez_fun::memez_utils;
 use memez_vesting::memez_vesting;
-use sui::{clock::Clock, coin::{Coin,}};
+use sui::{clock::Clock, coin::Coin};
 
 // === Structs ===
 
@@ -20,7 +20,10 @@ public struct Distributor has copy, drop, store {
 
 public(package) fun new(recipients: vector<address>, percentages: vector<u64>): Distributor {
     Distributor {
-        recipients: recipients.zip_map!(percentages, |addy, bps| Recipient { addy, bps: bps::new(bps) }),
+        recipients: recipients.zip_map!(
+            percentages,
+            |addy, bps| Recipient { addy, bps: bps::new(bps) },
+        ),
     }
 }
 

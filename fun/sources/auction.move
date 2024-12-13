@@ -114,7 +114,11 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
         accrued_meme_balance: 0,
         meme_reserve,
         liquidity_provision,
-        allocation: fees.allocation(stake_holders, stake_holders_allocation, stake_holders_vesting_period),
+        allocation: fees.allocation(
+            stake_holders,
+            stake_holders_allocation,
+            stake_holders_vesting_period,
+        ),
         constant_product: memez_constant_product::new(
             auction_config[3],
             auction_config[4],

@@ -1,11 +1,8 @@
 module memez_fun::memez_fees;
 
 use interest_bps::bps::{Self, BPS};
-use memez_fun::{memez_errors, memez_utils};
-use memez_fun::memez_distributor::{Self, Distributor};
-use sui::coin::Coin;
-use sui::balance::Balance;
-use sui::clock::Clock;
+use memez_fun::{memez_distributor::{Self, Distributor}, memez_errors, memez_utils};
+use sui::{balance::Balance, clock::Clock, coin::Coin};
 
 // === Constants ===
 
@@ -25,7 +22,7 @@ public struct FeePayload has copy, drop, store {
 }
 
 public struct Allocation<phantom T> has store {
-    balance: Balance<T>, 
+    balance: Balance<T>,
     vesting_period: u64,
     distributor: Distributor,
 }
@@ -109,7 +106,7 @@ public(package) fun take<T>(fee: Fee, asset: &mut Coin<T>, ctx: &mut TxContext):
 
             let payment = asset.split(value, ctx);
             let payment_value = payment.value();
-            
+
             distributor.send(payment, ctx);
 
             payment_value
@@ -127,14 +124,18 @@ public(package) fun take<T>(fee: Fee, asset: &mut Coin<T>, ctx: &mut TxContext):
             distributor.send(payment, ctx);
 
             payment_value
-        }
+        },
     }
 }
 
-public(package) fun allocation_take<T>(allocation: &mut Allocation<T>, clock: &Clock, ctx: &mut TxContext) {
+public(package) fun allocation_take<T>(
+    allocation: &mut Allocation<T>,
+    clock: &Clock,
+    ctx: &mut TxContext,
+) {
     let value = allocation.balance.value();
 
-    if (value == 0) return;    
+    if (value == 0) return;
 
     let coin_to_send = allocation.balance.withdraw_all().into_coin(ctx);
 
@@ -172,7 +173,12 @@ public(package) fun migration(self: MemezFees, stake_holders: vector<address>): 
     )
 }
 
-public(package) fun allocation<T>(self: MemezFees, stake_holders: vector<address>, balance: Balance<T>, vesting_period: u64): Allocation<T> {
+public(package) fun allocation<T>(
+    self: MemezFees,
+    stake_holders: vector<address>,
+    balance: Balance<T>,
+    vesting_period: u64,
+): Allocation<T> {
     let mut recipients = self.allocation.recipients;
 
     recipients.append(stake_holders);

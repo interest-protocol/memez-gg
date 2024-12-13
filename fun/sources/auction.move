@@ -281,16 +281,11 @@ fun pump_amount<Meme>(
     amount_in: u64,
     clock: &Clock,
 ): vector<u64> {
-    let state = self.state();
-
-    let amount = state.expected_drip_amount(clock);
-
-    state
-        .constant_product
-        .pump_amount(
-            amount_in,
-            amount,
-        )
+    self.cp_pump_amount!(|self| {
+        let state = self.state_mut();
+        let amount = state.expected_drip_amount(clock);
+        (state, amount)
+    }, amount_in)
 }
 
 #[allow(unused_function)]
@@ -299,11 +294,11 @@ fun dump_amount<Meme>(
     amount_in: u64,
     clock: &Clock,
 ): vector<u64> {
-    let state = self.state();
-
-    let amount = state.expected_drip_amount(clock);
-
-    state.constant_product.dump_amount(amount_in, amount)
+    self.cp_dump_amount!(|self| {
+        let state = self.state_mut();
+        let amount = state.expected_drip_amount(clock);
+        (state, amount)
+    }, amount_in)
 }
 
 #[allow(unused_function)]

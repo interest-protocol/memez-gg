@@ -264,21 +264,12 @@ public fun to_coin<Meme>(
 
 #[allow(unused_function)]
 fun pump_amount<Meme>(self: &mut MemezFun<Pump, Meme>, amount_in: u64): vector<u64> {
-    let state = self.state();
-
-    state
-        .constant_product
-        .pump_amount(
-            amount_in,
-            0,
-        )
+    self.cp_pump_amount!(|self| (self.state_mut(), 0), amount_in)
 }
 
 #[allow(unused_function)]
 fun dump_amount<Meme>(self: &mut MemezFun<Pump, Meme>, amount_in: u64): vector<u64> {
-    let state = self.state();
-
-    state.constant_product.dump_amount(amount_in, 0)
+    self.cp_dump_amount!(|self| (self.state_mut(), 0), amount_in)
 }
 
 // === Private Functions ===

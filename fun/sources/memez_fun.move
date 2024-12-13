@@ -308,6 +308,40 @@ public(package) macro fun distribute_stake_holders_allocation<$Curve, $Meme, $St
     state.allocation_fee.take_allocation(stake_holders_allocation, clock, ctx);
 }
 
+public(package) macro fun cp_pump_amount<$Curve, $Meme, $State>(
+    $self: &mut MemezFun<$Curve, $Meme>,
+    $f: |&mut MemezFun<$Curve, $Meme>| -> (&mut $State, u64),
+    $amount_in: u64,
+): vector<u64> {
+    let amount_in = $amount_in;
+
+    let (state, amount) = $f($self);
+
+    state
+        .constant_product
+        .pump_amount(
+            amount_in,
+            amount,
+        )
+}
+
+public(package) macro fun cp_dump_amount<$Curve, $Meme, $State>(
+    $self: &mut MemezFun<$Curve, $Meme>,
+    $f: |&mut MemezFun<$Curve, $Meme>| -> (&mut $State, u64),
+    $amount_in: u64,
+): vector<u64> {
+    let amount_in = $amount_in;
+
+    let (state, amount) = $f($self);
+
+    state
+        .constant_product
+        .dump_amount(
+            amount_in,
+            amount,
+        )
+}
+
 #[allow(lint(share_owned))]
 public(package) fun share<Curve, Meme>(self: MemezFun<Curve, Meme>) {
     transfer::share_object(self);

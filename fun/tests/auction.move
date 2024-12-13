@@ -24,6 +24,8 @@ use sui::{
 
 const ADMIN: address = @0x1;
 
+const STAKE_HOLDER: address = @0x2;
+
 // @dev Sui Decimal Scale
 const POW_9: u64 = 1__000_000_000;
 
@@ -37,6 +39,9 @@ const VIRTUAL_LIQUIDITY: u64 = 1_000 * POW_9;
 const TARGET_LIQUIDITY: u64 = 10_000 * POW_9;
 const PROVISION_LIQUIDITY: u64 = 500;
 const SEED_LIQUIDITY: u64 = 1;
+const STAKE_HOLDERS_ALLOCATION: u64 = 200;
+const STAKE_HOLDERS_VESTING_PERIOD: u64 = THIRTY_MINUTES_MS * 10;
+
 const DEV: address = @0x2;
 
 public struct Meme has drop ()
@@ -509,6 +514,230 @@ fun test_token_end_to_end() {
     );
 
     assert_eq(meme_coin.burn_for_testing(), expected_meme_amount_out);
+
+    destroy(memez_fun);
+
+    destroy(treasury);
+    world.end();
+}
+
+#[test]
+fun test_coin_end_to_end_with_stake_holders() {
+    let mut world = start();
+
+    let witness = acl::sign_in_for_testing();
+
+    world.config.set_fees<DefaultKey>(
+        &witness,
+        vector[vector[MAX_BPS / 2, MAX_BPS / 2,  2 * POW_9], vector[3_000, 7_000, 30], vector[2_000, 8_000, 200 * POW_9], vector[0, MAX_BPS, 500]],
+        vector[vector[ADMIN, STAKE_HOLDER], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
+        world.scenario.ctx(),
+    );
+
+    world.config.set_auction<DefaultKey>(
+        &witness,
+        vector[
+            THIRTY_MINUTES_MS,
+            DEV_ALLOCATION,
+            BURN_TAX,
+            VIRTUAL_LIQUIDITY,
+            TARGET_LIQUIDITY,
+            PROVISION_LIQUIDITY,
+            SEED_LIQUIDITY,
+            STAKE_HOLDERS_ALLOCATION,
+            STAKE_HOLDERS_VESTING_PERIOD,
+        ],
+        world.scenario.ctx(),
+    );
+
+    let total_supply = 1_000_000_000 * POW_9;
+
+    let start_time = 100;
+
+    world.clock.increment_for_testing(start_time);
+
+    let metadata_cap = memez_auction::new<Meme, DefaultKey, MigrationWitness>(
+        &world.config,
+        &world.migrator_list,
+        &world.clock,
+        create_treasury_cap_for_testing(world.scenario.ctx()),
+        mint_for_testing(2_000_000_000, world.scenario.ctx()),
+        total_supply,
+        false,
+        vector[],
+        vector[],
+        vector[STAKE_HOLDER],
+        DEV,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    destroy(metadata_cap);
+
+    world.scenario.next_tx(ADMIN);
+
+    let mut memez_fun = world.scenario.take_shared<MemezFun<Auction, Meme>>();
+
+    world.scenario.next_tx(ADMIN);
+
+    // 50% of the creation fee is paid to the admin
+    assert_eq(world.scenario.take_from_address<Coin<SUI>>(ADMIN).burn_for_testing(), POW_9);
+
+    // 50% of the creation fee is paid to the stake holder
+    assert_eq(world.scenario.take_from_address<Coin<SUI>>(STAKE_HOLDER).burn_for_testing(), POW_9);
+
+    let cp = memez_auction::constant_product(&mut memez_fun);
+
+    let initial_meme_balance = cp.meme_balance().value();
+
+    let swap_fee = cp.swap_fee().calculate(1_000 * POW_9);
+
+    let expected_meme_amount_out = get_amount_out(
+        1_000 * POW_9 - swap_fee,
+        cp.virtual_liquidity(),
+        cp.meme_balance().value(),
+    );
+
+    let meme_coin = memez_auction::pump(
+        &mut memez_fun,
+        &world.clock,
+        mint_for_testing(1_000 * POW_9, world.scenario.ctx()),
+        expected_meme_amount_out,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    assert_eq(meme_coin.burn_for_testing(), expected_meme_amount_out);
+
+    world.scenario.next_tx(ADMIN);
+
+    // 70% of the swap fee is paid to the admin
+    assert_eq(world.scenario.take_from_address<Coin<SUI>>(ADMIN).burn_for_testing(), swap_fee * 3_000 / 10_000);
+
+    // 30% of the swap fee is paid to the stake holder
+    assert_eq(world.scenario.take_from_address<Coin<SUI>>(STAKE_HOLDER).burn_for_testing(), swap_fee * 7_000 / 10_000);
+
+    let cp = memez_auction::constant_product(&mut memez_fun);
+
+    assert_eq(cp.sui_balance().value(), 1_000 * POW_9 - swap_fee);
+    assert_eq(cp.meme_balance().value(), initial_meme_balance - expected_meme_amount_out);
+
+    memez_fun.assert_is_bonding();
+    memez_fun.assert_uses_coin();
+
+    // @dev Advance 5 minutes to increase liquidity
+    world.clock.increment_for_testing(THIRTY_MINUTES_MS / 6);
+
+    let current_meme_balance = memez_auction::current_meme_balance(&mut memez_fun, &world.clock);
+
+    let cp = memez_auction::constant_product(&mut memez_fun);
+
+    let expected_meme_amount_out_2 = get_amount_out(
+        1_000 * POW_9 - swap_fee,
+        cp.virtual_liquidity() + cp.sui_balance().value(),
+        current_meme_balance,
+    );
+
+    // Get at cheaper value
+    assert_eq(expected_meme_amount_out_2 > expected_meme_amount_out, true);
+
+    let meme_coin_2 = memez_auction::pump(
+        &mut memez_fun,
+        &world.clock,
+        mint_for_testing(1_000 * POW_9, world.scenario.ctx()),
+        expected_meme_amount_out_2,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    assert_eq(meme_coin_2.burn_for_testing(), expected_meme_amount_out_2);
+
+    let cp = memez_auction::constant_product(&mut memez_fun);
+
+    let amounts = cp.dump_amount(expected_meme_amount_out_2 / 2, 0);
+
+    let mut treasury = world.scenario.take_shared<IPXTreasuryStandard>();
+
+    let sui_coin = memez_auction::dump(
+        &mut memez_fun,
+        &world.clock,
+        &mut treasury,
+        mint_for_testing(expected_meme_amount_out_2 / 2, world.scenario.ctx()),
+        0,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    assert_eq(sui_coin.burn_for_testing(), amounts[1]);
+
+    let cp = memez_auction::constant_product(&mut memez_fun);
+
+    let remaining_amount_to_migrate = 10_000 * POW_9 - cp.sui_balance().value();
+
+    let expected_meme_amount_out = get_amount_out(
+        remaining_amount_to_migrate,
+        cp.virtual_liquidity() + cp.sui_balance().value(),
+        cp.meme_balance().value(),
+    );
+
+    let meme_coin = memez_auction::pump(
+        &mut memez_fun,
+        &world.clock,
+        mint_for_testing(
+            remaining_amount_to_migrate * 10_000 / (10_000 - 30),
+            world.scenario.ctx(),
+        ),
+        expected_meme_amount_out,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    assert_eq(meme_coin.burn_for_testing(), expected_meme_amount_out);
+
+    memez_fun.assert_is_migrating();
+
+    world.scenario.next_tx(STAKE_HOLDER);
+
+    // Burn all swap coins
+
+    // 2 Pump swaps so each have 2 sui coins
+    world.scenario.take_from_address<Coin<SUI>>(ADMIN).burn_for_testing();
+    world.scenario.take_from_address<Coin<SUI>>(STAKE_HOLDER).burn_for_testing();
+    world.scenario.take_from_address<Coin<SUI>>(ADMIN).burn_for_testing();
+    world.scenario.take_from_address<Coin<SUI>>(STAKE_HOLDER).burn_for_testing();
+
+    let migrator = memez_auction::migrate(
+        &mut memez_fun,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    let (sui_balance, meme_balance) = migrator.destroy(MigrationWitness());
+
+    let auction_config = world.config.get_auction<DefaultKey>(total_supply);
+
+    assert_eq(sui_balance.value(), 10_000 * POW_9 - 200 * POW_9);
+    assert_eq(meme_balance.value(), auction_config[5]);
+
+    sui_balance.destroy_for_testing();
+    meme_balance.destroy_for_testing();
+
+    memez_fun.assert_migrated();
+
+    world.scenario.next_tx(DEV);
+
+    assert_eq(world.scenario.take_from_address<Coin<SUI>>(ADMIN).burn_for_testing(), 200 * POW_9 * 2_000 / 10_000);
+    assert_eq(world.scenario.take_from_address<Coin<SUI>>(STAKE_HOLDER).burn_for_testing(), 200 * POW_9 * 8_000 / 10_000);
+
+    let dev_allocation = memez_auction::dev_allocation_claim(
+        &mut memez_fun,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    assert_eq(dev_allocation.burn_for_testing(), auction_config[1]);
+
+    
 
     destroy(memez_fun);
 

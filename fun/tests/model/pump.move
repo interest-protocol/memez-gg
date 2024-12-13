@@ -1,5 +1,5 @@
 #[test_only]
-module memez_fun::memez_pump_config_tests;
+module memez_fun::memez_pump_model_tests;
 
 use memez_fun::{memez_errors, memez_pump_model};
 use std::unit_test::assert_eq;
@@ -14,11 +14,6 @@ const VIRTUAL_LIQUIDITY: u64 = 1_000__000_000_000;
 
 const TARGET_SUI_LIQUIDITY: u64 = 10_000__000_000_000;
 
-// @dev 200 = 2%
-const DEV_ALLOCATION: u64 = 200;
-
-// @dev 100 = 100 days
-const DEV_VESTING_PERIOD: u64 = 86400000 * 2;
 
 #[test]
 fun test_end_to_end() {
@@ -27,8 +22,6 @@ fun test_end_to_end() {
         VIRTUAL_LIQUIDITY,
         TARGET_SUI_LIQUIDITY,
         LIQUIDITY_PROVISION,
-        DEV_ALLOCATION,
-        DEV_VESTING_PERIOD,
     ]);
 
     let payload = auction.get(1000);
@@ -37,8 +30,6 @@ fun test_end_to_end() {
     assert_eq!(payload[1], VIRTUAL_LIQUIDITY);
     assert_eq!(payload[2], TARGET_SUI_LIQUIDITY);
     assert_eq!(payload[3], 60);
-    assert_eq!(payload[4], 20);
-    assert_eq!(payload[5], DEV_VESTING_PERIOD);
 
     destroy(auction);
 }

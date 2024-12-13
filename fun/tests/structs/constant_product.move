@@ -3,13 +3,7 @@ module memez_fun::memez_constant_product_tests;
 
 use constant_product::constant_product::get_amount_out;
 use ipx_coin_standard::ipx_coin_standard;
-use memez_fun::{
-    memez_burner,
-    memez_constant_product,
-    memez_errors,
-    memez_fees,
-    memez_utils
-};
+use memez_fun::{memez_burner, memez_constant_product, memez_errors, memez_fees, memez_utils};
 use sui::{balance, coin::{Self, mint_for_testing}, sui::SUI, test_utils::{assert_eq, destroy}};
 
 // === Imports ===
@@ -346,11 +340,7 @@ fun test_dump_with_fee() {
         vector[memez_fees::new_recipient(@0x0, BPS_MAX)],
     );
 
-    let burner = memez_burner::new(vector[
-        BURN_TAX,
-        virtual_liquidity,
-        target_sui_liquidity,
-    ]);
+    let burner = memez_burner::new(vector[BURN_TAX, virtual_liquidity, target_sui_liquidity]);
 
     let mut meme_treasury_cap = coin::create_treasury_cap_for_testing<Meme>(&mut ctx);
 
@@ -478,11 +468,7 @@ fun test_dump_amount() {
         vector[memez_fees::new_recipient(@0x0, BPS_MAX)],
     );
 
-    let burner = memez_burner::new(vector[
-        BURN_TAX,
-        virtual_liquidity,
-        target_sui_liquidity,
-    ]);
+    let burner = memez_burner::new(vector[BURN_TAX, virtual_liquidity, target_sui_liquidity]);
 
     let mut cp = memez_constant_product::new(
         virtual_liquidity,

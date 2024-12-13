@@ -58,7 +58,7 @@ public struct StableState<phantom Meme> has store {
     meme_token_cap: Option<MemezTokenCap<Meme>>,
     migration_fee: Fee,
     allocation_fee: Fee,
-    stake_holders_allocation: Balance<Meme>
+    stake_holders_allocation: Balance<Meme>,
 }
 
 // === Public Mutative Functions ===

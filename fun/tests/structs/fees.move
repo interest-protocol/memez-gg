@@ -1,12 +1,14 @@
 #[test_only]
 module memez_fun::memez_fees_tests;
 
-use memez_fun::{memez_errors, memez_fees::{Self, MemezFees}, memez_utils};
-use sui::test_utils::{assert_eq, destroy};
-use sui::{coin::{mint_for_testing, Coin}, test_scenario as ts};
-use sui::clock;
-use memez_fun::memez_test_helpers;
+use memez_fun::{memez_errors, memez_fees::{Self, MemezFees}, memez_test_helpers, memez_utils};
 use memez_vesting::memez_vesting::MemezVesting;
+use sui::{
+    clock,
+    coin::{mint_for_testing, Coin},
+    test_scenario as ts,
+    test_utils::{assert_eq, destroy}
+};
 
 use fun memez_test_helpers::do as vector.do;
 
@@ -65,7 +67,7 @@ fun test_calculate() {
     assert_eq(migration_fee.value(), 200 * POW_9);
     assert_eq(allocation_fee.value(), 200);
 
-    // Test Recipient Percentages 
+    // Test Recipient Percentages
 
     let expected_creation_recipients = vector[INTEGRATOR, INTEREST];
     let expected_creation_percentages = vector[7_000, 3_000];
@@ -81,7 +83,11 @@ fun test_calculate() {
 
     let expected_swap_recipients = vector[INTEGRATOR, STAKE_HOLDER_1, STAKE_HOLDER_2];
     let expected_swap_percentages = vector[5_000, 2_500, 2_500];
-    let expected_swap_values = vector[100 * 5_000 / 10_000, 100 * 2_500 / 10_000, 100 * 2_500 / 10_000];
+    let expected_swap_values = vector[
+        100 * 5_000 / 10_000,
+        100 * 2_500 / 10_000,
+        100 * 2_500 / 10_000,
+    ];
 
     swap_fee.recipients().do!(|recipient, i| {
         let (recipient_addy, recipient_bps) = recipient.recipient_data();
@@ -91,9 +97,19 @@ fun test_calculate() {
         assert_eq(recipient_bps.calc(100), expected_swap_values[i]);
     });
 
-    let expected_migration_recipients = vector[INTEGRATOR, INTEREST, STAKE_HOLDER_1, STAKE_HOLDER_2];
+    let expected_migration_recipients = vector[
+        INTEGRATOR,
+        INTEREST,
+        STAKE_HOLDER_1,
+        STAKE_HOLDER_2,
+    ];
     let expected_migration_percentages = vector[4_000, 1_000, 2_500, 2_500];
-    let expected_migration_values = vector[200 * POW_9 * 4_000 / 10_000, 200 * POW_9 * 1_000 / 10_000, 200 * POW_9 * 2_500 / 10_000, 200 * POW_9 * 2_500 / 10_000];
+    let expected_migration_values = vector[
+        200 * POW_9 * 4_000 / 10_000,
+        200 * POW_9 * 1_000 / 10_000,
+        200 * POW_9 * 2_500 / 10_000,
+        200 * POW_9 * 2_500 / 10_000,
+    ];
 
     migration_fee.recipients().do!(|recipient, i| {
         let (recipient_addy, recipient_bps) = recipient.recipient_data();
@@ -105,7 +121,11 @@ fun test_calculate() {
 
     let expected_allocation_recipients = vector[INTEGRATOR, STAKE_HOLDER_1, STAKE_HOLDER_2];
     let expected_allocation_percentages = vector[3_000, 3_500, 3_500];
-    let expected_allocation_values = vector[100 * 3_000 / 10_000, 100 * 3_500 / 10_000, 100 * 3_500 / 10_000];
+    let expected_allocation_values = vector[
+        100 * 3_000 / 10_000,
+        100 * 3_500 / 10_000,
+        100 * 3_500 / 10_000,
+    ];
 
     allocation_fee.recipients().do!(|recipient, i| {
         let (recipient_addy, recipient_bps) = recipient.recipient_data();
@@ -178,8 +198,13 @@ fun test_take() {
 
     let clock = clock::create_for_testing(scenario.ctx());
 
-    fees.allocation(vector[STAKE_HOLDER_1, STAKE_HOLDER_2], 101).take_allocation(
-        &mut asset, &clock, scenario.ctx());
+    fees
+        .allocation(vector[STAKE_HOLDER_1, STAKE_HOLDER_2], 101)
+        .take_allocation(
+            &mut asset,
+            &clock,
+            scenario.ctx(),
+        );
 
     assert_eq(asset.value(), (2000 - 40) * POW_9);
 
@@ -188,8 +213,12 @@ fun test_take() {
     scenario.next_tx(@0x0);
 
     let integrator_allocation_vesting = scenario.take_from_address<MemezVesting<Meme>>(INTEGRATOR);
-    let stake_holder_1_allocation_vesting = scenario.take_from_address<MemezVesting<Meme>>(STAKE_HOLDER_1);
-    let stake_holder_2_allocation_vesting = scenario.take_from_address<MemezVesting<Meme>>(STAKE_HOLDER_2);
+    let stake_holder_1_allocation_vesting = scenario.take_from_address<MemezVesting<Meme>>(
+        STAKE_HOLDER_1,
+    );
+    let stake_holder_2_allocation_vesting = scenario.take_from_address<MemezVesting<Meme>>(
+        STAKE_HOLDER_2,
+    );
 
     assert_eq(integrator_allocation_vesting.duration(), 101);
     assert_eq(stake_holder_1_allocation_vesting.duration(), 101);
@@ -210,7 +239,12 @@ fun test_take() {
             vector[2_500, 2_500, 2_500, 2_500, 0],
             vector[5_000, 5_000, 0],
         ],
-        vector[vector[INTEGRATOR, INTEREST], vector[INTEGRATOR, STAKE_HOLDER_1, STAKE_HOLDER_2], vector[INTEGRATOR, INTEREST, STAKE_HOLDER_1, STAKE_HOLDER_2], vector[ STAKE_HOLDER_1, STAKE_HOLDER_2]],
+        vector[
+            vector[INTEGRATOR, INTEREST],
+            vector[INTEGRATOR, STAKE_HOLDER_1, STAKE_HOLDER_2],
+            vector[INTEGRATOR, INTEREST, STAKE_HOLDER_1, STAKE_HOLDER_2],
+            vector[STAKE_HOLDER_1, STAKE_HOLDER_2],
+        ],
     );
 
     let mut asset = mint_for_testing<Meme>(1000, scenario.ctx());
@@ -220,7 +254,7 @@ fun test_take() {
     fees.migration(vector[]).take(&mut asset, scenario.ctx());
 
     let mut asset = asset.into_balance();
-    
+
     fees.allocation(vector[], 101).take_allocation(&mut asset, &clock, scenario.ctx());
 
     assert_eq(asset.value(), 1000);
@@ -234,7 +268,12 @@ fun test_take() {
 #[test, expected_failure(abort_code = memez_errors::EInvalidConfig, location = memez_fees)]
 fun test_new_invalid_config() {
     memez_fees::new(
-        vector[vector[7_000, 3_000, 2], vector[5_000, 5_000, 30], vector[10_000, 0, 6], vector[10_000, 0, 6]],
+        vector[
+            vector[7_000, 3_000, 2],
+            vector[5_000, 5_000, 30],
+            vector[10_000, 0, 6],
+            vector[10_000, 0, 6],
+        ],
         vector[vector[@0x0, @0x1], vector[@0x1], vector[@0x2]],
     );
 }
@@ -242,7 +281,12 @@ fun test_new_invalid_config() {
 #[test, expected_failure(abort_code = memez_errors::EInvalidPercentages, location = memez_utils)]
 fun test_new_invalid_creation_percentages() {
     memez_fees::new(
-        vector[vector[7_000, 3_000 - 1, 2], vector[5_000, 5_000, 30], vector[10_000, 0, 6], vector[10_000, 0, 6]],
+        vector[
+            vector[7_000, 3_000 - 1, 2],
+            vector[5_000, 5_000, 30],
+            vector[10_000, 0, 6],
+            vector[10_000, 0, 6],
+        ],
         vector[vector[@0x0, @0x1], vector[@0x1], vector[@0x2], vector[@0x3]],
     );
 }
@@ -250,7 +294,12 @@ fun test_new_invalid_creation_percentages() {
 #[test, expected_failure(abort_code = memez_errors::EInvalidPercentages, location = memez_utils)]
 fun test_new_invalid_swap_percentages() {
     memez_fees::new(
-        vector[vector[7_000, 3_000, 2], vector[5_000 - 1, 5_000, 30], vector[10_000, 0, 6], vector[10_000, 0, 6]],
+        vector[
+            vector[7_000, 3_000, 2],
+            vector[5_000 - 1, 5_000, 30],
+            vector[10_000, 0, 6],
+            vector[10_000, 0, 6],
+        ],
         vector[vector[@0x0, @0x1], vector[@0x1], vector[@0x2], vector[@0x3]],
     );
 }
@@ -258,7 +307,12 @@ fun test_new_invalid_swap_percentages() {
 #[test, expected_failure(abort_code = memez_errors::EInvalidPercentages, location = memez_utils)]
 fun test_new_invalid_migration_percentages() {
     memez_fees::new(
-        vector[vector[7_000, 3_000, 2], vector[5_000, 5_000, 30], vector[10_000, 1, 6], vector[10_000, 0, 6]],
+        vector[
+            vector[7_000, 3_000, 2],
+            vector[5_000, 5_000, 30],
+            vector[10_000, 1, 6],
+            vector[10_000, 0, 6],
+        ],
         vector[vector[@0x0, @0x1], vector[@0x1], vector[@0x2], vector[@0x3]],
     );
 }
@@ -266,15 +320,31 @@ fun test_new_invalid_migration_percentages() {
 #[test, expected_failure(abort_code = memez_errors::EInvalidPercentages, location = memez_utils)]
 fun test_new_invalid_allocation_percentages() {
     memez_fees::new(
-        vector[vector[7_000, 3_000, 2], vector[5_000, 5_000, 30], vector[10_000, 0, 6], vector[10_000, 1, 6]],
+        vector[
+            vector[7_000, 3_000, 2],
+            vector[5_000, 5_000, 30],
+            vector[10_000, 0, 6],
+            vector[10_000, 1, 6],
+        ],
         vector[vector[@0x0, @0x1], vector[@0x1], vector[@0x2], vector[@0x3]],
     );
 }
 
-#[test, expected_failure(abort_code = memez_errors::EInvalidCreationFeeConfig, location = memez_fees)]
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EInvalidCreationFeeConfig,
+        location = memez_fees,
+    ),
+]
 fun test_new_wrong_creation_recipients() {
     memez_fees::new(
-        vector[vector[7_000, 3_000, 2], vector[5_000, 5_000, 0, 30], vector[10_000, 0, 6], vector[10_000, 0, 6]],
+        vector[
+            vector[7_000, 3_000, 2],
+            vector[5_000, 5_000, 0, 30],
+            vector[10_000, 0, 6],
+            vector[10_000, 0, 6],
+        ],
         vector[vector[@0x0], vector[@0x1], vector[@0x2], vector[@0x3]],
     );
 }

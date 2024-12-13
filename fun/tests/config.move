@@ -4,15 +4,7 @@ module memez_fun::memez_config_tests;
 use memez_acl::acl;
 use memez_fun::{
     memez_auction_model::AuctionModel,
-    memez_config::{
-        Self,
-        MemezConfig,
-        DefaultKey,
-        FeesKey,
-        AuctionKey,
-        PumpKey,
-        StableKey
-    },
+    memez_config::{Self, MemezConfig, DefaultKey, FeesKey, AuctionKey, PumpKey, StableKey},
     memez_fees::MemezFees,
     memez_pump_model::PumpModel,
     memez_stable_model::StableModel
@@ -39,7 +31,12 @@ fun test_set_fees() {
         .config
         .set_fees<DefaultKey>(
             &witness,
-            vector[vector[7_000, 3_000, 2], vector[5_000, 5_000, 30], vector[10_000, 0, 6], vector[0, 10_000, 8]],
+            vector[
+                vector[7_000, 3_000, 2],
+                vector[5_000, 5_000, 30],
+                vector[10_000, 0, 6],
+                vector[0, 10_000, 8],
+            ],
             vector[vector[@0x0, @0x1], vector[@0x1], vector[@0x2], vector[@0x3]],
             world.scenario.ctx(),
         );
@@ -138,7 +135,14 @@ fun test_pump() {
         .config
         .set_pump<DefaultKey>(
             &witness,
-            vector[burn_take, virtual_liquidity, target_liquidity, provision_liquidity, dev_allocation, dev_vesting_period],
+            vector[
+                burn_take,
+                virtual_liquidity,
+                target_liquidity,
+                provision_liquidity,
+                dev_allocation,
+                dev_vesting_period,
+            ],
             world.scenario.ctx(),
         );
 

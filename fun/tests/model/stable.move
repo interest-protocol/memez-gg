@@ -29,13 +29,7 @@ fun test_end_to_end() {
     destroy(auction);
 }
 
-#[
-    test,
-    expected_failure(
-        abort_code = memez_errors::EInvalidConfig,
-        location = memez_stable_model,
-    ),
-]
+#[test, expected_failure(abort_code = memez_errors::EInvalidConfig, location = memez_stable_model)]
 fun test_new_invalid_config() {
     let auction = memez_stable_model::new(vector[MAX_TARGET_SUI_LIQUIDITY, LIQUIDITY_PROVISION]);
 

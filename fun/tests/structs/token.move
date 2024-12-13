@@ -1,10 +1,9 @@
 #[test_only]
 module memez_fun::memez_token_cap_tests;
 
+use memez_fun::memez_token_cap;
 use std::unit_test::assert_eq;
 use sui::{coin::{mint_for_testing, create_treasury_cap_for_testing}, test_utils::destroy};
-
-use memez_fun::memez_token_cap;
 
 public struct Meme()
 

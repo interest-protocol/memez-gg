@@ -43,13 +43,7 @@ fun test_end_to_end() {
     destroy(auction);
 }
 
-#[
-    test,
-    expected_failure(
-        abort_code = memez_errors::EInvalidConfig,
-        location = memez_pump_model,
-    ),
-]
+#[test, expected_failure(abort_code = memez_errors::EInvalidConfig, location = memez_pump_model)]
 fun test_new_invalid_config() {
     let auction = memez_pump_model::new(vector[
         BURN_TAX,

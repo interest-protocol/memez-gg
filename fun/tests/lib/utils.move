@@ -122,7 +122,7 @@ fun set_up_treasury() {
 
     destroy(meme_balance);
     destroy(meme_treasury);
-    
+
     destroy(metadata_cap);
 
     scenario.end();

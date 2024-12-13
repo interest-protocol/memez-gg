@@ -76,14 +76,11 @@ fun test_auction() {
     let witness = acl::sign_in_for_testing();
 
     let third_minutes_ms = 3 * 60 * 1_000_000;
-    let dev_allocation = 100;
     let burn_take = 2000;
     let virtual_liquidity = 1000;
     let target_liquidity = 10_000;
     let provision_liquidity = 500;
     let seed_liquidity = 100;
-    let stake_holders_allocation = 300;
-    let stake_holders_vesting_period = 777;
 
     world
         .config
@@ -91,14 +88,11 @@ fun test_auction() {
             &witness,
             vector[
                 third_minutes_ms,
-                dev_allocation,
                 burn_take,
                 virtual_liquidity,
                 target_liquidity,
                 provision_liquidity,
                 seed_liquidity,
-                stake_holders_allocation,
-                stake_holders_vesting_period,
             ],
             world.scenario.ctx(),
         );
@@ -106,14 +100,11 @@ fun test_auction() {
     let amounts = world.config.get_auction<DefaultKey>(1_000);
 
     assert_eq!(amounts[0], third_minutes_ms);
-    assert_eq!(amounts[1], 10);
-    assert_eq!(amounts[2], burn_take);
-    assert_eq!(amounts[3], virtual_liquidity);
-    assert_eq!(amounts[4], target_liquidity);
-    assert_eq!(amounts[5], 50);
-    assert_eq!(amounts[6], seed_liquidity);
-    assert_eq!(amounts[7], 30);
-    assert_eq!(amounts[8], stake_holders_vesting_period);
+    assert_eq!(amounts[1], burn_take);
+    assert_eq!(amounts[2], virtual_liquidity);
+    assert_eq!(amounts[3], target_liquidity);
+    assert_eq!(amounts[4], 50);
+    assert_eq!(amounts[5], seed_liquidity);
 
     assert_eq!(memez_config::exists_for_testing<AuctionKey<DefaultKey>>(&world.config), true);
 
@@ -134,8 +125,6 @@ fun test_pump() {
     let virtual_liquidity = 1000;
     let target_liquidity = 10_000;
     let provision_liquidity = 700;
-    let dev_allocation = 200;
-    let dev_vesting_period = 100;
 
     world
         .config
@@ -146,8 +135,6 @@ fun test_pump() {
                 virtual_liquidity,
                 target_liquidity,
                 provision_liquidity,
-                dev_allocation,
-                dev_vesting_period,
             ],
             world.scenario.ctx(),
         );
@@ -158,8 +145,6 @@ fun test_pump() {
     assert_eq!(amounts[1], virtual_liquidity);
     assert_eq!(amounts[2], target_liquidity);
     assert_eq!(amounts[3], 70);
-    assert_eq!(amounts[4], 20);
-    assert_eq!(amounts[5], dev_vesting_period);
 
     assert_eq!(memez_config::exists_for_testing<PumpKey<DefaultKey>>(&world.config), true);
 

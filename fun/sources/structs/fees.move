@@ -228,7 +228,7 @@ public fun value(fee: Fee): u64 {
 
 #[test_only]
 public fun payloads(fees: MemezFees): vector<FeePayload> {
-    vector[fees.creation, fees.swap, fees.migration]
+    vector[fees.creation, fees.swap, fees.migration, fees.allocation]
 }
 
 #[test_only]

@@ -1,5 +1,5 @@
 #[test_only]
-module memez_fun::memez_stable_config_tests;
+module memez_fun::memez_stable_model_tests;
 
 use memez_fun::{memez_errors, memez_stable_model};
 use std::unit_test::assert_eq;

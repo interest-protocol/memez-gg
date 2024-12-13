@@ -22,7 +22,7 @@ use ipx_coin_standard::ipx_coin_standard::MetadataCap;
 use memez_fun::{
     memez_config::MemezConfig,
     memez_errors,
-    memez_fees::Fee,
+    memez_fees::{Allocation, Fee},
     memez_fixed_rate::{Self, FixedRate},
     memez_fun::{Self, MemezFun, MemezMigrator},
     memez_migrator_list::MemezMigratorList,
@@ -57,8 +57,7 @@ public struct StableState<phantom Meme> has store {
     fixed_rate: FixedRate<Meme>,
     meme_token_cap: Option<MemezTokenCap<Meme>>,
     migration_fee: Fee,
-    allocation_fee: Fee,
-    stake_holders_allocation: Balance<Meme>,
+    allocation: Allocation<Meme>,
 }
 
 // === Public Mutative Functions ===
@@ -119,8 +118,7 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
         fixed_rate,
         meme_token_cap,
         migration_fee: fees.migration(stake_holders),
-        allocation_fee: fees.allocation(stake_holders, stable_config[4]),
-        stake_holders_allocation,
+        allocation: fees.allocation(stake_holders, stake_holders_allocation, stable_config[4]),
     };
 
     let mut memez_fun = memez_fun::new<Stable, Meme, ConfigKey, MigrationWitness>(

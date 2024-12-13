@@ -25,7 +25,7 @@ use memez_fun::{
     memez_config::MemezConfig,
     memez_constant_product::{Self, MemezConstantProduct},
     memez_errors,
-    memez_fees::Fee,
+    memez_fees::{Fee, Allocation},
     memez_fun::{Self, MemezFun, MemezMigrator},
     memez_migrator_list::MemezMigratorList,
     memez_token_cap::{Self, MemezTokenCap},
@@ -56,11 +56,9 @@ public struct AuctionState<phantom Meme> has store {
     auction_duration: u64,
     initial_reserve: u64,
     accrued_meme_balance: u64,
-    allocation_fee: Fee,
+    allocation: Allocation<Meme>,
     meme_reserve: Balance<Meme>,
-    dev_allocation: Balance<Meme>,
     liquidity_provision: Balance<Meme>,
-    stake_holders_allocation: Balance<Meme>,
     constant_product: MemezConstantProduct<Meme>,
     meme_token_cap: Option<MemezTokenCap<Meme>>,
 }
@@ -79,7 +77,6 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
     metadata_names: vector<String>,
     metadata_values: vector<String>,
     stake_holders: vector<address>,
-    dev: address,
     version: CurrentVersion,
     ctx: &mut TxContext,
 ): MetadataCap {
@@ -102,8 +99,6 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
         ctx,
     );
 
-    let dev_allocation = meme_reserve.split(auction_config[1]);
-
     let liquidity_provision = meme_reserve.split(auction_config[5]);
 
     let meme_balance = meme_reserve.split(auction_config[6]);
@@ -118,9 +113,8 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
         initial_reserve: meme_reserve.value(),
         accrued_meme_balance: 0,
         meme_reserve,
-        dev_allocation,
         liquidity_provision,
-        allocation_fee: fees.allocation(stake_holders, stake_holders_vesting_period),
+        allocation: fees.allocation(stake_holders, stake_holders_allocation, stake_holders_vesting_period),
         constant_product: memez_constant_product::new(
             auction_config[3],
             auction_config[4],
@@ -128,7 +122,6 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
             fees.swap(stake_holders),
             auction_config[2],
         ),
-        stake_holders_allocation,
         meme_token_cap,
         migration_fee: fees.migration(stake_holders),
     };
@@ -140,7 +133,7 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
         metadata_names,
         metadata_values,
         ipx_meme_coin_treasury,
-        dev,
+        ctx.sender(),
         ctx,
     );
 
@@ -241,21 +234,6 @@ public fun migrate<Meme>(
     self.migrate(sui_coin.into_balance(), liquidity_provision)
 }
 
-public fun dev_allocation_claim<Meme>(
-    self: &mut MemezFun<Auction, Meme>,
-    version: CurrentVersion,
-    ctx: &mut TxContext,
-): Coin<Meme> {
-    self.assert_migrated();
-    self.assert_is_dev(ctx);
-
-    version.assert_is_valid();
-
-    let state = self.state_mut();
-
-    state.dev_allocation.withdraw_all().into_coin(ctx)
-}
-
 public fun distribute_stake_holders_allocation<Meme>(
     self: &mut MemezFun<Auction, Meme>,
     clock: &Clock,
@@ -282,7 +260,7 @@ fun pump_amount<Meme>(
     clock: &Clock,
 ): vector<u64> {
     self.cp_pump_amount!(|self| {
-        let state = self.state_mut();
+        let state = self.state();
         let amount = state.expected_drip_amount(clock);
         (state, amount)
     }, amount_in)
@@ -295,7 +273,7 @@ fun dump_amount<Meme>(
     clock: &Clock,
 ): vector<u64> {
     self.cp_dump_amount!(|self| {
-        let state = self.state_mut();
+        let state = self.state();
         let amount = state.expected_drip_amount(clock);
         (state, amount)
     }, amount_in)
@@ -399,11 +377,6 @@ public fun meme_reserve<Meme>(self: &mut MemezFun<Auction, Meme>): u64 {
 #[test_only]
 public fun constant_product<Meme>(self: &mut MemezFun<Auction, Meme>): &MemezConstantProduct<Meme> {
     &self.state().constant_product
-}
-
-#[test_only]
-public fun dev_allocation<Meme>(self: &mut MemezFun<Auction, Meme>): u64 {
-    self.state().dev_allocation.value()
 }
 
 #[test_only]

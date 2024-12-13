@@ -303,14 +303,12 @@ public(package) macro fun distribute_stake_holders_allocation<$Curve, $Meme, $St
 
     let state = $f(self);
 
-    let stake_holders_allocation = &mut state.stake_holders_allocation;
-
-    state.allocation_fee.take_allocation(stake_holders_allocation, clock, ctx);
+    state.allocation.take(clock, ctx);
 }
 
 public(package) macro fun cp_pump_amount<$Curve, $Meme, $State>(
     $self: &mut MemezFun<$Curve, $Meme>,
-    $f: |&mut MemezFun<$Curve, $Meme>| -> (&mut $State, u64),
+    $f: |&mut MemezFun<$Curve, $Meme>| -> (&$State, u64),
     $amount_in: u64,
 ): vector<u64> {
     let amount_in = $amount_in;
@@ -327,7 +325,7 @@ public(package) macro fun cp_pump_amount<$Curve, $Meme, $State>(
 
 public(package) macro fun cp_dump_amount<$Curve, $Meme, $State>(
     $self: &mut MemezFun<$Curve, $Meme>,
-    $f: |&mut MemezFun<$Curve, $Meme>| -> (&mut $State, u64),
+    $f: |&mut MemezFun<$Curve, $Meme>| -> (&$State, u64),
     $amount_in: u64,
 ): vector<u64> {
     let amount_in = $amount_in;

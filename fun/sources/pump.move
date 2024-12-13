@@ -23,7 +23,7 @@ use memez_fun::{
     memez_config::MemezConfig,
     memez_constant_product::{Self, MemezConstantProduct},
     memez_errors,
-    memez_fees::Fee,
+    memez_fees::{Allocation, Fee},
     memez_fun::{Self, MemezFun, MemezMigrator},
     memez_migrator_list::MemezMigratorList,
     memez_token_cap::{Self, MemezTokenCap},
@@ -50,12 +50,11 @@ public struct Pump()
 
 public struct PumpState<phantom Meme> has store {
     dev_purchase: Balance<Meme>,
-    stake_holders_allocation: Balance<Meme>,
     liquidity_provision: Balance<Meme>,
+    allocation: Allocation<Meme>,
     constant_product: MemezConstantProduct<Meme>,
     meme_token_cap: Option<MemezTokenCap<Meme>>,
     migration_fee: Fee,
-    allocation_fee: Fee,
 }
 
 // === Public Mutative Functions ===
@@ -102,7 +101,6 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
     let pump_state = PumpState<Meme> {
         dev_purchase: balance::zero(),
         liquidity_provision,
-        stake_holders_allocation,
         constant_product: memez_constant_product::new(
             pump_config[1],
             pump_config[2],
@@ -112,7 +110,7 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
         ),
         meme_token_cap,
         migration_fee: fees.migration(stake_holders),
-        allocation_fee: fees.allocation(stake_holders, pump_config[5]),
+        allocation: fees.allocation(stake_holders, stake_holders_allocation, pump_config[6]),
     };
 
     let mut memez_fun = memez_fun::new<Pump, Meme, ConfigKey, MigrationWitness>(
@@ -264,12 +262,12 @@ public fun to_coin<Meme>(
 
 #[allow(unused_function)]
 fun pump_amount<Meme>(self: &mut MemezFun<Pump, Meme>, amount_in: u64): vector<u64> {
-    self.cp_pump_amount!(|self| (self.state_mut(), 0), amount_in)
+    self.cp_pump_amount!(|self| (self.state(), 0), amount_in)
 }
 
 #[allow(unused_function)]
 fun dump_amount<Meme>(self: &mut MemezFun<Pump, Meme>, amount_in: u64): vector<u64> {
-    self.cp_dump_amount!(|self| (self.state_mut(), 0), amount_in)
+    self.cp_dump_amount!(|self| (self.state(), 0), amount_in)
 }
 
 // === Private Functions ===

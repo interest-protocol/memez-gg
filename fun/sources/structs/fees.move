@@ -60,10 +60,11 @@ public(package) fun new(
     swap_percentages.validate();
     migration_percentages.validate();
     allocation_percentages.validate();
-    // @dev We need to add the deployer address to the end of the recipients vector as its a dynamic field
+
+    // @dev The other fees include dynamic recipients
     assert!(
         recipients[0].length() == creation_percentages.length(),
-        memez_errors::wrong_recipients_length(),
+        memez_errors::invalid_creation_fee_config(),
     );
 
     MemezFees {

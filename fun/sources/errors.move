@@ -44,7 +44,7 @@ const EInvalidConfig: u64 = 19;
 
 const EModelKeyNotSupported: u64 = 20;
 
-const EWrongRecipientsLength: u64 = 21;
+const EInvalidCreationFeeConfig: u64 = 21;
 
 const EZeroTotalSupply: u64 = 22;
 
@@ -134,8 +134,8 @@ public(package) fun model_key_not_supported(): u64 {
     EModelKeyNotSupported
 }
 
-public(package) fun wrong_recipients_length(): u64 {
-    EWrongRecipientsLength
+public(package) fun invalid_creation_fee_config(): u64 {
+    EInvalidCreationFeeConfig
 }
 
 public(package) fun zero_total_supply(): u64 {

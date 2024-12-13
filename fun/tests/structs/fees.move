@@ -174,14 +174,16 @@ fun test_take() {
 
     scenario.next_tx(@0x0);
 
-    let mut asset = mint_for_testing<Meme>(200, scenario.ctx()).into_balance();
+    let mut asset = mint_for_testing<Meme>(2_000 * POW_9, scenario.ctx()).into_balance();
 
     let clock = clock::create_for_testing(scenario.ctx());
 
     fees.allocation(vector[STAKE_HOLDER_1, STAKE_HOLDER_2], 101).take_allocation(
         &mut asset, &clock, scenario.ctx());
 
-    asset.destroy_zero();
+    assert_eq(asset.value(), (2000 - 40) * POW_9);
+
+    destroy(asset);
 
     scenario.next_tx(@0x0);
 
@@ -193,9 +195,9 @@ fun test_take() {
     assert_eq(stake_holder_1_allocation_vesting.duration(), 101);
     assert_eq(stake_holder_2_allocation_vesting.duration(), 101);
 
-    assert_eq(integrator_allocation_vesting.balance(), 200 * 3_000 / 10_000);
-    assert_eq(stake_holder_1_allocation_vesting.balance(), 200 * 3_500 / 10_000);
-    assert_eq(stake_holder_2_allocation_vesting.balance(), 200 * 3_500 / 10_000);
+    assert_eq(integrator_allocation_vesting.balance(), 40 * POW_9 * 3_000 / 10_000);
+    assert_eq(stake_holder_1_allocation_vesting.balance(), 40 * POW_9 * 3_500 / 10_000);
+    assert_eq(stake_holder_2_allocation_vesting.balance(), 40 * POW_9 * 3_500 / 10_000);
 
     destroy(integrator_allocation_vesting);
     destroy(stake_holder_1_allocation_vesting);
@@ -229,61 +231,53 @@ fun test_take() {
     scenario.end();
 }
 
-// #[test, expected_failure(abort_code = memez_errors::EInvalidConfig, location = memez_fees)]
-// fun test_new_invalid_config() {
-//     memez_fees::new(
-//         vector[vector[7_000, 3_000, 2], vector[5_000, 5_000, 30], vector[10_000, 0, 6]],
-//         vector[vector[@0x0, @0x1], vector[@0x1]],
-//     );
-// }
+#[test, expected_failure(abort_code = memez_errors::EInvalidConfig, location = memez_fees)]
+fun test_new_invalid_config() {
+    memez_fees::new(
+        vector[vector[7_000, 3_000, 2], vector[5_000, 5_000, 30], vector[10_000, 0, 6], vector[10_000, 0, 6]],
+        vector[vector[@0x0, @0x1], vector[@0x1], vector[@0x2]],
+    );
+}
 
-// #[test, expected_failure(abort_code = memez_errors::EInvalidPercentages, location = memez_utils)]
-// fun test_new_invalid_creation_percentages() {
-//     memez_fees::new(
-//         vector[vector[7_000, 3_000 - 1, 2], vector[5_000, 5_000, 30], vector[10_000, 0, 6]],
-//         vector[vector[@0x0, @0x1], vector[@0x1], vector[@0x2]],
-//     );
-// }
+#[test, expected_failure(abort_code = memez_errors::EInvalidPercentages, location = memez_utils)]
+fun test_new_invalid_creation_percentages() {
+    memez_fees::new(
+        vector[vector[7_000, 3_000 - 1, 2], vector[5_000, 5_000, 30], vector[10_000, 0, 6], vector[10_000, 0, 6]],
+        vector[vector[@0x0, @0x1], vector[@0x1], vector[@0x2], vector[@0x3]],
+    );
+}
 
-// #[test, expected_failure(abort_code = memez_errors::EInvalidPercentages, location = memez_utils)]
-// fun test_new_invalid_swap_percentages() {
-//     memez_fees::new(
-//         vector[vector[7_000, 3_000, 2], vector[5_000 - 1, 5_000, 30], vector[10_000, 0, 6]],
-//         vector[vector[@0x0, @0x1], vector[@0x1], vector[@0x2]],
-//     );
-// }
+#[test, expected_failure(abort_code = memez_errors::EInvalidPercentages, location = memez_utils)]
+fun test_new_invalid_swap_percentages() {
+    memez_fees::new(
+        vector[vector[7_000, 3_000, 2], vector[5_000 - 1, 5_000, 30], vector[10_000, 0, 6], vector[10_000, 0, 6]],
+        vector[vector[@0x0, @0x1], vector[@0x1], vector[@0x2], vector[@0x3]],
+    );
+}
 
-// #[test, expected_failure(abort_code = memez_errors::EInvalidPercentages, location = memez_utils)]
-// fun test_new_invalid_migration_percentages() {
-//     memez_fees::new(
-//         vector[vector[7_000, 3_000, 2], vector[5_000, 5_000, 30], vector[10_000, 1, 6]],
-//         vector[vector[@0x0, @0x1], vector[@0x1], vector[@0x2]],
-//     );
-// }
+#[test, expected_failure(abort_code = memez_errors::EInvalidPercentages, location = memez_utils)]
+fun test_new_invalid_migration_percentages() {
+    memez_fees::new(
+        vector[vector[7_000, 3_000, 2], vector[5_000, 5_000, 30], vector[10_000, 1, 6], vector[10_000, 0, 6]],
+        vector[vector[@0x0, @0x1], vector[@0x1], vector[@0x2], vector[@0x3]],
+    );
+}
 
-// #[test, expected_failure(abort_code = memez_errors::EWrongRecipientsLength, location = memez_fees)]
-// fun test_new_wrong_creation_recipients() {
-//     memez_fees::new(
-//         vector[vector[7_000, 3_000, 2], vector[5_000, 5_000, 0, 30], vector[10_000, 0, 6]],
-//         vector[vector[@0x0], vector[@0x1], vector[@0x2]],
-//     );
-// }
+#[test, expected_failure(abort_code = memez_errors::EInvalidPercentages, location = memez_utils)]
+fun test_new_invalid_allocation_percentages() {
+    memez_fees::new(
+        vector[vector[7_000, 3_000, 2], vector[5_000, 5_000, 30], vector[10_000, 0, 6], vector[10_000, 1, 6]],
+        vector[vector[@0x0, @0x1], vector[@0x1], vector[@0x2], vector[@0x3]],
+    );
+}
 
-// #[test, expected_failure(abort_code = memez_errors::EWrongRecipientsLength, location = memez_fees)]
-// fun test_new_wrong_swap_recipients() {
-//     memez_fees::new(
-//         vector[vector[7_000, 3_000, 2], vector[5_000, 5_000, 0, 30], vector[10_000, 0, 6]],
-//         vector[vector[@0x0, @0x1], vector[@0x1], vector[@0x2]],
-//     );
-// }
-
-// #[test, expected_failure(abort_code = memez_errors::EWrongRecipientsLength, location = memez_fees)]
-// fun test_new_wrong_migration_recipients() {
-//     memez_fees::new(
-//         vector[vector[7_000, 3_000, 2], vector[5_000, 5_000, 30], vector[10_000, 0, 0, 6]],
-//         vector[vector[@0x0, @0x1], vector[@0x1], vector[@0x2]],
-//     );
-// }
+#[test, expected_failure(abort_code = memez_errors::EInvalidCreationFeeConfig, location = memez_fees)]
+fun test_new_wrong_creation_recipients() {
+    memez_fees::new(
+        vector[vector[7_000, 3_000, 2], vector[5_000, 5_000, 0, 30], vector[10_000, 0, 6], vector[10_000, 0, 6]],
+        vector[vector[@0x0], vector[@0x1], vector[@0x2], vector[@0x3]],
+    );
+}
 
 fun default_fees(): MemezFees {
     let fees = memez_fees::new(

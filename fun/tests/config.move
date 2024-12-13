@@ -82,6 +82,8 @@ fun test_auction() {
     let target_liquidity = 10_000;
     let provision_liquidity = 500;
     let seed_liquidity = 100;
+    let stake_holders_allocation = 300;
+    let stake_holders_vesting_period = 777;
 
     world
         .config
@@ -95,6 +97,8 @@ fun test_auction() {
                 target_liquidity,
                 provision_liquidity,
                 seed_liquidity,
+                stake_holders_allocation,
+                stake_holders_vesting_period,
             ],
             world.scenario.ctx(),
         );
@@ -108,6 +112,8 @@ fun test_auction() {
     assert_eq!(amounts[4], target_liquidity);
     assert_eq!(amounts[5], 50);
     assert_eq!(amounts[6], seed_liquidity);
+    assert_eq!(amounts[7], 30);
+    assert_eq!(amounts[8], stake_holders_vesting_period);
 
     assert_eq!(memez_config::exists_for_testing<AuctionKey<DefaultKey>>(&world.config), true);
 

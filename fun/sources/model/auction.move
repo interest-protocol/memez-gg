@@ -7,7 +7,7 @@ use memez_fun::memez_errors;
 
 const MIN_SEED_LIQUIDITY: u64 = 100;
 
-const VALUES_LENGTH: u64 = 7;
+const VALUES_LENGTH: u64 = 9;
 
 // === Structs ===
 
@@ -19,6 +19,8 @@ public struct AuctionModel has copy, drop, store {
     target_sui_liquidity: u64,
     liquidity_provision: BPS,
     seed_liquidity: BPS,
+    stake_holders_allocation: BPS,
+    stake_holders_vesting_period: u64,
 }
 
 // === Public Package Functions ===
@@ -34,6 +36,8 @@ public(package) fun new(values: vector<u64>): AuctionModel {
         target_sui_liquidity: values[4],
         liquidity_provision: bps::new(values[5]),
         seed_liquidity: bps::new(values[6]),
+        stake_holders_allocation: bps::new(values[7]),
+        stake_holders_vesting_period: values[8],
     }
 }
 
@@ -41,6 +45,7 @@ public(package) fun get(self: &AuctionModel, total_supply: u64): vector<u64> {
     let dev_allocation = self.dev_allocation.calc(total_supply);
     let liquidity_provision = self.liquidity_provision.calc(total_supply);
     let seed_liquidity = self.seed_liquidity.calc(total_supply).max(MIN_SEED_LIQUIDITY);
+    let stake_holders_allocation = self.stake_holders_allocation.calc(total_supply);
 
     vector[
         self.auction_duration,
@@ -50,5 +55,7 @@ public(package) fun get(self: &AuctionModel, total_supply: u64): vector<u64> {
         self.target_sui_liquidity,
         liquidity_provision,
         seed_liquidity,
+        stake_holders_allocation,
+        self.stake_holders_vesting_period,
     ]
 }

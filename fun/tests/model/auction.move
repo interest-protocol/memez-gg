@@ -23,6 +23,10 @@ const SEED_LIQUIDITY: u64 = 10;
 
 const MIN_SEED_LIQUIDITY: u64 = 100;
 
+const STAKE_HOLDERS_ALLOCATION: u64 = 1_000;
+
+const STAKE_HOLDERS_VESTING_PERIOD: u64 = THIRTY_MINUTES_MS * 10;
+
 #[test]
 fun test_end_to_end() {
     let auction = memez_auction_model::new(vector[
@@ -33,6 +37,8 @@ fun test_end_to_end() {
         TARGET_SUI_LIQUIDITY,
         LIQUIDITY_PROVISION,
         SEED_LIQUIDITY,
+        STAKE_HOLDERS_ALLOCATION,
+        STAKE_HOLDERS_VESTING_PERIOD,
     ]);
 
     let payload = auction.get(1000);
@@ -44,6 +50,8 @@ fun test_end_to_end() {
     assert_eq!(payload[4], TARGET_SUI_LIQUIDITY);
     assert_eq!(payload[5], 50);
     assert_eq!(payload[6], MIN_SEED_LIQUIDITY);
+    assert_eq!(payload[7], 100);
+    assert_eq!(payload[8], STAKE_HOLDERS_VESTING_PERIOD);
 
     let payload = auction.get(1_000_000_000);
 
@@ -54,6 +62,8 @@ fun test_end_to_end() {
     assert_eq!(payload[4], TARGET_SUI_LIQUIDITY);
     assert_eq!(payload[5], 50_000_000);
     assert_eq!(payload[6], 1_000_000);
+    assert_eq!(payload[7], 100_000_000);
+    assert_eq!(payload[8], STAKE_HOLDERS_VESTING_PERIOD);
 
     destroy(auction);
 }
@@ -67,6 +77,8 @@ fun test_new_invalid_config() {
         VIRTUAL_LIQUIDITY,
         TARGET_SUI_LIQUIDITY,
         LIQUIDITY_PROVISION,
+        SEED_LIQUIDITY,
+        STAKE_HOLDERS_ALLOCATION,
     ]);
 
     destroy(auction);

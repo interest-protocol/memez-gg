@@ -88,3 +88,13 @@ macro fun distribute_internal<$T>(
 use fun memez_utils::destroy_or_return as Coin.destroy_or_return;
 
 // === Test Functions ===
+
+#[test_only]
+public fun recipient_addys(self: &Distributor): vector<address> {
+    self.recipients.map!(|recipient| recipient.addy)
+}
+
+#[test_only]
+public fun recipient_percentages(self: &Distributor): vector<BPS> {
+    self.recipients.map!(|recipient| recipient.bps)
+}

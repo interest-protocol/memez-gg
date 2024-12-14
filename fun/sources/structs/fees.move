@@ -2,7 +2,7 @@ module memez_fun::memez_fees;
 
 use interest_bps::bps::{Self, BPS};
 use memez_fun::{memez_distributor::{Self, Distributor}, memez_errors, memez_utils};
-use sui::{balance::Balance, clock::Clock, coin::Coin};
+use sui::{balance::{Self, Balance}, clock::Clock, coin::Coin};
 
 // === Constants ===
 
@@ -32,6 +32,7 @@ public struct MemezFees has copy, drop, store {
     swap: FeePayload,
     migration: FeePayload,
     allocation: FeePayload,
+    vesting_period: u64,
 }
 
 // === Public Package Functions ===
@@ -54,6 +55,7 @@ public(package) fun new(
     let swap_value = swap_percentages.pop_back();
     let migration_value = migration_percentages.pop_back();
     let allocation_value = allocation_percentages.pop_back();
+    let vesting_period = allocation_percentages.pop_back();
 
     creation_percentages.validate();
     swap_percentages.validate();
@@ -87,6 +89,7 @@ public(package) fun new(
             percentages: allocation_percentages,
             recipients: recipients[3],
         },
+        vesting_period,
     }
 }
 
@@ -175,17 +178,18 @@ public(package) fun migration(self: MemezFees, stake_holders: vector<address>): 
 
 public(package) fun allocation<T>(
     self: MemezFees,
+    balance: &mut Balance<T>,
     stake_holders: vector<address>,
-    balance: Balance<T>,
-    vesting_period: u64,
 ): Allocation<T> {
     let mut recipients = self.allocation.recipients;
 
     recipients.append(stake_holders);
 
+    let balance_value = balance.value();
+
     Allocation {
-        balance,
-        vesting_period,
+        balance: if (self.allocation.value == 0) balance::zero() else balance.split(bps::new(self.allocation.value).calc(balance_value)),
+        vesting_period: self.vesting_period,
         distributor: memez_distributor::new(recipients, self.allocation.percentages),
     }
 }
@@ -243,4 +247,27 @@ public fun payload_percentages(payload: FeePayload): vector<u64> {
 #[test_only]
 public fun payload_recipients(payload: FeePayload): vector<address> {
     payload.recipients
+}
+
+#[test_only]
+public use fun allocation_value as Allocation.value;
+
+#[test_only]
+public fun allocation_value<T>(allocation: &Allocation<T>): u64 {
+    allocation.balance.value()
+}
+
+#[test_only]
+public use fun allocation_vesting_period as Allocation.vesting_period;
+#[test_only]
+public fun allocation_vesting_period<T>(allocation: &Allocation<T>): u64 {
+    allocation.vesting_period
+}
+
+#[test_only]
+public use fun allocation_distributor as Allocation.distributor;
+
+#[test_only]
+public fun allocation_distributor<T>(allocation: &Allocation<T>): Distributor {
+    allocation.distributor
 }

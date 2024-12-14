@@ -94,7 +94,7 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
         ctx,
     );
 
-    let stake_holders_allocation = meme_balance.split(pump_config[4]);
+    let allocation = fees.allocation(&mut meme_balance, stake_holders);
 
     let liquidity_provision = meme_balance.split(pump_config[3]);
 
@@ -110,7 +110,7 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
         ),
         meme_token_cap,
         migration_fee: fees.migration(stake_holders),
-        allocation: fees.allocation(stake_holders, stake_holders_allocation, pump_config[6]),
+        allocation,
     };
 
     let mut memez_fun = memez_fun::new<Pump, Meme, ConfigKey, MigrationWitness>(

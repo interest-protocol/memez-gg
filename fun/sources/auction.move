@@ -99,13 +99,14 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
         ctx,
     );
 
-    let liquidity_provision = meme_reserve.split(auction_config[5]);
+    let allocation = fees.allocation(
+        &mut meme_reserve,
+            stake_holders,
+        );
 
-    let meme_balance = meme_reserve.split(auction_config[6]);
+    let liquidity_provision = meme_reserve.split(auction_config[4]);
 
-    let stake_holders_allocation = meme_reserve.split(auction_config[7]);
-
-    let stake_holders_vesting_period = auction_config[8];
+    let meme_balance = meme_reserve.split(auction_config[5]);
 
     let auction_state = AuctionState<Meme> {
         start_time: clock.timestamp_ms(),
@@ -114,17 +115,13 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
         accrued_meme_balance: 0,
         meme_reserve,
         liquidity_provision,
-        allocation: fees.allocation(
-            stake_holders,
-            stake_holders_allocation,
-            stake_holders_vesting_period,
-        ),
+        allocation,
         constant_product: memez_constant_product::new(
+            auction_config[2],
             auction_config[3],
-            auction_config[4],
             meme_balance,
             fees.swap(stake_holders),
-            auction_config[2],
+            auction_config[1],
         ),
         meme_token_cap,
         migration_fee: fees.migration(stake_holders),

@@ -401,3 +401,8 @@ public fun market_cap<Meme>(
 public fun current_meme_balance<Meme>(self: &mut MemezFun<Auction, Meme>, clock: &Clock): u64 {
     meme_balance(self, clock)
 }
+
+#[test_only]
+public fun allocation<Meme>(self: &mut MemezFun<Auction, Meme>): &Allocation<Meme> {
+    &self.state().allocation
+}

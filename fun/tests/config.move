@@ -3,11 +3,11 @@ module memez_fun::memez_config_tests;
 
 use memez_acl::acl;
 use memez_fun::{
-    memez_auction_model::AuctionModel,
+    memez_auction_config::AuctionConfig,
     memez_config::{Self, MemezConfig, DefaultKey, FeesKey, AuctionKey, PumpKey, StableKey},
     memez_fees::MemezFees,
-    memez_pump_model::PumpModel,
-    memez_stable_model::StableModel
+    memez_pump_config::PumpConfig,
+    memez_stable_config::StableConfig
 };
 use std::unit_test::assert_eq;
 use sui::{test_scenario::{Self as ts, Scenario}, test_utils::destroy};
@@ -108,7 +108,7 @@ fun test_auction() {
 
     assert_eq!(memez_config::exists_for_testing<AuctionKey<DefaultKey>>(&world.config), true);
 
-    world.config.remove<AuctionKey<DefaultKey>, AuctionModel>(&witness, world.scenario.ctx());
+    world.config.remove<AuctionKey<DefaultKey>, AuctionConfig>(&witness, world.scenario.ctx());
 
     assert_eq!(memez_config::exists_for_testing<AuctionKey<DefaultKey>>(&world.config), false);
 
@@ -148,7 +148,7 @@ fun test_pump() {
 
     assert_eq!(memez_config::exists_for_testing<PumpKey<DefaultKey>>(&world.config), true);
 
-    world.config.remove<PumpKey<DefaultKey>, PumpModel>(&witness, world.scenario.ctx());
+    world.config.remove<PumpKey<DefaultKey>, PumpConfig>(&witness, world.scenario.ctx());
 
     assert_eq!(memez_config::exists_for_testing<PumpKey<DefaultKey>>(&world.config), false);
 
@@ -181,7 +181,7 @@ fun test_stable() {
 
     assert_eq!(memez_config::exists_for_testing<StableKey<DefaultKey>>(&world.config), true);
 
-    world.config.remove<StableKey<DefaultKey>, StableModel>(&witness, world.scenario.ctx());
+    world.config.remove<StableKey<DefaultKey>, StableConfig>(&witness, world.scenario.ctx());
 
     assert_eq!(memez_config::exists_for_testing<StableKey<DefaultKey>>(&world.config), false);
 

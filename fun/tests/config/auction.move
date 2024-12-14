@@ -1,7 +1,7 @@
 #[test_only]
-module memez_fun::memez_auction_model_tests;
+module memez_fun::memez_auction_config_tests;
 
-use memez_fun::{memez_auction_model, memez_errors};
+use memez_fun::{memez_auction_config, memez_errors};
 use std::unit_test::assert_eq;
 use sui::test_utils::destroy;
 
@@ -22,7 +22,7 @@ const MIN_SEED_LIQUIDITY: u64 = 100;
 
 #[test]
 fun test_end_to_end() {
-    let auction = memez_auction_model::new(vector[
+    let auction = memez_auction_config::new(vector[
         THIRTY_MINUTES_MS,
         BURN_TAX,
         VIRTUAL_LIQUIDITY,
@@ -52,9 +52,9 @@ fun test_end_to_end() {
     destroy(auction);
 }
 
-#[test, expected_failure(abort_code = memez_errors::EInvalidConfig, location = memez_auction_model)]
+#[test, expected_failure(abort_code = memez_errors::EInvalidConfig, location = memez_auction_config)]
 fun test_new_invalid_config() {
-    let auction = memez_auction_model::new(vector[
+    let auction = memez_auction_config::new(vector[
         THIRTY_MINUTES_MS,
         BURN_TAX,
         VIRTUAL_LIQUIDITY,

@@ -2,11 +2,11 @@ module memez_fun::memez_config;
 
 use memez_acl::acl::AuthWitness;
 use memez_fun::{
-    memez_auction_model::{Self, AuctionModel},
+    memez_auction_config::{Self, AuctionConfig},
     memez_errors,
     memez_fees::{Self, MemezFees},
-    memez_pump_model::{Self, PumpModel},
-    memez_stable_model::{Self, StableModel}
+    memez_pump_config::{Self, PumpConfig},
+    memez_stable_config::{Self, StableConfig}
 };
 use std::type_name;
 use sui::dynamic_field as df;
@@ -55,7 +55,7 @@ public fun set_auction<T>(
     values: vector<u64>,
     _ctx: &mut TxContext,
 ) {
-    add<AuctionKey<T>, _>(self, memez_auction_model::new(values));
+    add<AuctionKey<T>, _>(self, memez_auction_config::new(values));
 }
 
 public fun set_pump<T>(
@@ -64,7 +64,7 @@ public fun set_pump<T>(
     values: vector<u64>,
     _ctx: &mut TxContext,
 ) {
-    add<PumpKey<T>, _>(self, memez_pump_model::new(values));
+    add<PumpKey<T>, _>(self, memez_pump_config::new(values));
 }
 
 public fun set_stable<T>(
@@ -73,7 +73,7 @@ public fun set_stable<T>(
     values: vector<u64>,
     _ctx: &mut TxContext,
 ) {
-    add<StableKey<T>, _>(self, memez_stable_model::new(values));
+    add<StableKey<T>, _>(self, memez_stable_config::new(values));
 }
 
 public fun remove<T, Model: drop + store>(
@@ -95,15 +95,15 @@ public(package) fun fees<T>(self: &MemezConfig): MemezFees {
 }
 
 public(package) fun get_auction<T>(self: &MemezConfig, total_supply: u64): vector<u64> {
-    self.get!<AuctionKey<T>, AuctionModel>(total_supply)
+    self.get!<AuctionKey<T>, AuctionConfig>(total_supply)
 }
 
 public(package) fun get_pump<T>(self: &MemezConfig, total_supply: u64): vector<u64> {
-    self.get!<PumpKey<T>, PumpModel>(total_supply)
+    self.get!<PumpKey<T>, PumpConfig>(total_supply)
 }
 
 public(package) fun get_stable<T>(self: &MemezConfig, total_supply: u64): vector<u64> {
-    self.get!<StableKey<T>, StableModel>(total_supply)
+    self.get!<StableKey<T>, StableConfig>(total_supply)
 }
 
 // === Private Functions ===

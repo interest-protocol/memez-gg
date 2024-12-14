@@ -1,7 +1,7 @@
 #[test_only]
 module memez_fun::memez_stable_model_tests;
 
-use memez_fun::{memez_errors, memez_stable_model};
+use memez_fun::{memez_errors, memez_stable_config};
 use std::unit_test::assert_eq;
 use sui::test_utils::destroy;
 
@@ -14,7 +14,7 @@ const MAX_TARGET_SUI_LIQUIDITY: u64 = 1_000_000_000;
 
 #[test]
 fun test_end_to_end() {
-    let auction = memez_stable_model::new(vector[
+    let auction = memez_stable_config::new(vector[
         MAX_TARGET_SUI_LIQUIDITY,
         LIQUIDITY_PROVISION,
         MEME_SALE_AMOUNT,
@@ -29,9 +29,9 @@ fun test_end_to_end() {
     destroy(auction);
 }
 
-#[test, expected_failure(abort_code = memez_errors::EInvalidConfig, location = memez_stable_model)]
+#[test, expected_failure(abort_code = memez_errors::EInvalidConfig, location = memez_stable_config)]
 fun test_new_invalid_config() {
-    let auction = memez_stable_model::new(vector[MAX_TARGET_SUI_LIQUIDITY, LIQUIDITY_PROVISION]);
+    let auction = memez_stable_config::new(vector[MAX_TARGET_SUI_LIQUIDITY, LIQUIDITY_PROVISION]);
 
     destroy(auction);
 }

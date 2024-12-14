@@ -776,6 +776,52 @@ fun test_coin_end_to_end_with_stake_holders() {
         location = memez_version,
     ),
 ]
+fun test_distribute_stake_holders_allocation_invalid_version() {
+    let mut world = start();
+
+    let mut memez_fun = set_up_pool(&mut world, false, 1_000_000_000 * POW_9);
+
+    memez_auction::distribute_stake_holders_allocation(
+        &mut memez_fun,
+        &world.clock,
+        memez_version::get_version_for_testing(2),
+        world.scenario.ctx(),
+    );
+
+    destroy(memez_fun);
+    world.end();
+}
+
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::ENotMigrated,
+        location = memez_fun,
+    ),
+]
+fun test_distribute_stake_holders_allocation_not_migrating() {
+    let mut world = start();
+
+    let mut memez_fun = set_up_pool(&mut world, false, 1_000_000_000 * POW_9);
+
+    memez_auction::distribute_stake_holders_allocation(
+        &mut memez_fun,
+        &world.clock,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    destroy(memez_fun);
+    world.end();
+}
+
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EOutdatedPackageVersion,
+        location = memez_version,
+    ),
+]
 fun new_invalid_version() {
     let mut world = start();
 

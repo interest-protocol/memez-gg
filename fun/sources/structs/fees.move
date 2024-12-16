@@ -188,7 +188,8 @@ public(package) fun allocation<T>(
     let balance_value = balance.value();
 
     Allocation {
-        balance: if (self.allocation.value == 0) balance::zero() else balance.split(bps::new(self.allocation.value).calc(balance_value)),
+        balance: if (self.allocation.value == 0) balance::zero()
+        else balance.split(bps::new(self.allocation.value).calc(balance_value)),
         vesting_period: self.vesting_period,
         distributor: memez_distributor::new(recipients, self.allocation.percentages),
     }

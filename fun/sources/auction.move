@@ -101,8 +101,8 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
 
     let allocation = fees.allocation(
         &mut meme_reserve,
-            stake_holders,
-        );
+        stake_holders,
+    );
 
     let liquidity_provision = meme_reserve.split(auction_config[4]);
 

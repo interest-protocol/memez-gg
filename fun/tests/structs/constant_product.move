@@ -205,7 +205,7 @@ fun test_pump_with_fee() {
 
     let meme_balance_value = cp.meme_balance().value();
 
-    let mut new_sui_balance = amount_in - tax_fee;
+    let new_sui_balance = amount_in - tax_fee;
 
     let amount_in = target_sui_liquidity - amount_in;
 

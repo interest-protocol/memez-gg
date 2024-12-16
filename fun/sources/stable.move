@@ -74,8 +74,8 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
     metadata_names: vector<String>,
     metadata_values: vector<String>,
     dev_payload: vector<u64>,
-    dev: address,
     stake_holders: vector<address>,
+    dev: address,
     version: CurrentVersion,
     ctx: &mut TxContext,
 ): MetadataCap {

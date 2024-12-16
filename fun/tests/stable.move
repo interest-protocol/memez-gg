@@ -1,1342 +1,1357 @@
-// #[test_only]
-// module memez_fun::memez_stable_tests;
+#[test_only]
+module memez_fun::memez_stable_tests;
 
-// use memez_acl::acl;
-// use memez_fun::{
-//     memez_config::{Self, MemezConfig, DefaultKey},
-//     memez_errors,
-//     memez_fees,
-//     memez_fixed_rate,
-//     memez_fun::{Self, MemezFun},
-//     memez_migrator_list::{Self, MemezMigratorList},
-//     memez_stable::{Self, Stable},
-//     memez_version
-// };
-// use sui::{
-//     balance,
-//     clock,
-//     coin::{Self, mint_for_testing, create_treasury_cap_for_testing, Coin},
-//     sui::SUI,
-//     test_scenario::{Self as ts, Scenario},
-//     test_utils::{assert_eq, destroy},
-//     token
-// };
+use memez_acl::acl;
+use memez_fun::{
+    memez_config::{Self, MemezConfig, DefaultKey},
+    memez_errors,
+    memez_fees,
+    memez_fixed_rate,
+    memez_fun::{Self, MemezFun},
+    memez_migrator_list::{Self, MemezMigratorList},
+    memez_stable::{Self, Stable},
+    memez_version
+};
+use sui::{
+    balance,
+    clock,
+    coin::{Self, mint_for_testing, create_treasury_cap_for_testing, Coin},
+    sui::SUI,
+    test_scenario::{Self as ts, Scenario},
+    test_utils::{assert_eq, destroy},
+    token
+};
 
-// const ADMIN: address = @0x1;
+const ADMIN: address = @0x1;
 
-// const DAY: u64 = 86_400_000;
+const STAKE_HOLDER: address = @0x2;
 
-// const POW_9: u64 = 1__000_000_000;
+const DAY: u64 = 86_400_000;
 
-// const DEV: address = @0x2;
+const POW_9: u64 = 1__000_000_000;
 
-// const MAX_BPS: u64 = 10_000;
+const DEV: address = @0x2;
 
-// const LIQUIDITY_PROVISION: u64 = 500;
+const MAX_BPS: u64 = 10_000;
 
-// const MEME_SALE_AMOUNT: u64 = 2_000;
+const LIQUIDITY_PROVISION: u64 = 500;
 
-// const MAX_TARGET_SUI_LIQUIDITY: u64 = 10_000 * POW_9;
+const MEME_SALE_AMOUNT: u64 = 2_000;
 
-// public struct World {
-//     config: MemezConfig,
-//     migrator_list: MemezMigratorList,
-//     scenario: Scenario,
-// }
+const MAX_TARGET_SUI_LIQUIDITY: u64 = 10_000 * POW_9;
 
-// public struct Meme has drop ()
+const VESTING_PERIOD: u64 = 250;
 
-// public struct MigrationWitness has drop ()
+public struct World {
+    config: MemezConfig,
+    migrator_list: MemezMigratorList,
+    scenario: Scenario,
+}
 
-// #[test]
-// fun test_new_coin() {
-//     let mut world = start();
+public struct Meme has drop ()
 
-//     let total_supply = POW_9 * POW_9;
+public struct MigrationWitness has drop ()
 
-//     let dev_allocation = POW_9 / 10;
+#[test]
+fun test_new_coin() {
+    let mut world = start();
 
-//     let target_sui_liquidity = 10_000 * POW_9;
+    let total_supply = POW_9 * POW_9;
 
-//     let mut memez_fun = set_up_pool(
-//         &mut world,
-//         false,
-//         target_sui_liquidity,
-//         vector[dev_allocation, DAY],
-//         total_supply,
-//     );
+    let dev_allocation = POW_9 / 10;
 
-//     memez_fun.assert_uses_coin();
+    let target_sui_liquidity = 10_000 * POW_9;
 
-//     let stable_config = world.config.get_stable<DefaultKey>(total_supply);
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        false,
+        target_sui_liquidity,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
 
-//     assert_eq(memez_stable::dev_allocation(&mut memez_fun), dev_allocation);
-//     assert_eq(memez_stable::liquidity_provision(&mut memez_fun), stable_config[1]);
-//     assert_eq(memez_stable::dev_vesting_period(&mut memez_fun), DAY);
+    memez_fun.assert_uses_coin();
 
-//     let fr = memez_stable::fixed_rate(&mut memez_fun);
+    let stable_config = world.config.get_stable<DefaultKey>(total_supply);
 
-//     assert_eq(fr.memez_fun(), object::id_address(&memez_fun));
-//     assert_eq(fr.sui_raise_amount(), target_sui_liquidity);
-//     assert_eq(fr.meme_sale_amount(), stable_config[2]);
-//     assert_eq(fr.sui_balance().value(), 0);
-//     assert_eq(fr.meme_balance().value(), stable_config[2]);
+    assert_eq(memez_stable::dev_allocation(&mut memez_fun), dev_allocation);
+    assert_eq(memez_stable::liquidity_provision(&mut memez_fun), stable_config[1]);
+    assert_eq(memez_stable::dev_vesting_period(&mut memez_fun), DAY);
 
-//     assert_eq(
-//         memez_stable::meme_reserve(&mut memez_fun).value(),
-//         total_supply - dev_allocation - stable_config[2] - stable_config[1],
-//     );
+    let fr = memez_stable::fixed_rate(&mut memez_fun);
 
-//     destroy(memez_fun);
-//     world.end();
-// }
+    assert_eq(fr.memez_fun(), object::id_address(&memez_fun));
+    assert_eq(fr.sui_raise_amount(), target_sui_liquidity);
+    assert_eq(fr.meme_sale_amount(), stable_config[2]);
+    assert_eq(fr.sui_balance().value(), 0);
+    assert_eq(fr.meme_balance().value(), stable_config[2]);
 
-// #[test]
-// fun test_new_token() {
-//     let mut world = start();
+    assert_eq(
+        memez_stable::meme_reserve(&mut memez_fun).value(),
+        total_supply - dev_allocation - stable_config[2] - stable_config[1],
+    );
 
-//     let total_supply = POW_9 * POW_9;
+    destroy(memez_fun);
+    world.end();
+}
 
-//     let dev_allocation = POW_9 / 10;
+#[test]
+fun test_new_token() {
+    let mut world = start();
 
-//     let target_sui_liquidity = 10_000 * POW_9;
-
-//     let mut memez_fun = set_up_pool(
-//         &mut world,
-//         true,
-//         target_sui_liquidity,
-//         vector[dev_allocation, DAY],
-//         total_supply,
-//     );
+    let total_supply = POW_9 * POW_9;
+
+    let dev_allocation = POW_9 / 10;
+
+    let target_sui_liquidity = 10_000 * POW_9;
+
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        true,
+        target_sui_liquidity,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
 
-//     memez_fun.assert_uses_token();
+    memez_fun.assert_uses_token();
 
-//     let stable_config = world.config.get_stable<DefaultKey>(total_supply);
-
-//     assert_eq(memez_stable::dev_allocation(&mut memez_fun), dev_allocation);
-//     assert_eq(memez_stable::liquidity_provision(&mut memez_fun), stable_config[1]);
-//     assert_eq(memez_stable::dev_vesting_period(&mut memez_fun), DAY);
+    let stable_config = world.config.get_stable<DefaultKey>(total_supply);
 
-//     let fr = memez_stable::fixed_rate(&mut memez_fun);
+    assert_eq(memez_stable::dev_allocation(&mut memez_fun), dev_allocation);
+    assert_eq(memez_stable::liquidity_provision(&mut memez_fun), stable_config[1]);
+    assert_eq(memez_stable::dev_vesting_period(&mut memez_fun), DAY);
 
-//     assert_eq(fr.memez_fun(), object::id_address(&memez_fun));
-//     assert_eq(fr.sui_raise_amount(), target_sui_liquidity);
-//     assert_eq(fr.meme_sale_amount(), stable_config[2]);
-//     assert_eq(fr.sui_balance().value(), 0);
-//     assert_eq(fr.meme_balance().value(), stable_config[2]);
+    let fr = memez_stable::fixed_rate(&mut memez_fun);
 
-//     assert_eq(
-//         memez_stable::meme_reserve(&mut memez_fun).value(),
-//         total_supply - dev_allocation - stable_config[2] - stable_config[1],
-//     );
+    assert_eq(fr.memez_fun(), object::id_address(&memez_fun));
+    assert_eq(fr.sui_raise_amount(), target_sui_liquidity);
+    assert_eq(fr.meme_sale_amount(), stable_config[2]);
+    assert_eq(fr.sui_balance().value(), 0);
+    assert_eq(fr.meme_balance().value(), stable_config[2]);
 
-//     destroy(memez_fun);
-//     world.end();
-// }
+    assert_eq(
+        memez_stable::meme_reserve(&mut memez_fun).value(),
+        total_supply - dev_allocation - stable_config[2] - stable_config[1],
+    );
 
-// #[test]
-// fun test_new_max_target_sui_liquidity() {
-//     let mut world = start();
+    destroy(memez_fun);
+    world.end();
+}
 
-//     let total_supply = POW_9 * POW_9;
-
-//     let dev_allocation = POW_9 / 10;
+#[test]
+fun test_new_max_target_sui_liquidity() {
+    let mut world = start();
 
-//     let mut memez_fun = set_up_pool(
-//         &mut world,
-//         false,
-//         POW_9 * POW_9,
-//         vector[dev_allocation, DAY],
-//         total_supply,
-//     );
+    let total_supply = POW_9 * POW_9;
 
-//     let stable_config = world.config.get_stable<DefaultKey>(total_supply);
+    let dev_allocation = POW_9 / 10;
 
-//     let fr = memez_stable::fixed_rate(&mut memez_fun);
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        false,
+        POW_9 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
 
-//     assert_eq(stable_config[0], fr.sui_raise_amount());
+    let stable_config = world.config.get_stable<DefaultKey>(total_supply);
 
-//     destroy(memez_fun);
-//     world.end();
-// }
+    let fr = memez_stable::fixed_rate(&mut memez_fun);
 
-// #[
-//     test,
-//     expected_failure(
-//         abort_code = memez_errors::EOutdatedPackageVersion,
-//         location = memez_version,
-//     ),
-// ]
-// fun test_new_invalid_version() {
-//     let mut world = start();
+    assert_eq(stable_config[0], fr.sui_raise_amount());
 
-//     let total_supply = POW_9 * POW_9;
-
-//     let dev_allocation = POW_9 / 10;
+    destroy(memez_fun);
+    world.end();
+}
 
-//     let metadata_cap = memez_stable::new<Meme, DefaultKey, MigrationWitness>(
-//         &world.config,
-//         &world.migrator_list,
-//         create_treasury_cap_for_testing(world.scenario.ctx()),
-//         mint_for_testing(2_000_000_000, world.scenario.ctx()),
-//         10_000 * POW_9,
-//         total_supply,
-//         false,
-//         vector[],
-//         vector[],
-//         vector[dev_allocation, DAY],
-//         DEV,
-//         memez_version::get_version_for_testing(2),
-//         world.scenario.ctx(),
-//     );
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EOutdatedPackageVersion,
+        location = memez_version,
+    ),
+]
+fun test_new_invalid_version() {
+    let mut world = start();
 
-//     destroy(metadata_cap);
-//     world.end();
-// }
+    let total_supply = POW_9 * POW_9;
 
-// #[test]
-// fun test_coin_end_to_end() {
-//     let mut world = start();
+    let dev_allocation = POW_9 / 10;
 
-//     let total_supply = POW_9 * POW_9;
+    let metadata_cap = memez_stable::new<Meme, DefaultKey, MigrationWitness>(
+        &world.config,
+        &world.migrator_list,
+        create_treasury_cap_for_testing(world.scenario.ctx()),
+        mint_for_testing(2_000_000_000, world.scenario.ctx()),
+        10_000 * POW_9,
+        total_supply,
+        false,
+        vector[],
+        vector[],
+        vector[dev_allocation, DAY],
+        vector[STAKE_HOLDER, STAKE_HOLDER],
+        DEV,
+        memez_version::get_version_for_testing(2),
+        world.scenario.ctx(),
+    );
 
-//     let dev_allocation = POW_9 / 10;
+    destroy(metadata_cap);
+    world.end();
+}
 
-//     let target_sui_liquidity = 10_000 * POW_9;
+#[test]
+fun test_coin_end_to_end() {
+    let mut world = start();
 
-//     let stable_config = world.config.get_stable<DefaultKey>(total_supply);
+    let total_supply = POW_9 * POW_9;
 
-//     let mut memez_fun = set_up_pool(
-//         &mut world,
-//         false,
-//         target_sui_liquidity,
-//         vector[dev_allocation, DAY],
-//         total_supply,
-//     );
+    let dev_allocation = POW_9 / 10;
 
-//     world.scenario.next_tx(ADMIN);
+    let target_sui_liquidity = 10_000 * POW_9;
 
-//     let creation_fee = world.scenario.take_from_address<Coin<SUI>>(ADMIN);
+    let stable_config = world.config.get_stable<DefaultKey>(total_supply);
 
-//     assert_eq(creation_fee.burn_for_testing(), 2 * POW_9);
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        false,
+        target_sui_liquidity,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
 
-//     let mut fr = memez_fixed_rate::new<Meme>(
-//         target_sui_liquidity,
-//         balance::create_for_testing(stable_config[2]),
-//         world.config.fees<DefaultKey>().swap(DEV),
-//     );
+    world.scenario.next_tx(ADMIN);
 
-//     let amounts = fr.pump_amount(1000 * POW_9);
+    let creation_fee = world.scenario.take_from_address<Coin<SUI>>(ADMIN);
 
-//     let (excess_sui_coin, meme_coin) = memez_stable::pump(
-//         &mut memez_fun,
-//         coin::mint_for_testing(1000 * POW_9, world.scenario.ctx()),
-//         amounts[0],
-//         memez_version::get_version_for_testing(1),
-//         world.scenario.ctx(),
-//     );
+    assert_eq(creation_fee.burn_for_testing(), 2 * POW_9);
 
-//     assert_eq(excess_sui_coin.burn_for_testing(), amounts[0]);
-//     assert_eq(0, amounts[0]);
-//     assert_eq(meme_coin.burn_for_testing(), amounts[1]);
+    let mut fr = memez_fixed_rate::new<Meme>(
+        target_sui_liquidity,
+        balance::create_for_testing(stable_config[2]),
+        world.config.fees<DefaultKey>().swap(vector[STAKE_HOLDER]),
+    );
 
-//     memez_fun.assert_is_bonding();
+    let amounts = fr.pump_amount(1000 * POW_9);
 
-//     let swap_fee = world.config.fees<DefaultKey>().swap(DEV).calculate(1000 * POW_9);
+    let (excess_sui_coin, meme_coin) = memez_stable::pump(
+        &mut memez_fun,
+        coin::mint_for_testing(1000 * POW_9, world.scenario.ctx()),
+        amounts[0],
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
 
-//     let (_, x, y) = fr.pump(
-//         coin::mint_for_testing(1000 * POW_9 - swap_fee, world.scenario.ctx()),
-//         0,
-//         world.scenario.ctx(),
-//     );
+    assert_eq(excess_sui_coin.burn_for_testing(), amounts[0]);
+    assert_eq(0, amounts[0]);
+    assert_eq(meme_coin.burn_for_testing(), amounts[1]);
 
-//     x.burn_for_testing();
-//     y.burn_for_testing();
+    memez_fun.assert_is_bonding();
 
-//     let dump_amounts = fr.dump_amount(amounts[1]);
+    let swap_fee = world.config.fees<DefaultKey>().swap(vector[STAKE_HOLDER]).calculate(1000 * POW_9);
 
-//     let sui_coin = memez_stable::dump(
-//         &mut memez_fun,
-//         coin::mint_for_testing(amounts[1], world.scenario.ctx()),
-//         dump_amounts[0],
-//         memez_version::get_version_for_testing(1),
-//         world.scenario.ctx(),
-//     );
+    let (_, x, y) = fr.pump(
+        coin::mint_for_testing(1000 * POW_9 - swap_fee, world.scenario.ctx()),
+        0,
+        world.scenario.ctx(),
+    );
 
-//     assert_eq(sui_coin.burn_for_testing(), dump_amounts[0]);
+    x.burn_for_testing();
+    y.burn_for_testing();
 
-//     let (excess_sui_coin, meme_coin) = memez_stable::pump(
-//         &mut memez_fun,
-//         coin::mint_for_testing(1000 * POW_9 + target_sui_liquidity, world.scenario.ctx()),
-//         amounts[0],
-//         memez_version::get_version_for_testing(1),
-//         world.scenario.ctx(),
-//     );
+    let dump_amounts = fr.dump_amount(amounts[1]);
 
-//     meme_coin.burn_for_testing();
-//     excess_sui_coin.burn_for_testing();
+    let sui_coin = memez_stable::dump(
+        &mut memez_fun,
+        coin::mint_for_testing(amounts[1], world.scenario.ctx()),
+        dump_amounts[0],
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
 
-//     memez_fun.assert_is_migrating();
+    assert_eq(sui_coin.burn_for_testing(), dump_amounts[0]);
 
-//     let migrator = memez_stable::migrate(
-//         &mut memez_fun,
-//         memez_version::get_version_for_testing(1),
-//         world.scenario.ctx(),
-//     );
+    let (excess_sui_coin, meme_coin) = memez_stable::pump(
+        &mut memez_fun,
+        coin::mint_for_testing(1000 * POW_9 + target_sui_liquidity, world.scenario.ctx()),
+        amounts[0],
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
 
-//     let (sui_balance_after, meme_balance_after) = migrator.destroy(MigrationWitness());
+    meme_coin.burn_for_testing();
+    excess_sui_coin.burn_for_testing();
 
-//     assert_eq(
-//         sui_balance_after.destroy_for_testing(),
-//         target_sui_liquidity - 200 * POW_9,
-//     );
-//     assert_eq(meme_balance_after.destroy_for_testing(), stable_config[1]);
+    memez_fun.assert_is_migrating();
 
-//     memez_fun.assert_migrated();
+    let migrator = memez_stable::migrate(
+        &mut memez_fun,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
 
-//     world.scenario.next_tx(DEV);
+    let (sui_balance_after, meme_balance_after) = migrator.destroy(MigrationWitness());
 
-//     let migration_fee = world.scenario.take_from_address<Coin<SUI>>(ADMIN);
+    assert_eq(
+        sui_balance_after.destroy_for_testing(),
+        target_sui_liquidity - 200 * POW_9,
+    );
+    assert_eq(meme_balance_after.destroy_for_testing(), stable_config[1]);
 
-//     let fees = world.config.fees<DefaultKey>();
+    memez_fun.assert_migrated();
 
-//     assert_eq(migration_fee.burn_for_testing(), fees.migration(DEV).value());
+    world.scenario.next_tx(DEV);
 
-//     destroy(fr);
-//     destroy(memez_fun);
-//     world.end();
-// }
+    let migration_fee = world.scenario.take_from_address<Coin<SUI>>(ADMIN);
 
-// #[test]
-// fun test_token_end_to_end() {
-//     let mut world = start();
+    let fees = world.config.fees<DefaultKey>();
 
-//     let total_supply = POW_9 * POW_9;
+    assert_eq(migration_fee.burn_for_testing(), fees.migration(vector[STAKE_HOLDER]).value());
 
-//     let dev_allocation = POW_9 / 10;
+    destroy(fr);
+    destroy(memez_fun);
+    world.end();
+}
 
-//     let target_sui_liquidity = 10_000 * POW_9;
+#[test]
+fun test_token_end_to_end() {
+    let mut world = start();
 
-//     let witness = acl::sign_in_for_testing();
+    let total_supply = POW_9 * POW_9;
 
-//     world
-//         .config
-//         .set_fees<DefaultKey>(
-//             &witness,
-//             vector[
-//                 vector[MAX_BPS, 2 * POW_9],
-//                 vector[MAX_BPS, 0, 0],
-//                 vector[MAX_BPS, 0, 200 * POW_9],
-//             ],
-//             vector[vector[ADMIN], vector[ADMIN], vector[ADMIN]],
-//             world.scenario.ctx(),
-//         );
+    let dev_allocation = POW_9 / 10;
 
-//     let stable_config = world.config.get_stable<DefaultKey>(total_supply);
+    let target_sui_liquidity = 10_000 * POW_9;
 
-//     let mut memez_fun = set_up_pool(
-//         &mut world,
-//         true,
-//         target_sui_liquidity,
-//         vector[dev_allocation, DAY],
-//         total_supply,
-//     );
+    let witness = acl::sign_in_for_testing();
 
-//     world.scenario.next_tx(ADMIN);
+    world
+        .config
+        .set_fees<DefaultKey>(
+            &witness,
+            vector[
+                vector[MAX_BPS, 2 * POW_9],
+                vector[MAX_BPS, 0, 0],
+                vector[MAX_BPS, 0, 200 * POW_9],
+                vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 0],
+            ],
+            vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
+            world.scenario.ctx(),
+        );
 
-//     let creation_fee = world.scenario.take_from_address<Coin<SUI>>(ADMIN);
+    let stable_config = world.config.get_stable<DefaultKey>(total_supply);
 
-//     assert_eq(creation_fee.burn_for_testing(), 2 * POW_9);
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        true,
+        target_sui_liquidity,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
 
-//     let fees = world.config.fees<DefaultKey>();
+    world.scenario.next_tx(ADMIN);
 
-//     let mut fr = memez_fixed_rate::new<Meme>(
-//         target_sui_liquidity,
-//         balance::create_for_testing(stable_config[2]),
-//         fees.swap(DEV),
-//     );
+    let creation_fee = world.scenario.take_from_address<Coin<SUI>>(ADMIN);
 
-//     let pump_amounts = fr.pump_amount(1000 * POW_9);
+    assert_eq(creation_fee.burn_for_testing(), 2 * POW_9);
 
-//     let (excess_sui_coin, meme_token) = memez_stable::pump_token(
-//         &mut memez_fun,
-//         coin::mint_for_testing(1000 * POW_9, world.scenario.ctx()),
-//         pump_amounts[0],
-//         memez_version::get_version_for_testing(1),
-//         world.scenario.ctx(),
-//     );
+    let fees = world.config.fees<DefaultKey>();
 
-//     assert_eq(excess_sui_coin.burn_for_testing(), pump_amounts[0]);
-//     assert_eq(0, pump_amounts[0]);
-//     assert_eq(meme_token.value(), pump_amounts[1]);
+    let mut fr = memez_fixed_rate::new<Meme>(
+        target_sui_liquidity,
+        balance::create_for_testing(stable_config[2]),
+        fees.swap(vector[STAKE_HOLDER]),
+    );
 
-//     meme_token.burn_for_testing();
+    let pump_amounts = fr.pump_amount(1000 * POW_9);
 
-//     memez_fun.assert_is_bonding();
+    let (excess_sui_coin, meme_token) = memez_stable::pump_token(
+        &mut memez_fun,
+        coin::mint_for_testing(1000 * POW_9, world.scenario.ctx()),
+        pump_amounts[0],
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
 
-//     let (_, x, y) = fr.pump(
-//         coin::mint_for_testing(1000 * POW_9, world.scenario.ctx()),
-//         0,
-//         world.scenario.ctx(),
-//     );
+    assert_eq(excess_sui_coin.burn_for_testing(), pump_amounts[0]);
+    assert_eq(0, pump_amounts[0]);
+    assert_eq(meme_token.value(), pump_amounts[1]);
 
-//     x.burn_for_testing();
-//     y.burn_for_testing();
+    meme_token.burn_for_testing();
 
-//     let dump_amounts = fr.dump_amount(pump_amounts[1]);
+    memez_fun.assert_is_bonding();
 
-//     let sui_coin = memez_stable::dump_token(
-//         &mut memez_fun,
-//         token::mint_for_testing(pump_amounts[1], world.scenario.ctx()),
-//         dump_amounts[0],
-//         memez_version::get_version_for_testing(1),
-//         world.scenario.ctx(),
-//     );
+    let (_, x, y) = fr.pump(
+        coin::mint_for_testing(1000 * POW_9, world.scenario.ctx()),
+        0,
+        world.scenario.ctx(),
+    );
 
-//     assert_eq(sui_coin.burn_for_testing(), dump_amounts[0]);
-//     assert_eq(1000 * POW_9, dump_amounts[0]);
+    x.burn_for_testing();
+    y.burn_for_testing();
 
-//     let (excess_sui_coin, meme_token) = memez_stable::pump_token(
-//         &mut memez_fun,
-//         coin::mint_for_testing(1000 * POW_9 + target_sui_liquidity, world.scenario.ctx()),
-//         pump_amounts[0],
-//         memez_version::get_version_for_testing(1),
-//         world.scenario.ctx(),
-//     );
+    let dump_amounts = fr.dump_amount(pump_amounts[1]);
 
-//     assert_eq(excess_sui_coin.burn_for_testing(), 1000 * POW_9);
-//     assert_eq(meme_token.value(), stable_config[2]);
+    let sui_coin = memez_stable::dump_token(
+        &mut memez_fun,
+        token::mint_for_testing(pump_amounts[1], world.scenario.ctx()),
+        dump_amounts[0],
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
 
-//     memez_fun.assert_is_migrating();
+    assert_eq(sui_coin.burn_for_testing(), dump_amounts[0]);
+    assert_eq(1000 * POW_9, dump_amounts[0]);
 
-//     let migrator = memez_stable::migrate(
-//         &mut memez_fun,
-//         memez_version::get_version_for_testing(1),
-//         world.scenario.ctx(),
-//     );
+    let (excess_sui_coin, meme_token) = memez_stable::pump_token(
+        &mut memez_fun,
+        coin::mint_for_testing(1000 * POW_9 + target_sui_liquidity, world.scenario.ctx()),
+        pump_amounts[0],
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
 
-//     let (sui_balance_after, meme_balance_after) = migrator.destroy(MigrationWitness());
+    assert_eq(excess_sui_coin.burn_for_testing(), 1000 * POW_9);
+    assert_eq(meme_token.value(), stable_config[2]);
 
-//     assert_eq(
-//         sui_balance_after.destroy_for_testing(),
-//         target_sui_liquidity - fees.migration(DEV).value(),
-//     );
-//     assert_eq(meme_balance_after.destroy_for_testing(), stable_config[1]);
+    memez_fun.assert_is_migrating();
 
-//     memez_fun.assert_migrated();
+    let migrator = memez_stable::migrate(
+        &mut memez_fun,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
 
-//     let meme_coin = memez_stable::to_coin(&mut memez_fun, meme_token, world.scenario.ctx());
+    let (sui_balance_after, meme_balance_after) = migrator.destroy(MigrationWitness());
 
-//     assert_eq(meme_coin.burn_for_testing(), stable_config[2]);
+    assert_eq(
+        sui_balance_after.destroy_for_testing(),
+        target_sui_liquidity - fees.migration(vector[STAKE_HOLDER]).value(),
+    );
+    assert_eq(meme_balance_after.destroy_for_testing(), stable_config[1]);
 
-//     let mut clock = clock::create_for_testing(world.scenario.ctx());
+    memez_fun.assert_migrated();
 
-//     world.scenario.next_tx(DEV);
+    let meme_coin = memez_stable::to_coin(&mut memez_fun, meme_token, world.scenario.ctx());
 
-//     let mut memez_vesting = memez_stable::dev_allocation_claim(
-//         &mut memez_fun,
-//         &clock,
-//         memez_version::get_version_for_testing(1),
-//         world.scenario.ctx(),
-//     );
+    assert_eq(meme_coin.burn_for_testing(), stable_config[2]);
 
-//     assert_eq(memez_vesting.balance(), dev_allocation);
-//     assert_eq(memez_vesting.duration(), DAY);
-//     assert_eq(memez_vesting.start(), 0);
+    let mut clock = clock::create_for_testing(world.scenario.ctx());
 
-//     world.scenario.next_tx(ADMIN);
+    world.scenario.next_tx(DEV);
 
-//     let migration_fee = world.scenario.take_from_address<Coin<SUI>>(ADMIN);
+    let mut memez_vesting = memez_stable::dev_allocation_claim(
+        &mut memez_fun,
+        &clock,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
 
-//     assert_eq(migration_fee.burn_for_testing(), fees.migration(DEV).value());
+    assert_eq(memez_vesting.balance(), dev_allocation);
+    assert_eq(memez_vesting.duration(), DAY);
+    assert_eq(memez_vesting.start(), 0);
 
-//     clock.increment_for_testing(DAY + 1);
+    world.scenario.next_tx(ADMIN);
 
-//     let dev_meme_coin = memez_vesting.claim(&clock, world.scenario.ctx());
+    let migration_fee = world.scenario.take_from_address<Coin<SUI>>(ADMIN);
 
-//     memez_vesting.destroy_zero();
+    assert_eq(migration_fee.burn_for_testing(), fees.migration(vector[STAKE_HOLDER]).value());
 
-//     assert_eq(dev_meme_coin.burn_for_testing(), dev_allocation);
+    clock.increment_for_testing(DAY + 1);
 
-//     destroy(clock);
-//     destroy(fr);
-//     destroy(memez_fun);
-//     world.end();
-// }
+    let dev_meme_coin = memez_vesting.claim(&clock, world.scenario.ctx());
 
-// #[test, expected_failure(abort_code = memez_errors::ENotEnoughSuiToPayFee, location = memez_fees)]
-// fun test_new_invalid_creation_fee() {
-//     let mut world = start();
+    memez_vesting.destroy_zero();
 
-//     let total_supply = POW_9 * POW_9;
+    assert_eq(dev_meme_coin.burn_for_testing(), dev_allocation);
 
-//     let dev_allocation = POW_9 / 10;
+    destroy(clock);
+    destroy(fr);
+    destroy(memez_fun);
+    world.end();
+}
 
-//     let metadata_cap = memez_stable::new<Meme, DefaultKey, MigrationWitness>(
-//         &world.config,
-//         &world.migrator_list,
-//         create_treasury_cap_for_testing(world.scenario.ctx()),
-//         mint_for_testing(2_000_000_000 - 1, world.scenario.ctx()),
-//         10_000 * POW_9,
-//         total_supply,
-//         false,
-//         vector[],
-//         vector[],
-//         vector[dev_allocation, DAY],
-//         DEV,
-//         memez_version::get_version_for_testing(1),
-//         world.scenario.ctx(),
-//     );
+#[test, expected_failure(abort_code = memez_errors::EInsufficientValue, location = memez_fees)]
+fun test_new_invalid_creation_fee() {
+    let mut world = start();
 
-//     destroy(metadata_cap);
-//     world.end();
-// }
+    let total_supply = POW_9 * POW_9;
 
-// #[
-//     test,
-//     expected_failure(
-//         abort_code = memez_errors::EOutdatedPackageVersion,
-//         location = memez_version,
-//     ),
-// ]
-// fun pump_invalid_version() {
-//     let mut world = start();
-
-//     let total_supply = POW_9 * POW_9;
-
-//     let dev_allocation = POW_9 / 10;
-
-//     let mut memez_fun = set_up_pool(
-//         &mut world,
-//         false,
-//         POW_9 * POW_9,
-//         vector[dev_allocation, DAY],
-//         total_supply,
-//     );
-
-//     let (x, y) = memez_stable::pump(
-//         &mut memez_fun,
-//         coin::mint_for_testing(1000 * POW_9, world.scenario.ctx()),
-//         0,
-//         memez_version::get_version_for_testing(2),
-//         world.scenario.ctx(),
-//     );
-
-//     x.burn_for_testing();
-//     y.burn_for_testing();
-
-//     destroy(memez_fun);
-//     world.end();
-// }
-
-// #[test, expected_failure(abort_code = memez_errors::ETokenSupported, location = memez_fun)]
-// fun pump_use_token_instead() {
-//     let mut world = start();
-
-//     let total_supply = POW_9 * POW_9;
-
-//     let dev_allocation = POW_9 / 10;
-
-//     let mut memez_fun = set_up_pool(
-//         &mut world,
-//         true,
-//         POW_9 * POW_9,
-//         vector[dev_allocation, DAY],
-//         total_supply,
-//     );
-
-//     let (x, y) = memez_stable::pump(
-//         &mut memez_fun,
-//         coin::mint_for_testing(1000 * POW_9, world.scenario.ctx()),
-//         0,
-//         memez_version::get_version_for_testing(1),
-//         world.scenario.ctx(),
-//     );
-
-//     x.burn_for_testing();
-//     y.burn_for_testing();
-
-//     destroy(memez_fun);
-//     world.end();
-// }
-
-// #[test, expected_failure(abort_code = memez_errors::ENotBonding, location = memez_fun)]
-// fun pump_is_not_bonding() {
-//     let mut world = start();
-
-//     let witness = acl::sign_in_for_testing();
-
-//     world
-//         .config
-//         .set_fees<DefaultKey>(
-//             &witness,
-//             vector[
-//                 vector[MAX_BPS, 2 * POW_9],
-//                 vector[MAX_BPS, 0, 0],
-//                 vector[MAX_BPS, 0, 200 * POW_9],
-//             ],
-//             vector[vector[ADMIN], vector[ADMIN], vector[ADMIN]],
-//             world.scenario.ctx(),
-//         );
-
-//     let total_supply = POW_9 * POW_9;
-
-//     let dev_allocation = POW_9 / 10;
-
-//     let mut memez_fun = set_up_pool(
-//         &mut world,
-//         false,
-//         10_000 * POW_9,
-//         vector[dev_allocation, DAY],
-//         total_supply,
-//     );
-
-//     let (x, y) = memez_stable::pump(
-//         &mut memez_fun,
-//         coin::mint_for_testing(10_000 * POW_9, world.scenario.ctx()),
-//         0,
-//         memez_version::get_version_for_testing(1),
-//         world.scenario.ctx(),
-//     );
-
-//     x.burn_for_testing();
-//     y.burn_for_testing();
-
-//     let (x, y) = memez_stable::pump(
-//         &mut memez_fun,
-//         coin::mint_for_testing(POW_9, world.scenario.ctx()),
-//         0,
-//         memez_version::get_version_for_testing(1),
-//         world.scenario.ctx(),
-//     );
-
-//     x.burn_for_testing();
-//     y.burn_for_testing();
-
-//     destroy(memez_fun);
-//     world.end();
-// }
-
-// #[
-//     test,
-//     expected_failure(
-//         abort_code = memez_errors::EOutdatedPackageVersion,
-//         location = memez_version,
-//     ),
-// ]
-// fun dump_invalid_version() {
-//     let mut world = start();
-
-//     let total_supply = POW_9 * POW_9;
-
-//     let dev_allocation = POW_9 / 10;
-
-//     let mut memez_fun = set_up_pool(
-//         &mut world,
-//         false,
-//         10_000 * POW_9,
-//         vector[dev_allocation, DAY],
-//         total_supply,
-//     );
-
-//     let (x, y) = memez_stable::pump(
-//         &mut memez_fun,
-//         coin::mint_for_testing(1000 * POW_9, world.scenario.ctx()),
-//         0,
-//         memez_version::get_version_for_testing(1),
-//         world.scenario.ctx(),
-//     );
-
-//     x.burn_for_testing();
-//     y.burn_for_testing();
-
-//     let sui_coin = memez_stable::dump(
-//         &mut memez_fun,
-//         coin::mint_for_testing(POW_9, world.scenario.ctx()),
-//         0,
-//         memez_version::get_version_for_testing(2),
-//         world.scenario.ctx(),
-//     );
-
-//     sui_coin.burn_for_testing();
-
-//     destroy(memez_fun);
-//     world.end();
-// }
-
-// #[test, expected_failure(abort_code = memez_errors::ETokenSupported, location = memez_fun)]
-// fun dump_use_token_instead() {
-//     let mut world = start();
-
-//     let total_supply = POW_9 * POW_9;
-
-//     let dev_allocation = POW_9 / 10;
-
-//     let mut memez_fun = set_up_pool(
-//         &mut world,
-//         true,
-//         10_000 * POW_9,
-//         vector[dev_allocation, DAY],
-//         total_supply,
-//     );
-
-//     let sui_coin = memez_stable::dump(
-//         &mut memez_fun,
-//         coin::mint_for_testing(POW_9, world.scenario.ctx()),
-//         0,
-//         memez_version::get_version_for_testing(1),
-//         world.scenario.ctx(),
-//     );
-
-//     sui_coin.burn_for_testing();
-
-//     destroy(memez_fun);
-//     world.end();
-// }
-
-// #[test, expected_failure(abort_code = memez_errors::ENotBonding, location = memez_fun)]
-// fun dump_is_not_bonding() {
-//     let mut world = start();
-
-//     let witness = acl::sign_in_for_testing();
-
-//     world
-//         .config
-//         .set_fees<DefaultKey>(
-//             &witness,
-//             vector[
-//                 vector[MAX_BPS, 2 * POW_9],
-//                 vector[MAX_BPS, 0, 0],
-//                 vector[MAX_BPS, 0, 200 * POW_9],
-//             ],
-//             vector[vector[ADMIN], vector[ADMIN], vector[ADMIN]],
-//             world.scenario.ctx(),
-//         );
-
-//     let total_supply = POW_9 * POW_9;
-
-//     let dev_allocation = POW_9 / 10;
-
-//     let mut memez_fun = set_up_pool(
-//         &mut world,
-//         false,
-//         10_000 * POW_9,
-//         vector[dev_allocation, DAY],
-//         total_supply,
-//     );
-
-//     let (x, y) = memez_stable::pump(
-//         &mut memez_fun,
-//         coin::mint_for_testing(10_000 * POW_9, world.scenario.ctx()),
-//         0,
-//         memez_version::get_version_for_testing(1),
-//         world.scenario.ctx(),
-//     );
-
-//     x.burn_for_testing();
-//     y.burn_for_testing();
-
-//     memez_stable::dump(
-//         &mut memez_fun,
-//         coin::mint_for_testing(POW_9, world.scenario.ctx()),
-//         0,
-//         memez_version::get_version_for_testing(1),
-//         world.scenario.ctx(),
-//     ).burn_for_testing();
-
-//     destroy(memez_fun);
-//     world.end();
-// }
-
-// #[
-//     test,
-//     expected_failure(
-//         abort_code = memez_errors::EOutdatedPackageVersion,
-//         location = memez_version,
-//     ),
-// ]
-// fun migrate_invalid_version() {
-//     let mut world = start();
-
-//     let total_supply = POW_9 * POW_9;
-
-//     let dev_allocation = POW_9 / 10;
-
-//     let mut memez_fun = set_up_pool(
-//         &mut world,
-//         false,
-//         10_000 * POW_9,
-//         vector[dev_allocation, DAY],
-//         total_supply,
-//     );
-
-//     let migrator = memez_stable::migrate(
-//         &mut memez_fun,
-//         memez_version::get_version_for_testing(2),
-//         world.scenario.ctx(),
-//     );
-
-//     destroy(migrator);
-
-//     destroy(memez_fun);
-//     world.end();
-// }
-
-// #[test, expected_failure(abort_code = memez_errors::ENotMigrating, location = memez_fun)]
-// fun migrate_is_not_migrating() {
-//     let mut world = start();
-
-//     let witness = acl::sign_in_for_testing();
-
-//     world
-//         .config
-//         .set_fees<DefaultKey>(
-//             &witness,
-//             vector[
-//                 vector[MAX_BPS, 2 * POW_9],
-//                 vector[MAX_BPS, 0, 0],
-//                 vector[MAX_BPS, 0, 200 * POW_9],
-//             ],
-//             vector[vector[ADMIN], vector[ADMIN], vector[ADMIN]],
-//             world.scenario.ctx(),
-//         );
-
-//     let total_supply = POW_9 * POW_9;
-
-//     let dev_allocation = POW_9 / 10;
-
-//     let mut memez_fun = set_up_pool(
-//         &mut world,
-//         false,
-//         10_000 * POW_9,
-//         vector[dev_allocation, DAY],
-//         total_supply,
-//     );
-
-//     let migrator = memez_stable::migrate(
-//         &mut memez_fun,
-//         memez_version::get_version_for_testing(1),
-//         world.scenario.ctx(),
-//     );
-
-//     destroy(migrator);
-
-//     destroy(memez_fun);
-//     world.end();
-// }
-
-// #[
-//     test,
-//     expected_failure(
-//         abort_code = memez_errors::EOutdatedPackageVersion,
-//         location = memez_version,
-//     ),
-// ]
-// fun dev_claim_invalid_version() {
-//     let mut world = start();
-
-//     let witness = acl::sign_in_for_testing();
-
-//     world
-//         .config
-//         .set_fees<DefaultKey>(
-//             &witness,
-//             vector[
-//                 vector[MAX_BPS, 2 * POW_9],
-//                 vector[MAX_BPS, 0, 0],
-//                 vector[MAX_BPS, 0, 200 * POW_9],
-//             ],
-//             vector[vector[ADMIN], vector[ADMIN], vector[ADMIN]],
-//             world.scenario.ctx(),
-//         );
-
-//     let total_supply = POW_9 * POW_9;
-
-//     let dev_allocation = POW_9 / 10;
-
-//     let mut memez_fun = set_up_pool(
-//         &mut world,
-//         false,
-//         10_000 * POW_9,
-//         vector[dev_allocation, DAY],
-//         total_supply,
-//     );
-
-//     let (x, y) = memez_stable::pump(
-//         &mut memez_fun,
-//         coin::mint_for_testing(10_000 * POW_9, world.scenario.ctx()),
-//         0,
-//         memez_version::get_version_for_testing(1),
-//         world.scenario.ctx(),
-//     );
-
-//     x.burn_for_testing();
-//     y.burn_for_testing();
-
-//     let migrator = memez_stable::migrate(
-//         &mut memez_fun,
-//         memez_version::get_version_for_testing(1),
-//         world.scenario.ctx(),
-//     );
-
-//     destroy(migrator);
-
-//     let clock = clock::create_for_testing(world.scenario.ctx());
-
-//     let memez_vesting = memez_stable::dev_allocation_claim(
-//         &mut memez_fun,
-//         &clock,
-//         memez_version::get_version_for_testing(2),
-//         world.scenario.ctx(),
-//     );
-
-//     destroy(clock);
-//     destroy(memez_vesting);
-//     destroy(memez_fun);
-//     world.end();
-// }
-
-// #[test, expected_failure(abort_code = memez_errors::ENotMigrated, location = memez_fun)]
-// fun dev_claim_has_not_migrated() {
-//     let mut world = start();
-
-//     let total_supply = POW_9 * POW_9;
-
-//     let dev_allocation = POW_9 / 10;
-
-//     let mut memez_fun = set_up_pool(
-//         &mut world,
-//         false,
-//         10_000 * POW_9,
-//         vector[dev_allocation, DAY],
-//         total_supply,
-//     );
-
-//     let (x, y) = memez_stable::pump(
-//         &mut memez_fun,
-//         coin::mint_for_testing(10_000 * POW_9, world.scenario.ctx()),
-//         0,
-//         memez_version::get_version_for_testing(1),
-//         world.scenario.ctx(),
-//     );
-
-//     x.burn_for_testing();
-//     y.burn_for_testing();
-
-//     let clock = clock::create_for_testing(world.scenario.ctx());
-
-//     let memez_vesting = memez_stable::dev_allocation_claim(
-//         &mut memez_fun,
-//         &clock,
-//         memez_version::get_version_for_testing(1),
-//         world.scenario.ctx(),
-//     );
-
-//     destroy(clock);
-//     destroy(memez_vesting);
-//     destroy(memez_fun);
-//     world.end();
-// }
-
-// #[test, expected_failure(abort_code = memez_errors::EInvalidDev, location = memez_fun)]
-// fun dev_claim_is_not_dev() {
-//     let mut world = start();
-
-//     let witness = acl::sign_in_for_testing();
-
-//     world
-//         .config
-//         .set_fees<DefaultKey>(
-//             &witness,
-//             vector[
-//                 vector[MAX_BPS, 2 * POW_9],
-//                 vector[MAX_BPS, 0, 0],
-//                 vector[MAX_BPS, 0, 200 * POW_9],
-//             ],
-//             vector[vector[ADMIN], vector[ADMIN], vector[ADMIN]],
-//             world.scenario.ctx(),
-//         );
-
-//     let total_supply = POW_9 * POW_9;
-
-//     let dev_allocation = POW_9 / 10;
-
-//     let mut memez_fun = set_up_pool(
-//         &mut world,
-//         false,
-//         10_000 * POW_9,
-//         vector[dev_allocation, DAY],
-//         total_supply,
-//     );
-
-//     let (x, y) = memez_stable::pump(
-//         &mut memez_fun,
-//         coin::mint_for_testing(10_000 * POW_9, world.scenario.ctx()),
-//         0,
-//         memez_version::get_version_for_testing(1),
-//         world.scenario.ctx(),
-//     );
-
-//     x.burn_for_testing();
-//     y.burn_for_testing();
-
-//     let migrator = memez_stable::migrate(
-//         &mut memez_fun,
-//         memez_version::get_version_for_testing(1),
-//         world.scenario.ctx(),
-//     );
-
-//     destroy(migrator);
-
-//     world.scenario.next_tx(@0x6);
-
-//     let clock = clock::create_for_testing(world.scenario.ctx());
-
-//     let memez_vesting = memez_stable::dev_allocation_claim(
-//         &mut memez_fun,
-//         &clock,
-//         memez_version::get_version_for_testing(1),
-//         world.scenario.ctx(),
-//     );
-
-//     destroy(clock);
-//     destroy(memez_vesting);
-//     destroy(memez_fun);
-//     world.end();
-// }
-
-// #[
-//     test,
-//     expected_failure(
-//         abort_code = memez_errors::EOutdatedPackageVersion,
-//         location = memez_version,
-//     ),
-// ]
-// fun pump_token_invalid_version() {
-//     let mut world = start();
-
-//     let total_supply = POW_9 * POW_9;
-
-//     let dev_allocation = POW_9 / 10;
-
-//     let mut memez_fun = set_up_pool(
-//         &mut world,
-//         true,
-//         POW_9 * POW_9,
-//         vector[dev_allocation, DAY],
-//         total_supply,
-//     );
-
-//     let (x, y) = memez_stable::pump_token(
-//         &mut memez_fun,
-//         coin::mint_for_testing(1000 * POW_9, world.scenario.ctx()),
-//         0,
-//         memez_version::get_version_for_testing(2),
-//         world.scenario.ctx(),
-//     );
-
-//     x.burn_for_testing();
-//     y.burn_for_testing();
-
-//     destroy(memez_fun);
-//     world.end();
-// }
-
-// #[test, expected_failure(abort_code = memez_errors::ETokenNotSupported, location = memez_fun)]
-// fun pump_use_coin_instead() {
-//     let mut world = start();
-
-//     let total_supply = POW_9 * POW_9;
-
-//     let dev_allocation = POW_9 / 10;
-
-//     let mut memez_fun = set_up_pool(
-//         &mut world,
-//         false,
-//         POW_9 * POW_9,
-//         vector[dev_allocation, DAY],
-//         total_supply,
-//     );
-
-//     let (x, y) = memez_stable::pump_token(
-//         &mut memez_fun,
-//         coin::mint_for_testing(1000 * POW_9, world.scenario.ctx()),
-//         0,
-//         memez_version::get_version_for_testing(1),
-//         world.scenario.ctx(),
-//     );
-
-//     x.burn_for_testing();
-//     y.burn_for_testing();
-
-//     destroy(memez_fun);
-//     world.end();
-// }
-
-// #[test, expected_failure(abort_code = memez_errors::ENotBonding, location = memez_fun)]
-// fun pump_token_is_not_bonding() {
-//     let mut world = start();
-
-//     let witness = acl::sign_in_for_testing();
-
-//     world
-//         .config
-//         .set_fees<DefaultKey>(
-//             &witness,
-//             vector[
-//                 vector[MAX_BPS, 2 * POW_9],
-//                 vector[MAX_BPS, 0, 0],
-//                 vector[MAX_BPS, 0, 200 * POW_9],
-//             ],
-//             vector[vector[ADMIN], vector[ADMIN], vector[ADMIN]],
-//             world.scenario.ctx(),
-//         );
-
-//     let total_supply = POW_9 * POW_9;
-
-//     let dev_allocation = POW_9 / 10;
-
-//     let mut memez_fun = set_up_pool(
-//         &mut world,
-//         true,
-//         1000 * POW_9,
-//         vector[dev_allocation, DAY],
-//         total_supply,
-//     );
-
-//     let (x, y) = memez_stable::pump_token(
-//         &mut memez_fun,
-//         coin::mint_for_testing(1000 * POW_9, world.scenario.ctx()),
-//         0,
-//         memez_version::get_version_for_testing(1),
-//         world.scenario.ctx(),
-//     );
-
-//     x.burn_for_testing();
-//     y.burn_for_testing();
-
-//     let (x, y) = memez_stable::pump_token(
-//         &mut memez_fun,
-//         coin::mint_for_testing(1000 * POW_9, world.scenario.ctx()),
-//         0,
-//         memez_version::get_version_for_testing(1),
-//         world.scenario.ctx(),
-//     );
-
-//     x.burn_for_testing();
-//     y.burn_for_testing();
-
-//     destroy(memez_fun);
-//     world.end();
-// }
-
-// #[
-//     test,
-//     expected_failure(
-//         abort_code = memez_errors::EOutdatedPackageVersion,
-//         location = memez_version,
-//     ),
-// ]
-// fun dump_token_invalid_version() {
-//     let mut world = start();
-
-//     let total_supply = POW_9 * POW_9;
-
-//     let dev_allocation = POW_9 / 10;
-
-//     let mut memez_fun = set_up_pool(
-//         &mut world,
-//         true,
-//         10_000 * POW_9,
-//         vector[dev_allocation, DAY],
-//         total_supply,
-//     );
-
-//     let (x, y) = memez_stable::pump_token(
-//         &mut memez_fun,
-//         coin::mint_for_testing(1000 * POW_9, world.scenario.ctx()),
-//         0,
-//         memez_version::get_version_for_testing(1),
-//         world.scenario.ctx(),
-//     );
-
-//     x.burn_for_testing();
-//     y.burn_for_testing();
-
-//     let sui_coin = memez_stable::dump_token(
-//         &mut memez_fun,
-//         token::mint_for_testing(POW_9, world.scenario.ctx()),
-//         0,
-//         memez_version::get_version_for_testing(2),
-//         world.scenario.ctx(),
-//     );
-
-//     sui_coin.burn_for_testing();
-
-//     destroy(memez_fun);
-//     world.end();
-// }
-
-// #[test, expected_failure(abort_code = memez_errors::ETokenNotSupported, location = memez_fun)]
-// fun dump_use_coin_instead() {
-//     let mut world = start();
-
-//     let total_supply = POW_9 * POW_9;
-
-//     let dev_allocation = POW_9 / 10;
-
-//     let mut memez_fun = set_up_pool(
-//         &mut world,
-//         false,
-//         10_000 * POW_9,
-//         vector[dev_allocation, DAY],
-//         total_supply,
-//     );
-
-//     let (x, y) = memez_stable::pump_token(
-//         &mut memez_fun,
-//         coin::mint_for_testing(1000 * POW_9, world.scenario.ctx()),
-//         0,
-//         memez_version::get_version_for_testing(1),
-//         world.scenario.ctx(),
-//     );
-
-//     x.burn_for_testing();
-//     y.burn_for_testing();
-
-//     let sui_coin = memez_stable::dump_token(
-//         &mut memez_fun,
-//         token::mint_for_testing(POW_9, world.scenario.ctx()),
-//         0,
-//         memez_version::get_version_for_testing(1),
-//         world.scenario.ctx(),
-//     );
-
-//     sui_coin.burn_for_testing();
-
-//     destroy(memez_fun);
-//     world.end();
-// }
-
-// #[test, expected_failure(abort_code = memez_errors::ENotBonding, location = memez_fun)]
-// fun dump_token_is_not_bonding() {
-//     let mut world = start();
-
-//     let witness = acl::sign_in_for_testing();
-
-//     world
-//         .config
-//         .set_fees<DefaultKey>(
-//             &witness,
-//             vector[
-//                 vector[MAX_BPS, 2 * POW_9],
-//                 vector[MAX_BPS, 0, 0],
-//                 vector[MAX_BPS, 0, 200 * POW_9],
-//             ],
-//             vector[vector[ADMIN], vector[ADMIN], vector[ADMIN]],
-//             world.scenario.ctx(),
-//         );
-
-//     let total_supply = POW_9 * POW_9;
-
-//     let dev_allocation = POW_9 / 10;
-
-//     let mut memez_fun = set_up_pool(
-//         &mut world,
-//         true,
-//         10_000 * POW_9,
-//         vector[dev_allocation, DAY],
-//         total_supply,
-//     );
-
-//     let (x, y) = memez_stable::pump_token(
-//         &mut memez_fun,
-//         coin::mint_for_testing(10_000 * POW_9, world.scenario.ctx()),
-//         0,
-//         memez_version::get_version_for_testing(1),
-//         world.scenario.ctx(),
-//     );
-
-//     x.burn_for_testing();
-//     y.burn_for_testing();
-
-//     let sui_coin = memez_stable::dump_token(
-//         &mut memez_fun,
-//         token::mint_for_testing(POW_9, world.scenario.ctx()),
-//         0,
-//         memez_version::get_version_for_testing(1),
-//         world.scenario.ctx(),
-//     );
-
-//     sui_coin.burn_for_testing();
-
-//     destroy(memez_fun);
-//     world.end();
-// }
-
-// fun set_up_pool(
-//     world: &mut World,
-//     is_token: bool,
-//     target_sui_liquidity: u64,
-//     dev_payload: vector<u64>,
-//     total_supply: u64,
-// ): MemezFun<Stable, Meme> {
-//     let ctx = world.scenario.ctx();
-
-//     let metadata_cap = memez_stable::new<Meme, DefaultKey, MigrationWitness>(
-//         &world.config,
-//         &world.migrator_list,
-//         create_treasury_cap_for_testing(ctx),
-//         mint_for_testing(2_000_000_000, ctx),
-//         target_sui_liquidity,
-//         total_supply,
-//         is_token,
-//         vector[],
-//         vector[],
-//         dev_payload,
-//         DEV,
-//         memez_version::get_version_for_testing(1),
-//         ctx,
-//     );
-
-//     destroy(metadata_cap);
-
-//     world.scenario.next_tx(ADMIN);
-
-//     world.scenario.take_shared<MemezFun<Stable, Meme>>()
-// }
-
-// fun start(): World {
-//     let mut scenario = ts::begin(ADMIN);
-
-//     memez_config::init_for_testing(scenario.ctx());
-//     memez_migrator_list::init_for_testing(scenario.ctx());
-
-//     scenario.next_tx(ADMIN);
-
-//     let mut config = scenario.take_shared<MemezConfig>();
-//     let mut migrator_list = scenario.take_shared<MemezMigratorList>();
-
-//     let witness = acl::sign_in_for_testing();
-
-//     migrator_list.add<MigrationWitness>(&witness);
-
-//     config.set_fees<DefaultKey>(
-//         &witness,
-//         vector[vector[MAX_BPS, 2 * POW_9], vector[MAX_BPS, 0, 30], vector[MAX_BPS, 0, 200 * POW_9]],
-//         vector[vector[ADMIN], vector[ADMIN], vector[ADMIN]],
-//         scenario.ctx(),
-//     );
-
-//     config.set_stable<DefaultKey>(
-//         &witness,
-//         vector[MAX_TARGET_SUI_LIQUIDITY, LIQUIDITY_PROVISION, MEME_SALE_AMOUNT],
-//         scenario.ctx(),
-//     );
-
-//     World { config, migrator_list, scenario }
-// }
-
-// fun end(world: World) {
-//     destroy(world);
-// }
+    let dev_allocation = POW_9 / 10;
+
+    let metadata_cap = memez_stable::new<Meme, DefaultKey, MigrationWitness>(
+        &world.config,
+        &world.migrator_list,
+        create_treasury_cap_for_testing(world.scenario.ctx()),
+        mint_for_testing(2_000_000_000 - 1, world.scenario.ctx()),
+        10_000 * POW_9,
+        total_supply,
+        false,
+        vector[],
+        vector[],
+        vector[dev_allocation, DAY],
+        vector[STAKE_HOLDER, STAKE_HOLDER],
+        DEV,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    destroy(metadata_cap);
+    world.end();
+}
+
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EOutdatedPackageVersion,
+        location = memez_version,
+    ),
+]
+fun pump_invalid_version() {
+    let mut world = start();
+
+    let total_supply = POW_9 * POW_9;
+
+    let dev_allocation = POW_9 / 10;
+
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        false,
+        POW_9 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
+
+    let (x, y) = memez_stable::pump(
+        &mut memez_fun,
+        coin::mint_for_testing(1000 * POW_9, world.scenario.ctx()),
+        0,
+        memez_version::get_version_for_testing(2),
+        world.scenario.ctx(),
+    );
+
+    x.burn_for_testing();
+    y.burn_for_testing();
+
+    destroy(memez_fun);
+    world.end();
+}
+
+#[test, expected_failure(abort_code = memez_errors::ETokenSupported, location = memez_fun)]
+fun pump_use_token_instead() {
+    let mut world = start();
+
+    let total_supply = POW_9 * POW_9;
+
+    let dev_allocation = POW_9 / 10;
+
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        true,
+        POW_9 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
+
+    let (x, y) = memez_stable::pump(
+        &mut memez_fun,
+        coin::mint_for_testing(1000 * POW_9, world.scenario.ctx()),
+        0,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    x.burn_for_testing();
+    y.burn_for_testing();
+
+    destroy(memez_fun);
+    world.end();
+}
+
+#[test, expected_failure(abort_code = memez_errors::ENotBonding, location = memez_fun)]
+fun pump_is_not_bonding() {
+    let mut world = start();
+
+    let witness = acl::sign_in_for_testing();
+
+    world
+        .config
+        .set_fees<DefaultKey>(
+            &witness,
+            vector[
+                vector[MAX_BPS, 2 * POW_9],
+                vector[MAX_BPS, 0, 0],
+                vector[MAX_BPS, 0, 200 * POW_9],
+                vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 500],
+            ],
+            vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
+            world.scenario.ctx(),
+        );
+
+    let total_supply = POW_9 * POW_9;
+
+    let dev_allocation = POW_9 / 10;
+
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        false,
+        10_000 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
+
+    let (x, y) = memez_stable::pump(
+        &mut memez_fun,
+        coin::mint_for_testing(10_000 * POW_9, world.scenario.ctx()),
+        0,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    x.burn_for_testing();
+    y.burn_for_testing();
+
+    let (x, y) = memez_stable::pump(
+        &mut memez_fun,
+        coin::mint_for_testing(POW_9, world.scenario.ctx()),
+        0,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    x.burn_for_testing();
+    y.burn_for_testing();
+
+    destroy(memez_fun);
+    world.end();
+}
+
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EOutdatedPackageVersion,
+        location = memez_version,
+    ),
+]
+fun dump_invalid_version() {
+    let mut world = start();
+
+    let total_supply = POW_9 * POW_9;
+
+    let dev_allocation = POW_9 / 10;
+
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        false,
+        10_000 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
+
+    let (x, y) = memez_stable::pump(
+        &mut memez_fun,
+        coin::mint_for_testing(1000 * POW_9, world.scenario.ctx()),
+        0,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    x.burn_for_testing();
+    y.burn_for_testing();
+
+    let sui_coin = memez_stable::dump(
+        &mut memez_fun,
+        coin::mint_for_testing(POW_9, world.scenario.ctx()),
+        0,
+        memez_version::get_version_for_testing(2),
+        world.scenario.ctx(),
+    );
+
+    sui_coin.burn_for_testing();
+
+    destroy(memez_fun);
+    world.end();
+}
+
+#[test, expected_failure(abort_code = memez_errors::ETokenSupported, location = memez_fun)]
+fun dump_use_token_instead() {
+    let mut world = start();
+
+    let total_supply = POW_9 * POW_9;
+
+    let dev_allocation = POW_9 / 10;
+
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        true,
+        10_000 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
+
+    let sui_coin = memez_stable::dump(
+        &mut memez_fun,
+        coin::mint_for_testing(POW_9, world.scenario.ctx()),
+        0,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    sui_coin.burn_for_testing();
+
+    destroy(memez_fun);
+    world.end();
+}
+
+#[test, expected_failure(abort_code = memez_errors::ENotBonding, location = memez_fun)]
+fun dump_is_not_bonding() {
+    let mut world = start();
+
+    let witness = acl::sign_in_for_testing();
+
+    world
+        .config
+        .set_fees<DefaultKey>(
+            &witness,
+            vector[
+                vector[MAX_BPS, 2 * POW_9],
+                vector[MAX_BPS, 0, 0],
+                vector[MAX_BPS, 0, 200 * POW_9],
+                vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 500],
+            ],
+            vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
+            world.scenario.ctx(),
+        );
+
+    let total_supply = POW_9 * POW_9;
+
+    let dev_allocation = POW_9 / 10;
+
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        false,
+        10_000 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
+
+    let (x, y) = memez_stable::pump(
+        &mut memez_fun,
+        coin::mint_for_testing(10_000 * POW_9, world.scenario.ctx()),
+        0,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    x.burn_for_testing();
+    y.burn_for_testing();
+
+    memez_stable::dump(
+        &mut memez_fun,
+        coin::mint_for_testing(POW_9, world.scenario.ctx()),
+        0,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    ).burn_for_testing();
+
+    destroy(memez_fun);
+    world.end();
+}
+
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EOutdatedPackageVersion,
+        location = memez_version,
+    ),
+]
+fun migrate_invalid_version() {
+    let mut world = start();
+
+    let total_supply = POW_9 * POW_9;
+
+    let dev_allocation = POW_9 / 10;
+
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        false,
+        10_000 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
+
+    let migrator = memez_stable::migrate(
+        &mut memez_fun,
+        memez_version::get_version_for_testing(2),
+        world.scenario.ctx(),
+    );
+
+    destroy(migrator);
+
+    destroy(memez_fun);
+    world.end();
+}
+
+#[test, expected_failure(abort_code = memez_errors::ENotMigrating, location = memez_fun)]
+fun migrate_is_not_migrating() {
+    let mut world = start();
+
+    let witness = acl::sign_in_for_testing();
+
+    world
+        .config
+        .set_fees<DefaultKey>(
+            &witness,
+            vector[
+                vector[MAX_BPS, 2 * POW_9],
+                vector[MAX_BPS, 0, 0],
+                vector[MAX_BPS, 0, 200 * POW_9],
+                vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 500],
+            ],
+            vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
+            world.scenario.ctx(),
+        );
+
+    let total_supply = POW_9 * POW_9;
+
+    let dev_allocation = POW_9 / 10;
+
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        false,
+        10_000 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
+
+    let migrator = memez_stable::migrate(
+        &mut memez_fun,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    destroy(migrator);
+
+    destroy(memez_fun);
+    world.end();
+}
+
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EOutdatedPackageVersion,
+        location = memez_version,
+    ),
+]
+fun dev_claim_invalid_version() {
+    let mut world = start();
+
+    let witness = acl::sign_in_for_testing();
+
+    world
+        .config
+        .set_fees<DefaultKey>(
+            &witness,
+            vector[
+                vector[MAX_BPS, 2 * POW_9],
+                vector[MAX_BPS, 0, 0],
+                vector[MAX_BPS, 0, 200 * POW_9],
+                vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 500],
+            ],
+            vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
+            world.scenario.ctx(),
+        );
+
+    let total_supply = POW_9 * POW_9;
+
+    let dev_allocation = POW_9 / 10;
+
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        false,
+        10_000 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
+
+    let (x, y) = memez_stable::pump(
+        &mut memez_fun,
+        coin::mint_for_testing(10_000 * POW_9, world.scenario.ctx()),
+        0,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    x.burn_for_testing();
+    y.burn_for_testing();
+
+    let migrator = memez_stable::migrate(
+        &mut memez_fun,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    destroy(migrator);
+
+    let clock = clock::create_for_testing(world.scenario.ctx());
+
+    let memez_vesting = memez_stable::dev_allocation_claim(
+        &mut memez_fun,
+        &clock,
+        memez_version::get_version_for_testing(2),
+        world.scenario.ctx(),
+    );
+
+    destroy(clock);
+    destroy(memez_vesting);
+    destroy(memez_fun);
+    world.end();
+}
+
+#[test, expected_failure(abort_code = memez_errors::ENotMigrated, location = memez_fun)]
+fun dev_claim_has_not_migrated() {
+    let mut world = start();
+
+    let total_supply = POW_9 * POW_9;
+
+    let dev_allocation = POW_9 / 10;
+
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        false,
+        10_000 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
+
+    let (x, y) = memez_stable::pump(
+        &mut memez_fun,
+        coin::mint_for_testing(10_000 * POW_9, world.scenario.ctx()),
+        0,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    x.burn_for_testing();
+    y.burn_for_testing();
+
+    let clock = clock::create_for_testing(world.scenario.ctx());
+
+    let memez_vesting = memez_stable::dev_allocation_claim(
+        &mut memez_fun,
+        &clock,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    destroy(clock);
+    destroy(memez_vesting);
+    destroy(memez_fun);
+    world.end();
+}
+
+#[test, expected_failure(abort_code = memez_errors::EInvalidDev, location = memez_fun)]
+fun dev_claim_is_not_dev() {
+    let mut world = start();
+
+    let witness = acl::sign_in_for_testing();
+
+    world
+        .config
+        .set_fees<DefaultKey>(
+            &witness,
+            vector[
+                vector[MAX_BPS, 2 * POW_9],
+                vector[MAX_BPS, 0, 0],
+                vector[MAX_BPS, 0, 200 * POW_9],
+                vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 500],
+            ],
+            vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
+            world.scenario.ctx(),
+        );
+
+    let total_supply = POW_9 * POW_9;
+
+    let dev_allocation = POW_9 / 10;
+
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        false,
+        10_000 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
+
+    let (x, y) = memez_stable::pump(
+        &mut memez_fun,
+        coin::mint_for_testing(10_000 * POW_9, world.scenario.ctx()),
+        0,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    x.burn_for_testing();
+    y.burn_for_testing();
+
+    let migrator = memez_stable::migrate(
+        &mut memez_fun,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    destroy(migrator);
+
+    world.scenario.next_tx(@0x6);
+
+    let clock = clock::create_for_testing(world.scenario.ctx());
+
+    let memez_vesting = memez_stable::dev_allocation_claim(
+        &mut memez_fun,
+        &clock,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    destroy(clock);
+    destroy(memez_vesting);
+    destroy(memez_fun);
+    world.end();
+}
+
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EOutdatedPackageVersion,
+        location = memez_version,
+    ),
+]
+fun pump_token_invalid_version() {
+    let mut world = start();
+
+    let total_supply = POW_9 * POW_9;
+
+    let dev_allocation = POW_9 / 10;
+
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        true,
+        POW_9 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
+
+    let (x, y) = memez_stable::pump_token(
+        &mut memez_fun,
+        coin::mint_for_testing(1000 * POW_9, world.scenario.ctx()),
+        0,
+        memez_version::get_version_for_testing(2),
+        world.scenario.ctx(),
+    );
+
+    x.burn_for_testing();
+    y.burn_for_testing();
+
+    destroy(memez_fun);
+    world.end();
+}
+
+#[test, expected_failure(abort_code = memez_errors::ETokenNotSupported, location = memez_fun)]
+fun pump_use_coin_instead() {
+    let mut world = start();
+
+    let total_supply = POW_9 * POW_9;
+
+    let dev_allocation = POW_9 / 10;
+
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        false,
+        POW_9 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
+
+    let (x, y) = memez_stable::pump_token(
+        &mut memez_fun,
+        coin::mint_for_testing(1000 * POW_9, world.scenario.ctx()),
+        0,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    x.burn_for_testing();
+    y.burn_for_testing();
+
+    destroy(memez_fun);
+    world.end();
+}
+
+#[test, expected_failure(abort_code = memez_errors::ENotBonding, location = memez_fun)]
+fun pump_token_is_not_bonding() {
+    let mut world = start();
+
+    let witness = acl::sign_in_for_testing();
+
+    world
+        .config
+        .set_fees<DefaultKey>(
+            &witness,
+            vector[
+                vector[MAX_BPS, 2 * POW_9],
+                vector[MAX_BPS, 0, 0],
+                vector[MAX_BPS, 0, 200 * POW_9],
+                vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 500],
+            ],
+            vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
+            world.scenario.ctx(),
+        );
+
+    let total_supply = POW_9 * POW_9;
+
+    let dev_allocation = POW_9 / 10;
+
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        true,
+        1000 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
+
+    let (x, y) = memez_stable::pump_token(
+        &mut memez_fun,
+        coin::mint_for_testing(1000 * POW_9, world.scenario.ctx()),
+        0,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    x.burn_for_testing();
+    y.burn_for_testing();
+
+    let (x, y) = memez_stable::pump_token(
+        &mut memez_fun,
+        coin::mint_for_testing(1000 * POW_9, world.scenario.ctx()),
+        0,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    x.burn_for_testing();
+    y.burn_for_testing();
+
+    destroy(memez_fun);
+    world.end();
+}
+
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EOutdatedPackageVersion,
+        location = memez_version,
+    ),
+]
+fun dump_token_invalid_version() {
+    let mut world = start();
+
+    let total_supply = POW_9 * POW_9;
+
+    let dev_allocation = POW_9 / 10;
+
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        true,
+        10_000 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
+
+    let (x, y) = memez_stable::pump_token(
+        &mut memez_fun,
+        coin::mint_for_testing(1000 * POW_9, world.scenario.ctx()),
+        0,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    x.burn_for_testing();
+    y.burn_for_testing();
+
+    let sui_coin = memez_stable::dump_token(
+        &mut memez_fun,
+        token::mint_for_testing(POW_9, world.scenario.ctx()),
+        0,
+        memez_version::get_version_for_testing(2),
+        world.scenario.ctx(),
+    );
+
+    sui_coin.burn_for_testing();
+
+    destroy(memez_fun);
+    world.end();
+}
+
+#[test, expected_failure(abort_code = memez_errors::ETokenNotSupported, location = memez_fun)]
+fun dump_use_coin_instead() {
+    let mut world = start();
+
+    let total_supply = POW_9 * POW_9;
+
+    let dev_allocation = POW_9 / 10;
+
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        false,
+        10_000 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
+
+    let (x, y) = memez_stable::pump_token(
+        &mut memez_fun,
+        coin::mint_for_testing(1000 * POW_9, world.scenario.ctx()),
+        0,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    x.burn_for_testing();
+    y.burn_for_testing();
+
+    let sui_coin = memez_stable::dump_token(
+        &mut memez_fun,
+        token::mint_for_testing(POW_9, world.scenario.ctx()),
+        0,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    sui_coin.burn_for_testing();
+
+    destroy(memez_fun);
+    world.end();
+}
+
+#[test, expected_failure(abort_code = memez_errors::ENotBonding, location = memez_fun)]
+fun dump_token_is_not_bonding() {
+    let mut world = start();
+
+    let witness = acl::sign_in_for_testing();
+
+    world
+        .config
+        .set_fees<DefaultKey>(
+            &witness,
+            vector[
+                vector[MAX_BPS, 2 * POW_9],
+                vector[MAX_BPS, 0, 0],
+                vector[MAX_BPS, 0, 200 * POW_9],
+                vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 500],
+            ],
+            vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
+            world.scenario.ctx(),
+        );
+
+    let total_supply = POW_9 * POW_9;
+
+    let dev_allocation = POW_9 / 10;
+
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        true,
+        10_000 * POW_9,
+        vector[dev_allocation, DAY],
+        total_supply,
+    );
+
+    let (x, y) = memez_stable::pump_token(
+        &mut memez_fun,
+        coin::mint_for_testing(10_000 * POW_9, world.scenario.ctx()),
+        0,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    x.burn_for_testing();
+    y.burn_for_testing();
+
+    let sui_coin = memez_stable::dump_token(
+        &mut memez_fun,
+        token::mint_for_testing(POW_9, world.scenario.ctx()),
+        0,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    sui_coin.burn_for_testing();
+
+    destroy(memez_fun);
+    world.end();
+}
+
+fun set_up_pool(
+    world: &mut World,
+    is_token: bool,
+    target_sui_liquidity: u64,
+    dev_payload: vector<u64>,
+    total_supply: u64,
+): MemezFun<Stable, Meme> {
+    let ctx = world.scenario.ctx();
+
+    let metadata_cap = memez_stable::new<Meme, DefaultKey, MigrationWitness>(
+        &world.config,
+        &world.migrator_list,
+        create_treasury_cap_for_testing(ctx),
+        mint_for_testing(2_000_000_000, ctx),
+        target_sui_liquidity,
+        total_supply,
+        is_token,
+        vector[],
+        vector[],
+        dev_payload,
+        vector[STAKE_HOLDER],
+        DEV,
+        memez_version::get_version_for_testing(1),
+        ctx,
+    );
+
+    destroy(metadata_cap);
+
+    world.scenario.next_tx(ADMIN);
+
+    world.scenario.take_shared<MemezFun<Stable, Meme>>()
+}
+
+fun start(): World {
+    let mut scenario = ts::begin(ADMIN);
+
+    memez_config::init_for_testing(scenario.ctx());
+    memez_migrator_list::init_for_testing(scenario.ctx());
+
+    scenario.next_tx(ADMIN);
+
+    let mut config = scenario.take_shared<MemezConfig>();
+    let mut migrator_list = scenario.take_shared<MemezMigratorList>();
+
+    let witness = acl::sign_in_for_testing();
+
+    migrator_list.add<MigrationWitness>(&witness);
+
+    config.set_fees<DefaultKey>(
+        &witness,
+        vector[vector[MAX_BPS, 2 * POW_9], vector[MAX_BPS, 0, 30], vector[MAX_BPS, 0, 200 * POW_9], vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 0]],
+        vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
+        scenario.ctx(),
+    );
+
+    config.set_stable<DefaultKey>(
+        &witness,
+        vector[MAX_TARGET_SUI_LIQUIDITY, LIQUIDITY_PROVISION, MEME_SALE_AMOUNT],
+        scenario.ctx(),
+    );
+
+    World { config, migrator_list, scenario }
+}
+
+fun end(world: World) {
+    destroy(world);
+}

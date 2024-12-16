@@ -74,7 +74,7 @@ macro fun distribute_internal<$T>(
 
     self.recipients.do_ref!(|beneficiary| {
         let current_value = coin_to_send.value();
-        let value_to_transfer = beneficiary.bps.calc(payment_value).min(current_value);
+        let value_to_transfer = beneficiary.bps.calc_up(payment_value).min(current_value);
 
         if (value_to_transfer == 0) return;
 

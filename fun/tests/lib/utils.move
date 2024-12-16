@@ -115,7 +115,7 @@ fun set_up_treasury() {
 
     assert_eq!(object::id(&meme_treasury).to_address(), meme_treasury_address);
 
-    assert_eq!(metadata_cap.treasury(), meme_treasury_address);
+    assert_eq!(metadata_cap.ipx_treasury(), meme_treasury_address);
     assert_eq!(meme_balance.value(), TOTAL_MEME_SUPPLY);
     assert_eq!(meme_treasury.total_supply<SUI>(), TOTAL_MEME_SUPPLY);
     assert_eq!(meme_treasury.can_burn(), true);

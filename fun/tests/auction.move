@@ -14,7 +14,8 @@ use memez_fun::{
     memez_fees,
     memez_fun::{Self, MemezFun},
     memez_migrator_list::{Self, MemezMigratorList},
-    memez_version
+    memez_version,
+    memez_test_helpers::add_fee
 };
 use sui::{
     clock::{Self, Clock},
@@ -312,7 +313,7 @@ fun test_coin_end_to_end() {
         &mut memez_fun,
         &world.clock,
         mint_for_testing(
-            remaining_amount_to_migrate * 10_000 / (10_000 - 30),
+            add_fee(remaining_amount_to_migrate, 30),
             world.scenario.ctx(),
         ),
         expected_meme_amount_out,
@@ -479,7 +480,7 @@ fun test_token_end_to_end() {
         &mut memez_fun,
         &world.clock,
         mint_for_testing(
-            remaining_amount_to_migrate * 10_000 / (10_000 - 30),
+            add_fee(remaining_amount_to_migrate, 30),
             world.scenario.ctx(),
         ),
         expected_meme_amount_out,
@@ -703,7 +704,7 @@ fun test_coin_end_to_end_with_stake_holders() {
         &mut memez_fun,
         &world.clock,
         mint_for_testing(
-            remaining_amount_to_migrate * 10_000 / (10_000 - 30),
+            add_fee(remaining_amount_to_migrate, 30),
             world.scenario.ctx(),
         ),
         expected_meme_amount_out,
@@ -922,7 +923,7 @@ fun pump_is_not_bonding() {
     memez_auction::pump(
         &mut memez_fun,
         &world.clock,
-        mint_for_testing(10_000 * POW_9 * 10_000 / (10_000 - 30), world.scenario.ctx()),
+        mint_for_testing(add_fee(10_000 * POW_9, 30), world.scenario.ctx()),
         0,
         memez_version::get_version_for_testing(1),
         world.scenario.ctx(),
@@ -1004,7 +1005,7 @@ fun dump_is_not_bonding() {
     memez_auction::pump(
         &mut memez_fun,
         &world.clock,
-        mint_for_testing(10_000 * POW_9 * 10_000 / (10_000 - 30), world.scenario.ctx()),
+        mint_for_testing(add_fee(10_000 * POW_9, 30), world.scenario.ctx()),
         0,
         memez_version::get_version_for_testing(1),
         world.scenario.ctx(),
@@ -1118,7 +1119,7 @@ fun pump_token_is_not_bonding() {
     memez_auction::pump_token(
         &mut memez_fun,
         &world.clock,
-        mint_for_testing(10_000 * POW_9 * 10_000 / (10_000 - 30), world.scenario.ctx()),
+        mint_for_testing(add_fee(10_000 * POW_9, 30), world.scenario.ctx()),
         0,
         memez_version::get_version_for_testing(1),
         world.scenario.ctx(),
@@ -1200,7 +1201,7 @@ fun dump_token_is_not_bonding() {
     memez_auction::pump_token(
         &mut memez_fun,
         &world.clock,
-        mint_for_testing(10_000 * POW_9 * 10_000 / (10_000 - 30), world.scenario.ctx()),
+        mint_for_testing(add_fee(10_000 * POW_9, 30), world.scenario.ctx()),
         0,
         memez_version::get_version_for_testing(1),
         world.scenario.ctx(),

@@ -99,7 +99,7 @@ public(package) fun dump<Meme>(
     );
 
     let dynamic_burn_tax = self.burner.calculate(sui_virtual_liquidity - pre_tax_sui_value_out);
-    let meme_burn_fee_value = dynamic_burn_tax.calc(meme_coin_value);
+    let meme_burn_fee_value = dynamic_burn_tax.calc_up(meme_coin_value);
 
     if (dynamic_burn_tax.value() != 0) treasury_cap.burn(meme_coin.split(meme_burn_fee_value, ctx));
 
@@ -182,7 +182,7 @@ public(package) fun dump_amount<Meme>(
         ]
     };
 
-    let meme_burn_fee_value = dynamic_burn_tax.calc(amount_in_minus_swap_fee);
+    let meme_burn_fee_value = dynamic_burn_tax.calc_up(amount_in_minus_swap_fee);
 
     let post_tax_sui_value_out = get_amount_out(
         amount_in_minus_swap_fee - meme_burn_fee_value,

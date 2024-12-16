@@ -96,7 +96,7 @@ public(package) fun new(
 public(package) fun calculate(fee: Fee, amount_in: u64): u64 {
     match (fee) {
         Fee::Value(value, _) => value,
-        Fee::Percentage(bps, _) => bps.calc(amount_in),
+        Fee::Percentage(bps, _) => bps.calc_up(amount_in),
     }
 }
 
@@ -118,7 +118,7 @@ public(package) fun take<T>(fee: Fee, asset: &mut Coin<T>, ctx: &mut TxContext):
             if (bps.value() == 0) return 0;
 
             let asset_value = asset.value();
-            let payment_value = bps.calc(asset_value);
+            let payment_value = bps.calc_up(asset_value);
 
             assert!(asset_value >= payment_value, memez_errors::insufficient_value());
 

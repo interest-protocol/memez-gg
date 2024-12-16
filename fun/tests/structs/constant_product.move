@@ -199,13 +199,13 @@ fun test_pump_with_fee() {
     assert_eq(coin_meme_out.value(), amounts[0]);
     assert_eq(amounts[1], swap_fee.calculate(amount_in));
     assert_eq(coin_meme_out.burn_for_testing(), amount_out);
-    assert_eq(cp.sui_balance().value(), amount_in);
+    assert_eq(cp.sui_balance().value(), amount_in - tax_fee);
     assert_eq(cp.virtual_liquidity(), virtual_liquidity);
     assert_eq(cp.meme_balance().value(), meme_balance_value - amount_out);
 
     let meme_balance_value = cp.meme_balance().value();
 
-    let new_sui_balance = amount_in;
+    let mut new_sui_balance = amount_in - tax_fee;
 
     let amount_in = target_sui_liquidity - amount_in;
 
@@ -407,7 +407,7 @@ fun test_dump_with_fee() {
         cp.sui_balance().value() + virtual_liquidity - pre_tax_amount_out,
     );
 
-    let meme_burn_fee_value = fee_rate.calc(meme_coin_out_value - swap_fee_value);
+    let meme_burn_fee_value = fee_rate.calc_up(meme_coin_out_value - swap_fee_value);
 
     let amount_out = get_amount_out(
         meme_coin_out_value - swap_fee_value - meme_burn_fee_value,
@@ -519,7 +519,7 @@ fun test_dump_amount() {
 
     let dynamic_burn_tax = burner.calculate(virtual_liquidity - amount_out);
 
-    let meme_burn_fee_value = dynamic_burn_tax.calc(amount_in - swap_fee_amount);
+    let meme_burn_fee_value = dynamic_burn_tax.calc_up(amount_in - swap_fee_amount);
 
     let amount_out = get_amount_out(
         amount_in - swap_fee_amount - meme_burn_fee_value,
@@ -545,7 +545,7 @@ fun test_dump_amount() {
 
     let dynamic_burn_tax = burner.calculate(virtual_liquidity + 600 - amount_out);
 
-    let meme_burn_fee_value = dynamic_burn_tax.calc(amount_in - swap_fee_amount);
+    let meme_burn_fee_value = dynamic_burn_tax.calc_up(amount_in - swap_fee_amount);
 
     let amount_out = get_amount_out(
         amount_in - swap_fee_amount - meme_burn_fee_value,

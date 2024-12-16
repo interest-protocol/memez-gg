@@ -2,6 +2,7 @@
 module memez_fun::memez_pump_tests;
 
 use interest_bps::bps;
+use memez_vesting::memez_vesting::MemezVesting;
 use constant_product::constant_product::get_amount_out;
 use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
 use memez_acl::acl;
@@ -43,6 +44,8 @@ const PROVISION_LIQUIDITY: u64 = 500;
 const DEV: address = @0x2;
 
 const STAKE_HOLDER: address = @0x3;
+
+const VESTING_PERIOD: u64 = 100;
 
 public struct World {
     config: MemezConfig,
@@ -1198,6 +1201,158 @@ fun dump_token_is_not_bonding() {
 
     destroy(memez_fun);
     destroy(treasury);
+
+    world.end();
+}
+
+#[test]
+fun test_distribute_stake_holders_allocation() {
+    let mut world = start(); 
+
+    let witness = acl::sign_in_for_testing();
+
+    world.config
+        .set_fees<DefaultKey>(
+            &witness,
+            vector[vector[MAX_BPS, 2 * POW_9], vector[MAX_BPS, 0, 30], vector[MAX_BPS, 0, 200 * POW_9], vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 500]],
+            vector[vector[@0x0], vector[@0x0], vector[@0x0], vector[ADMIN]],
+            world.scenario.ctx(),
+        );
+    
+    let first_purchase = mint_for_testing(0, world.scenario.ctx());
+
+    let total_supply = 1_000_000_000_000_000_000;
+
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        first_purchase,
+        false,
+        total_supply,
+    );
+
+    memez_pump::pump(
+        &mut memez_fun,
+        mint_for_testing(add_fee(TARGET_LIQUIDITY, 30), world.scenario.ctx()),
+        0,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    ).burn_for_testing();
+
+    let migrator = memez_pump::migrate(
+        &mut memez_fun,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    let (sui_balance, meme_balance) = migrator.destroy(MigrationWitness());
+
+    destroy(sui_balance);
+    destroy(meme_balance);
+
+    world.scenario.next_tx(ADMIN); 
+
+    let mut clock = clock::create_for_testing(world.scenario.ctx());
+
+    clock.increment_for_testing(VESTING_PERIOD);
+
+    memez_pump::distribute_stake_holders_allocation(
+        &mut memez_fun,
+        &clock,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    world.scenario.next_tx(ADMIN); 
+
+    let admin_vesting = world.scenario.take_from_address<MemezVesting<Meme>>(ADMIN);
+
+    let stake_holder_vesting = world.scenario.take_from_address<MemezVesting<Meme>>(STAKE_HOLDER);
+
+    let migration_fee = bps::new(500).calc_up(total_supply);
+
+    assert_eq(admin_vesting.balance(), migration_fee / 2);
+    assert_eq(stake_holder_vesting.balance(), migration_fee / 2);
+
+    destroy(clock);
+
+    destroy(memez_fun);
+
+    destroy(admin_vesting);
+    destroy(stake_holder_vesting);
+
+    world.end();
+}
+
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EOutdatedPackageVersion,
+        location = memez_version,
+    ),
+]
+fun test_distribute_stake_holders_allocation_invalid_version() {
+    let mut world = start();
+
+    let first_purchase = mint_for_testing(0, world.scenario.ctx());
+
+    let total_supply = 1_000_000_000_000_000_000;
+
+
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        first_purchase,
+        false,
+        total_supply,
+    );
+
+    let clock = clock::create_for_testing(world.scenario.ctx());
+
+    memez_pump::distribute_stake_holders_allocation(
+        &mut memez_fun,
+        &clock,
+        memez_version::get_version_for_testing(2),
+        world.scenario.ctx(),
+    );
+
+    destroy(memez_fun);
+    destroy(clock);
+
+    world.end();
+}
+
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::ENotMigrated,
+        location = memez_fun,
+    ),
+]
+fun test_distribute_stake_holders_allocation_not_migrated() {
+    let mut world = start();
+
+    let first_purchase = mint_for_testing(0, world.scenario.ctx());
+
+    let total_supply = 1_000_000_000_000_000_000;
+
+
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        first_purchase,
+        false,
+        total_supply,
+    );
+
+    let clock = clock::create_for_testing(world.scenario.ctx());
+
+    memez_pump::distribute_stake_holders_allocation(
+        &mut memez_fun,
+        &clock,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    destroy(memez_fun);
+    destroy(clock);
 
     world.end();
 }

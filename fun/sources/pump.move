@@ -215,9 +215,12 @@ public fun migrate<Meme>(
 
     let sui_balance = state.constant_product.sui_balance_mut().withdraw_all();
 
-    let liquidity_provision = state.liquidity_provision.withdraw_all();
-
-    state.constant_product.meme_balance_mut().destroy_or_burn(ctx);
+    let liquidity_provision = if (state.liquidity_provision.value() == 0) {
+        state.constant_product.meme_balance_mut().withdraw_all()
+    } else {
+        state.constant_product.meme_balance_mut().destroy_or_burn(ctx);
+        state.liquidity_provision.withdraw_all()
+    };
 
     let mut sui_coin = sui_balance.into_coin(ctx);
 

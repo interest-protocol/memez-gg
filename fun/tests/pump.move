@@ -1283,6 +1283,72 @@ fun test_distribute_stake_holders_allocation() {
     world.end();
 }
 
+#[test]
+fun test_migrate_full_liquidity() {
+    let mut world = start(); 
+
+    let witness = acl::sign_in_for_testing();
+
+    world.config
+        .set_fees<DefaultKey>(
+            &witness,
+            vector[vector[MAX_BPS, 2 * POW_9], vector[MAX_BPS, 0, 30], vector[MAX_BPS, 0, 200 * POW_9], vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 0]],
+            vector[vector[@0x0], vector[@0x0], vector[@0x0], vector[ADMIN]],
+            world.scenario.ctx(),
+        );
+
+    world.config
+        .set_pump<DefaultKey>(
+            &witness,
+            vector[0, VIRTUAL_LIQUIDITY, TARGET_LIQUIDITY, 0],
+            world.scenario.ctx(),
+        );
+
+    let first_purchase = mint_for_testing(0, world.scenario.ctx());
+
+    let total_supply = 1_000_000_000_000_000_000;
+
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        first_purchase,
+        false,
+        total_supply,
+    );
+
+    let cp = memez_pump::constant_product_mut(&mut memez_fun); 
+
+    assert_eq(cp.meme_balance().value(), 1_000_000_000_000_000_000);
+
+    memez_pump::pump(
+        &mut memez_fun,
+        mint_for_testing(add_fee(TARGET_LIQUIDITY, 30), world.scenario.ctx()),
+        0,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    ).burn_for_testing();
+
+    let migrator = memez_pump::migrate(
+        &mut memez_fun,
+        memez_version::get_version_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    let cp = memez_pump::constant_product_mut(&mut memez_fun); 
+
+    let expected_meme_balance = cp.meme_balance().value();
+
+    let (sui_balance, meme_balance) = migrator.destroy(MigrationWitness());
+
+    assert_eq(cp.meme_balance().value(), expected_meme_balance);
+
+    destroy(sui_balance);
+    destroy(meme_balance);
+
+    destroy(memez_fun);
+
+    world.end();
+}
+
 #[
     test,
     expected_failure(

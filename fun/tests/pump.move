@@ -1,6 +1,7 @@
 #[test_only]
 module memez_fun::memez_pump_tests;
 
+use interest_math::u64;
 use interest_bps::bps;
 use memez_vesting::memez_vesting::MemezVesting;
 use constant_product::constant_product::get_amount_out;
@@ -1343,6 +1344,73 @@ fun test_migrate_full_liquidity() {
 
     destroy(sui_balance);
     destroy(meme_balance);
+
+    destroy(memez_fun);
+
+    world.end();
+}
+
+/// We want the coin to migrate once it hits a market cap of 60% as per the @docs - https://docs.interestprotocol.com/overview/sui/memez.gg/memez.fun/bonding-curve
+#[test]
+fun test_bonding_curve_math() {
+    let mut world = start();
+
+    world.scenario.next_tx(DEV);
+
+    let witness = acl::sign_in_for_testing();
+
+    world.config
+        .set_fees<DefaultKey>(
+            &witness,
+            vector[vector[MAX_BPS, 0], vector[MAX_BPS, 0, 0], vector[MAX_BPS, 0, 0], vector[MAX_BPS, 0, 0, 0]],
+            vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
+            world.scenario.ctx(),
+        );
+
+    world.config
+        .set_pump<DefaultKey>(
+            &witness,
+            vector[0, 1_000 * POW_9, 2_464 * POW_9, 0],
+            world.scenario.ctx(),
+        );
+
+    let total_supply = 1_000_000_000_000_000_000;
+
+    let first_purchase = mint_for_testing(0, world.scenario.ctx());
+
+    let mut memez_fun = set_up_pool(
+        &mut world,
+        first_purchase,
+        false,
+        total_supply,
+    );
+
+    let purchase_sui_value = 2_464 * POW_9;
+
+    let ctx = world.scenario.ctx();
+
+    let meme_coin = memez_pump::pump(
+        &mut memez_fun,
+        mint_for_testing(purchase_sui_value, ctx),
+        0,
+        memez_version::get_version_for_testing(1),
+        ctx,
+    );
+
+    // @dev Value taken from the docs - https://docs.interestprotocol.com/overview/sui/memez.gg/memez.fun/bonding-curve
+    assert_eq(meme_coin.burn_for_testing() / POW_9, 711_316_397);
+
+    memez_fun.assert_is_migrating();
+
+    let cp = memez_pump::constant_product_mut(&mut memez_fun);
+
+    assert_eq(cp.meme_balance().value() / POW_9, 288_683_602);
+    assert_eq(cp.sui_balance().value() / POW_9, 2_464);
+    
+    let meme_coin_price = u64::mul_div_down(cp.sui_balance().value() + cp.virtual_liquidity(), POW_9, cp.meme_balance().value());
+
+    // @dev Around 60K
+    assert_eq(u64::mul_div_down(meme_coin_price, total_supply, POW_9) * 5 / POW_9, 59_995);
 
     destroy(memez_fun);
 

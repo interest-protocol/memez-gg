@@ -65,7 +65,7 @@ public fun migrate<Meme>(
 ) {
     let (sui_balance, meme_balance) = migrator.destroy(Witness());
 
-    let (position, excess_sui, excess_meme) = create_pool_v2(
+    let (position, excess_meme, excess_sui) = create_pool_v2(
         cetus_config,
         cetus_pools,
         config.tick_spacing,
@@ -77,7 +77,7 @@ public fun migrate<Meme>(
         sui_balance.into_coin(ctx),
         meme_metadata,
         sui_metadata,
-        true,
+        false,
         clock,
         ctx,
     );

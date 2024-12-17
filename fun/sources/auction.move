@@ -30,7 +30,8 @@ use memez_fun::{
     memez_migrator_list::MemezMigratorList,
     memez_token_cap::{Self, MemezTokenCap},
     memez_utils::{destroy_or_burn, destroy_or_return, new_treasury},
-    memez_version::CurrentVersion
+    memez_version::CurrentVersion,
+    memez_versioned::{Self, Versioned}
 };
 use std::string::String;
 use sui::{
@@ -39,7 +40,6 @@ use sui::{
     coin::{Coin, TreasuryCap},
     sui::SUI,
     token::Token,
-    versioned::{Self, Versioned}
 };
 
 // === Constants ===
@@ -50,7 +50,8 @@ const AUCTION_STATE_VERSION_V1: u64 = 1;
 
 public struct Auction()
 
-public struct AuctionState<phantom Meme> has store {
+public struct AuctionState<phantom Meme> has key, store {
+    id: UID,
     start_time: u64,
     migration_fee: Fee,
     auction_duration: u64,
@@ -109,6 +110,7 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
     let meme_balance = meme_reserve.split(auction_config[5]);
 
     let auction_state = AuctionState<Meme> {
+        id: object::new(ctx),
         start_time: clock.timestamp_ms(),
         auction_duration: auction_config[0],
         initial_reserve: meme_reserve.value(),
@@ -127,10 +129,13 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
         migration_fee: fees.migration(stake_holders),
     };
 
+    let inner_state = object::id_address(&auction_state);
+
     let mut memez_fun = memez_fun::new<Auction, Meme, ConfigKey, MigrationWitness>(
         migrator_list,
-        versioned::create(AUCTION_STATE_VERSION_V1, auction_state, ctx),
+        memez_versioned::create(AUCTION_STATE_VERSION_V1, auction_state, ctx),
         is_token,
+        inner_state,
         metadata_names,
         metadata_values,
         ipx_meme_coin_treasury,

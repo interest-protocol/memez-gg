@@ -247,6 +247,13 @@ module cetus_clmm::pool {
         amount: u64,
     }
 
+    struct CollectRewardV2Event has copy, drop, store {
+        position: ID,
+        pool: ID,
+        rewarder_type: TypeName,
+        amount: u64,
+    }
+
     // === public friend Functions ===
     fun init(_otw: POOL, _ctx: &mut TxContext) {
         abort 0
@@ -374,7 +381,7 @@ module cetus_clmm::pool {
     }
 
     /// The cost of increasing liquidity for the position.
-    /// Parans
+    /// Params
     ///     - `config` The global config of clmm package.
     ///     - `pool`  The clmm pool object.
     ///     - `balance_a` The balance of which type is CoinTypeA, if no need pay this coin pass `balance<CoinTypeA>Zero()`

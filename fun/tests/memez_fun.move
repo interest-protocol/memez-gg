@@ -2,13 +2,12 @@
 module memez_fun::memez_fun_tests;
 
 use memez_acl::acl;
-use memez_fun::{memez_errors, memez_fun, memez_migrator_list::{Self, MemezMigratorList}};
+use memez_fun::{memez_errors, memez_fun, memez_migrator_list::{Self, MemezMigratorList}, memez_versioned::{Self, Versioned}};
 use std::type_name;
 use sui::{
     balance,
     test_scenario::{Self as ts, Scenario},
     test_utils::{assert_eq, destroy},
-    versioned::{Self, Versioned}
 };
 
 const ADMIN: address = @0x1;
@@ -23,6 +22,11 @@ public struct ConfigKey() has drop;
 
 public struct MigrationWitness() has drop;
 
+public struct State has key, store {
+    id: UID,
+    value: u64,
+}
+
 public struct World {
     scenario: Scenario,
     migrator_list: MemezMigratorList,
@@ -35,10 +39,13 @@ fun test_new() {
 
     let versioned = world.versioned.pop_back();
 
+    let inner_state = object::id_address(&versioned);
+
     let memez_fun = memez_fun::new<Curve, Meme, ConfigKey, MigrationWitness>(
         &world.migrator_list,
         versioned,
         false,
+        inner_state,
         vector[b"Twitter".to_string()],
         vector[b"https://twitter.com/memez".to_string()],
         @0x7,
@@ -74,10 +81,13 @@ fun test_new_invalid_witness() {
 
     let versioned = world.versioned.pop_back();
 
+    let inner_state = object::id_address(&versioned);
+
     let memez_fun = memez_fun::new<Curve, Meme, ConfigKey, Meme>(
         &world.migrator_list,
         versioned,
         false,
+        inner_state,
         vector[b"Twitter".to_string()],
         vector[b"https://twitter.com/memez".to_string()],
         @0x7,
@@ -95,10 +105,13 @@ fun test_progress_asserts_not_bonding() {
 
     let versioned = world.versioned.pop_back();
 
+    let inner_state = object::id_address(&versioned);
+
     let mut memez_fun = memez_fun::new<Curve, Meme, ConfigKey, MigrationWitness>(
         &world.migrator_list,
         versioned,
         false,
+        inner_state,
         vector[b"Twitter".to_string()],
         vector[b"https://twitter.com/memez".to_string()],
         @0x7,
@@ -119,10 +132,13 @@ fun test_progress_asserts_not_migrating() {
 
     let versioned = world.versioned.pop_back();
 
+    let inner_state = object::id_address(&versioned);
+
     let memez_fun = memez_fun::new<Curve, Meme, ConfigKey, MigrationWitness>(
         &world.migrator_list,
         versioned,
         false,
+        inner_state,
         vector[b"Twitter".to_string()],
         vector[b"https://twitter.com/memez".to_string()],
         @0x7,
@@ -141,10 +157,13 @@ fun test_progress_asserts_not_migrated() {
 
     let versioned = world.versioned.pop_back();
 
+    let inner_state = object::id_address(&versioned);
+
     let memez_fun = memez_fun::new<Curve, Meme, ConfigKey, MigrationWitness>(
         &world.migrator_list,
         versioned,
         false,
+        inner_state,
         vector[b"Twitter".to_string()],
         vector[b"https://twitter.com/memez".to_string()],
         @0x7,
@@ -163,10 +182,13 @@ fun test_assert_is_dev() {
 
     let versioned = world.versioned.pop_back();
 
+    let inner_state = object::id_address(&versioned);
+
     let memez_fun = memez_fun::new<Curve, Meme, ConfigKey, MigrationWitness>(
         &world.migrator_list,
         versioned,
         false,
+        inner_state,
         vector[b"Twitter".to_string()],
         vector[b"https://twitter.com/memez".to_string()],
         @0x7,
@@ -188,10 +210,13 @@ fun test_assert_is_dev_invalid_dev() {
 
     let versioned = world.versioned.pop_back();
 
+    let inner_state = object::id_address(&versioned);
+
     let memez_fun = memez_fun::new<Curve, Meme, ConfigKey, MigrationWitness>(
         &world.migrator_list,
         versioned,
         false,
+        inner_state,
         vector[b"Twitter".to_string()],
         vector[b"https://twitter.com/memez".to_string()],
         @0x7,
@@ -212,10 +237,13 @@ fun test_assert_uses_token() {
 
     let versioned = world.versioned.pop_back();
 
+    let inner_state = object::id_address(&versioned);
+
     let memez_fun = memez_fun::new<Curve, Meme, ConfigKey, MigrationWitness>(
         &world.migrator_list,
         versioned,
         true,
+        inner_state,
         vector[b"Twitter".to_string()],
         vector[b"https://twitter.com/memez".to_string()],
         @0x7,
@@ -237,10 +265,13 @@ fun test_assert_uses_coin() {
 
     let versioned = world.versioned.pop_back();
 
+    let inner_state = object::id_address(&versioned);
+
     let memez_fun = memez_fun::new<Curve, Meme, ConfigKey, MigrationWitness>(
         &world.migrator_list,
         versioned,
         false,
+        inner_state,
         vector[b"Twitter".to_string()],
         vector[b"https://twitter.com/memez".to_string()],
         @0x7,
@@ -262,10 +293,13 @@ fun test_assert_uses_coin_invalid() {
 
     let versioned = world.versioned.pop_back();
 
+    let inner_state = object::id_address(&versioned);
+
     let memez_fun = memez_fun::new<Curve, Meme, ConfigKey, MigrationWitness>(
         &world.migrator_list,
         versioned,
         true,
+        inner_state,
         vector[b"Twitter".to_string()],
         vector[b"https://twitter.com/memez".to_string()],
         @0x7,
@@ -286,10 +320,13 @@ fun test_assert_uses_token_invalid() {
 
     let versioned = world.versioned.pop_back();
 
+    let inner_state = object::id_address(&versioned);
+
     let memez_fun = memez_fun::new<Curve, Meme, ConfigKey, MigrationWitness>(
         &world.migrator_list,
         versioned,
         false,
+        inner_state,
         vector[b"Twitter".to_string()],
         vector[b"https://twitter.com/memez".to_string()],
         @0x7,
@@ -311,10 +348,13 @@ fun test_progress_asserts() {
 
     let versioned = world.versioned.pop_back();
 
+    let inner_state = object::id_address(&versioned);
+
     let mut memez_fun = memez_fun::new<Curve, Meme, ConfigKey, MigrationWitness>(
         &world.migrator_list,
         versioned,
         false,
+        inner_state,
         vector[b"Twitter".to_string()],
         vector[b"https://twitter.com/memez".to_string()],
         @0x7,
@@ -343,10 +383,13 @@ fun test_migrate() {
 
     let versioned = world.versioned.pop_back();
 
+    let inner_state = object::id_address(&versioned);
+
     let mut memez_fun = memez_fun::new<Curve, Meme, ConfigKey, MigrationWitness>(
         &world.migrator_list,
         versioned,
         false,
+        inner_state,
         vector[b"Twitter".to_string()],
         vector[b"https://twitter.com/memez".to_string()],
         @0x7,
@@ -377,10 +420,13 @@ fun test_migrate_invalid_witness() {
 
     let versioned = world.versioned.pop_back();
 
+    let inner_state = object::id_address(&versioned);
+
     let mut memez_fun = memez_fun::new<Curve, Meme, ConfigKey, MigrationWitness>(
         &world.migrator_list,
         versioned,
         false,
+        inner_state,
         vector[b"Twitter".to_string()],
         vector[b"https://twitter.com/memez".to_string()],
         @0x7,
@@ -415,7 +461,7 @@ fun start(): World {
 
     migrator_list.add<MigrationWitness>(&witness);
 
-    let versioned = versioned::create(1, 10, scenario.ctx());
+    let versioned = memez_versioned::create(1, State { id: object::new(scenario.ctx()), value: 10 }, scenario.ctx());
 
     World { scenario, migrator_list, versioned: vector[versioned] }
 }

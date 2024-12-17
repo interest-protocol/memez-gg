@@ -28,7 +28,8 @@ use memez_fun::{
     memez_migrator_list::MemezMigratorList,
     memez_token_cap::{Self, MemezTokenCap},
     memez_utils::{destroy_or_burn, destroy_or_return, new_treasury},
-    memez_version::CurrentVersion
+    memez_version::CurrentVersion,
+    memez_versioned::{Self, Versioned}
 };
 use std::string::String;
 use sui::{
@@ -37,7 +38,6 @@ use sui::{
     coin::{Coin, TreasuryCap},
     sui::SUI,
     token::Token,
-    versioned::{Self, Versioned}
 };
 
 // === Constants ===
@@ -48,7 +48,8 @@ const PUMP_STATE_VERSION_V1: u64 = 1;
 
 public struct Pump()
 
-public struct PumpState<phantom Meme> has store {
+public struct PumpState<phantom Meme> has key, store {
+    id: UID,
     dev_purchase: Balance<Meme>,
     liquidity_provision: Balance<Meme>,
     allocation: Allocation<Meme>,
@@ -99,6 +100,7 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
     let liquidity_provision = meme_balance.split(pump_config[3]);
 
     let pump_state = PumpState<Meme> {
+        id: object::new(ctx),
         dev_purchase: balance::zero(),
         liquidity_provision,
         constant_product: memez_constant_product::new(
@@ -113,10 +115,13 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
         allocation,
     };
 
+    let inner_state = object::id_address(&pump_state);
+
     let mut memez_fun = memez_fun::new<Pump, Meme, ConfigKey, MigrationWitness>(
         migrator_list,
-        versioned::create(PUMP_STATE_VERSION_V1, pump_state, ctx),
+        memez_versioned::create(PUMP_STATE_VERSION_V1, pump_state, ctx),
         is_token,
+        inner_state,
         metadata_names,
         metadata_values,
         ipx_meme_coin_treasury,

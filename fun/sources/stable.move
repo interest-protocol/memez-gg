@@ -28,7 +28,8 @@ use memez_fun::{
     memez_migrator_list::MemezMigratorList,
     memez_token_cap::{Self, MemezTokenCap},
     memez_utils::{destroy_or_burn, destroy_or_return, new_treasury},
-    memez_version::CurrentVersion
+    memez_version::CurrentVersion,
+    memez_versioned::{Self, Versioned}
 };
 use memez_vesting::memez_vesting::{Self, MemezVesting};
 use std::string::String;
@@ -38,7 +39,6 @@ use sui::{
     coin::{Coin, TreasuryCap},
     sui::SUI,
     token::Token,
-    versioned::{Self, Versioned}
 };
 
 // === Constants ===
@@ -49,7 +49,8 @@ const STABLE_STATE_VERSION_V1: u64 = 1;
 
 public struct Stable()
 
-public struct StableState<phantom Meme> has store {
+public struct StableState<phantom Meme> has key, store {
+    id: UID,
     meme_reserve: Balance<Meme>,
     dev_allocation: Balance<Meme>,
     dev_vesting_period: u64,
@@ -111,6 +112,7 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
     );
 
     let stable_state = StableState {
+        id: object::new(ctx),
         meme_reserve,
         dev_allocation,
         dev_vesting_period: dev_payload[1],
@@ -121,10 +123,13 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
         allocation,
     };
 
+    let inner_state = object::id_address(&stable_state);
+
     let mut memez_fun = memez_fun::new<Stable, Meme, ConfigKey, MigrationWitness>(
         migrator_list,
-        versioned::create(STABLE_STATE_VERSION_V1, stable_state, ctx),
+        memez_versioned::create(STABLE_STATE_VERSION_V1, stable_state, ctx),
         is_token,
+        inner_state,
         metadata_names,
         metadata_values,
         ipx_meme_coin_treasury,

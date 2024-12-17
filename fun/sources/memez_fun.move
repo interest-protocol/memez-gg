@@ -23,7 +23,8 @@ use memez_fun::{
     memez_errors,
     memez_events,
     memez_migrator_list::MemezMigratorList,
-    memez_version::CurrentVersion
+    memez_version::CurrentVersion,
+    memez_versioned::Versioned,
 };
 use std::{string::String, type_name::{Self, TypeName}};
 use sui::{
@@ -34,7 +35,6 @@ use sui::{
     bag::{Self, Bag},
     token::Token,
     vec_map::{Self, VecMap},
-    versioned::Versioned
 };
 
 // === Constants ===
@@ -90,6 +90,7 @@ public(package) fun new<Curve, Meme, ConfigKey, MigrationWitness>(
     migrator: &MemezMigratorList,
     state: Versioned,
     is_token: bool,
+    inner_state: address,
     mut metadata_names: vector<String>,
     mut metadata_values: vector<String>,
     ipx_meme_coin_treasury: address,
@@ -108,6 +109,7 @@ public(package) fun new<Curve, Meme, ConfigKey, MigrationWitness>(
 
     memez_events::new<Curve, Meme>(
         id.to_address(),
+        inner_state,
         config_key,
         migration_witness,
         ipx_meme_coin_treasury,

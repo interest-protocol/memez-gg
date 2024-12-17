@@ -3,6 +3,7 @@ module recrd::recrd_migrator;
 use cetus_clmm::{config::GlobalConfig, factory::Pools, pool_creator::create_pool_v2};
 use memez_acl::acl::AuthWitness;
 use memez_fun::memez_fun::MemezMigrator;
+use recrd::recrd_version::CurrentVersion;
 use sui::{clock::Clock, coin::{Coin, CoinMetadata}, sui::SUI};
 
 // === Constants ===
@@ -61,8 +62,11 @@ public fun migrate<Meme>(
     sui_metadata: &CoinMetadata<SUI>,
     meme_metadata: &CoinMetadata<Meme>,
     migrator: MemezMigrator<Meme>,
+    version: &CurrentVersion,
     ctx: &mut TxContext,
 ) {
+    version.assert_is_valid();
+
     let (sui_balance, meme_balance) = migrator.destroy(Witness());
 
     let (position, excess_meme, excess_sui) = create_pool_v2(

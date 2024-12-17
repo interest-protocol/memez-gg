@@ -1,4 +1,4 @@
-// Modify the Mysten Labs Versioned to have Prime objects to easily fetch data
+// Modify the Mysten Labs Versioned to use Prime objects to easily fetch data
 // Original code: https://github.com/MystenLabs/sui/blob/main/crates/sui-framework/packages/sui-framework/sources/versioned.move
 
 module memez_fun::memez_versioned;

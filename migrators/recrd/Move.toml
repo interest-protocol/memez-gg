@@ -9,8 +9,10 @@ authors = ["Jose Cerqueira (jose@interestprotocol.com)"]
 Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet", override = true }
 
 MemezACL = { local = "../../acl" }
+MemezFun = { local = "../../fun" }
 CetusClmm = { local = "../../dependencies/cetus_clmm" }
 
 [addresses]
 recrd = "0x0"
 cetus_clmm = "0x3a5aa90ffa33d09100d7b6941ea1c0ffe6ab66e77062ddd26320c1b073aabb10"
+treasury = "0x0"

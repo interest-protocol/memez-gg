@@ -16,7 +16,9 @@ public struct VersionChangeCap {
     old_version: u64,
 }
 
-public fun create<T: key + store>(
+// === Public Package Functions ===
+
+public(package) fun create<T: key + store>(
     init_version: u64,
     init_value: T,
     ctx: &mut TxContext,
@@ -29,19 +31,17 @@ public fun create<T: key + store>(
     self
 }
 
-public fun version(self: &Versioned): u64 {
-    self.version
-}
-
-public fun load_value<T: key + store>(self: &Versioned): &T {
+public(package) fun load_value<T: key + store>(self: &Versioned): &T {
     dof::borrow(&self.id, self.version)
 }
 
-public fun load_value_mut<T: key + store>(self: &mut Versioned): &mut T {
+public(package) fun load_value_mut<T: key + store>(self: &mut Versioned): &mut T {
     dof::borrow_mut(&mut self.id, self.version)
 }
 
-public fun remove_value_for_upgrade<T: key + store>(self: &mut Versioned): (T, VersionChangeCap) {
+public(package) fun remove_value_for_upgrade<T: key + store>(
+    self: &mut Versioned,
+): (T, VersionChangeCap) {
     (
         dof::remove(&mut self.id, self.version),
         VersionChangeCap {
@@ -51,7 +51,7 @@ public fun remove_value_for_upgrade<T: key + store>(self: &mut Versioned): (T, V
     )
 }
 
-public fun upgrade<T: key + store>(
+public(package) fun upgrade<T: key + store>(
     self: &mut Versioned,
     new_version: u64,
     new_value: T,
@@ -66,9 +66,13 @@ public fun upgrade<T: key + store>(
     self.version = new_version;
 }
 
-public fun destroy<T: key + store>(self: Versioned): T {
+public(package) fun destroy<T: key + store>(self: Versioned): T {
     let Versioned { mut id, version } = self;
     let ret = dof::remove(&mut id, version);
     id.delete();
     ret
+}
+
+public(package) fun version(self: &Versioned): u64 {
+    self.version
 }

@@ -1,9 +1,10 @@
 // Modify the Mysten Labs Versioned to have Prime objects to easily fetch data
+// Original code: https://github.com/MystenLabs/sui/blob/main/crates/sui-framework/packages/sui-framework/sources/versioned.move
 
 module memez_fun::memez_versioned;
 
 use memez_fun::memez_errors;
-use sui::dynamic_object_field as dfo;
+use sui::dynamic_object_field as dof;
 
 public struct Versioned has key, store {
     id: UID,
@@ -24,7 +25,7 @@ public fun create<T: key + store>(
         id: object::new(ctx),
         version: init_version,
     };
-    dfo::add(&mut self.id, init_version, init_value);
+    dof::add(&mut self.id, init_version, init_value);
     self
 }
 
@@ -33,16 +34,16 @@ public fun version(self: &Versioned): u64 {
 }
 
 public fun load_value<T: key + store>(self: &Versioned): &T {
-    dfo::borrow(&self.id, self.version)
+    dof::borrow(&self.id, self.version)
 }
 
 public fun load_value_mut<T: key + store>(self: &mut Versioned): &mut T {
-    dfo::borrow_mut(&mut self.id, self.version)
+    dof::borrow_mut(&mut self.id, self.version)
 }
 
 public fun remove_value_for_upgrade<T: key + store>(self: &mut Versioned): (T, VersionChangeCap) {
     (
-        dfo::remove(&mut self.id, self.version),
+        dof::remove(&mut self.id, self.version),
         VersionChangeCap {
             versioned_id: object::id(self),
             old_version: self.version,
@@ -61,13 +62,13 @@ public fun upgrade<T: key + store>(
     let VersionChangeCap { versioned_id, old_version } = cap;
     assert!(versioned_id == object::id(self), error);
     assert!(old_version < new_version, error);
-    dfo::add(&mut self.id, new_version, new_value);
+    dof::add(&mut self.id, new_version, new_value);
     self.version = new_version;
 }
 
 public fun destroy<T: key + store>(self: Versioned): T {
     let Versioned { mut id, version } = self;
-    let ret = dfo::remove(&mut id, version);
+    let ret = dof::remove(&mut id, version);
     id.delete();
     ret
 }

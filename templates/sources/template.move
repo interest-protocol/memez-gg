@@ -1,8 +1,6 @@
 #[allow(implicit_const_copy)]
 module memez_templates::meme;
 
-// === Imports ===
-
 use sui::{
     coin,
     url::new_unsafe_from_bytes

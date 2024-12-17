@@ -427,3 +427,17 @@ public fun metadata<Curve, Meme>(self: &MemezFun<Curve, Meme>): &VecMap<String, 
 public fun ip_meme_coin_treasury<Curve, Meme>(self: &MemezFun<Curve, Meme>): address {
     self.ipx_meme_coin_treasury
 }
+
+#[test_only]
+public fun new_migrator_for_testing<Meme, Witness>(
+    memez_fun: address,
+    sui_balance: Balance<SUI>,
+    meme_balance: Balance<Meme>,
+): MemezMigrator<Meme> {
+    MemezMigrator {
+        witness: type_name::get<Witness>(),
+        memez_fun,
+        sui_balance,
+        meme_balance,
+    }
+}

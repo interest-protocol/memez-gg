@@ -48,6 +48,8 @@ const EInvalidCreationFeeConfig: u64 = 21;
 
 const EZeroTotalSupply: u64 = 22;
 
+const EInvalidUpgrade: u64 = 23;
+
 // === Public Package Functions ===
 
 public(package) fun already_initialized(): u64 {
@@ -140,4 +142,8 @@ public(package) fun invalid_creation_fee_config(): u64 {
 
 public(package) fun zero_total_supply(): u64 {
     EZeroTotalSupply
+}
+
+public(package) fun invalid_upgrade(): u64 {
+    EInvalidUpgrade
 }

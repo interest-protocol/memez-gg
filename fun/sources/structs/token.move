@@ -1,3 +1,4 @@
+#[allow(lint(share_owned))]
 module memez_fun::memez_token_cap;
 
 use sui::{coin::{Coin, TreasuryCap}, token::{Self, TokenPolicyCap, Token}};
@@ -11,7 +12,6 @@ public struct MemezTokenCap<phantom Meme> has store {
 
 // === Public Package Functions ===
 
-#[allow(lint(share_owned))]
 public(package) fun new<Meme>(
     treasury_cap: &TreasuryCap<Meme>,
     ctx: &mut TxContext,

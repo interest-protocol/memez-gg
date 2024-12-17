@@ -346,7 +346,6 @@ public(package) macro fun cp_dump_amount<$Curve, $Meme, $State>(
         )
 }
 
-#[allow(lint(share_owned))]
 public(package) fun share<Curve, Meme>(self: MemezFun<Curve, Meme>) {
     transfer::share_object(self);
 }

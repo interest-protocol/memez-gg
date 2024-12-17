@@ -16,6 +16,7 @@ G:::::G        G::::GG:::::G        G::::G
      GGG::::::GGG:::G     GGG::::::GGG:::G     
         GGGGGG   GGGG        GGGGGG   GGGG                                           
 */
+#[allow(lint(share_owned), unused_function, unused_mut_parameter)]
 module memez_fun::memez_stable;
 
 use ipx_coin_standard::ipx_coin_standard::MetadataCap;
@@ -63,7 +64,6 @@ public struct StableState<phantom Meme> has key, store {
 
 // === Public Mutative Functions ===
 
-#[allow(lint(share_owned))]
 public fun new<Meme, ConfigKey, MigrationWitness>(
     config: &MemezConfig,
     migrator_list: &MemezMigratorList,
@@ -313,14 +313,12 @@ public fun to_coin<Meme>(
 
 // === View Functions for FE ===
 
-#[allow(unused_function)]
 fun pump_amount<Meme>(self: &mut MemezFun<Stable, Meme>, amount_in: u64): vector<u64> {
     let state = self.state();
 
     state.fixed_rate.pump_amount(amount_in)
 }
 
-#[allow(unused_function)]
 fun dump_amount<Meme>(self: &mut MemezFun<Stable, Meme>, amount_in: u64): vector<u64> {
     let state = self.state();
 
@@ -345,7 +343,6 @@ fun state_mut<Meme>(memez_fun: &mut MemezFun<Stable, Meme>): &mut StableState<Me
     versioned.load_value_mut()
 }
 
-#[allow(unused_mut_parameter)]
 fun maybe_upgrade_state_to_latest(versioned: &mut Versioned) {
     assert!(
         versioned.version() == STABLE_STATE_VERSION_V1,

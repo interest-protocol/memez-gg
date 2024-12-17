@@ -16,6 +16,7 @@ G:::::G        G::::GG:::::G        G::::G
      GGG::::::GGG:::G     GGG::::::GGG:::G     
         GGGGGG   GGGG        GGGGGG   GGGG                                           
 */
+#[allow(lint(share_owned), unused_function, unused_mut_parameter)]
 module memez_fun::memez_auction;
 
 use interest_bps::bps::{Self, max_bps};
@@ -66,7 +67,6 @@ public struct AuctionState<phantom Meme> has key, store {
 
 // === Public Mutative Functions ===
 
-#[allow(lint(share_owned))]
 public fun new<Meme, ConfigKey, MigrationWitness>(
     config: &MemezConfig,
     migrator_list: &MemezMigratorList,
@@ -259,7 +259,6 @@ public fun to_coin<Meme>(
 
 // === View Functions for FE ===
 
-#[allow(unused_function)]
 fun pump_amount<Meme>(
     self: &mut MemezFun<Auction, Meme>,
     amount_in: u64,
@@ -272,7 +271,6 @@ fun pump_amount<Meme>(
     }, amount_in)
 }
 
-#[allow(unused_function)]
 fun dump_amount<Meme>(
     self: &mut MemezFun<Auction, Meme>,
     amount_in: u64,
@@ -285,7 +283,6 @@ fun dump_amount<Meme>(
     }, amount_in)
 }
 
-#[allow(unused_function)]
 fun meme_balance<Meme>(self: &mut MemezFun<Auction, Meme>, clock: &Clock): u64 {
     let state = self.state();
 
@@ -343,7 +340,6 @@ fun state_mut<Meme>(memez_fun: &mut MemezFun<Auction, Meme>): &mut AuctionState<
     versioned.load_value_mut()
 }
 
-#[allow(unused_mut_parameter)]
 fun maybe_upgrade_state_to_latest(versioned: &mut Versioned) {
     assert!(
         versioned.version() == AUCTION_STATE_VERSION_V1,

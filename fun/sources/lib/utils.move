@@ -1,3 +1,4 @@
+#[allow(lint(self_transfer, share_owned))]
 module memez_fun::memez_utils;
 
 use interest_bps::bps;
@@ -28,7 +29,6 @@ public(package) fun destroy_or_burn<Meme>(balance: &mut Balance<Meme>, ctx: &mut
     else transfer::public_transfer(bal.into_coin(ctx), DEAD_ADDRESS);
 }
 
-#[allow(lint(self_transfer))]
 public(package) fun destroy_or_return<Meme>(coin: Coin<Meme>, ctx: &TxContext) {
     if (coin.value() == 0) coin.destroy_zero()
     else transfer::public_transfer(coin, ctx.sender());
@@ -41,7 +41,6 @@ public(package) fun validate_bps(percentages: vector<u64>) {
     );
 }
 
-#[allow(lint(share_owned))]
 public(package) fun new_treasury<Meme>(
     mut meme_treasury_cap: TreasuryCap<Meme>,
     total_supply: u64,

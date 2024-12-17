@@ -12,10 +12,16 @@ const DEAD_ADDRESS: address = @0x0;
 // https://cetus-1.gitbook.io/cetus-developer-docs/developer/via-contract/features-available/create-pool
 const INITIAL_TICK_SPACING: u32 = 200;
 
-// @dev This is the full range on Cetus.
+// ~ 2^32 - 443636
 const INITIAL_TICK_LOWER_IDX: u32 = 4294523696;
 
-const INITIAL_TICK_UPPER_IDX: u32 = 443600;
+// ~ Almost the max tick index
+// https://github.com/CetusProtocol/cetus-clmm-sui-sdk/blob/main/src/types/constants.ts#L7
+const INITIAL_TICK_UPPER_IDX: u32 = 443630;
+
+// @dev Refer to https://github.com/interest-protocol/memez.gg-sdk/blob/main/src/scripts/memez/cetus-price.ts
+// This means that 1 Meme coin equals to 0.000012 Sui.
+const INITIALIZE_PRICE: u128 = 63901395939770060;
 
 // === Structs ===
 
@@ -36,7 +42,7 @@ fun init(ctx: &mut TxContext) {
     let recrd = RecrdConfig {
         id: object::new(ctx),
         tick_spacing: INITIAL_TICK_SPACING,
-        initialize_price: 0,
+        initialize_price: INITIALIZE_PRICE,
         tick_lower_idx: INITIAL_TICK_LOWER_IDX,
         tick_upper_idx: INITIAL_TICK_UPPER_IDX,
         treasury: @treasury,

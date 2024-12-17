@@ -1,4 +1,4 @@
-// Modify the Mysten Labs Versioned to have Keyed objects to easily fetch data
+// Modify the Mysten Labs Versioned to have Prime objects to easily fetch data
 
 module memez_fun::memez_versioned;
 

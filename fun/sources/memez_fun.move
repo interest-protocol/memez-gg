@@ -31,6 +31,7 @@ use sui::{
     clock::Clock,
     coin::Coin,
     sui::SUI,
+    bag::{Self, Bag},
     token::Token,
     vec_map::{Self, VecMap},
     versioned::Versioned
@@ -64,6 +65,8 @@ public struct MemezFun<phantom Curve, phantom Meme> has key {
     metadata: VecMap<String, String>,
     migration_witness: TypeName,
     progress: Progress,
+    // Extra fields for future use
+    extra_fields: Bag
 }
 
 // === Public Functions ===
@@ -119,6 +122,7 @@ public(package) fun new<Curve, Meme, ConfigKey, MigrationWitness>(
         migration_witness,
         progress: Progress::Bonding,
         state,
+        extra_fields: bag::new(ctx),
     }
 }
 

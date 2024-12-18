@@ -102,6 +102,7 @@ public fun migrate_to_existing_pool<Meme>(
     ctx: &mut TxContext,
 ) {
     version.assert_is_valid();
+    
     assert!(pool.tick_spacing() == TICK_SPACING, EInvalidTickSpacing);
 
     let (mut sui_balance, mut meme_balance) = migrator.destroy(Witness());
@@ -115,7 +116,7 @@ public fun migrate_to_existing_pool<Meme>(
         cetus_config,
         pool,
         &mut position,
-        sui_balance_value,
+        meme_balance_value,
         false,
         clock,
     );

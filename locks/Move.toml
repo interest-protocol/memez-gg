@@ -8,7 +8,7 @@ authors = ["Jose Cerqueira (jose@interestprotocol.com)"]
 Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet", override = true }
 InterestMath = { git = "https://github.com/interest-protocol/interest-math.git", rev = "main" }
 TurbosCLMM = { local = "../dependencies/turbos" }
-CetusClmm = { local = "../dependencies/cetus" }
+CetusClmm = { local = "../dependencies/cetus_clmm" }
 
 [addresses]
 memez_locks = "0x00987"

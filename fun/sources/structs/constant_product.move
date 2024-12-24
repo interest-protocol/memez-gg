@@ -70,7 +70,14 @@ public(package) fun pump<Meme>(
 
     let total_sui_balance = self.sui_balance.join(sui_coin.into_balance());
 
-    memez_events::pump<Meme>(self.memez_fun, sui_coin_value, meme_coin_value_out, swap_fee);
+    memez_events::pump<Meme>(
+        self.memez_fun,
+        sui_coin_value,
+        meme_coin_value_out,
+        swap_fee,
+        total_sui_balance,
+        self.meme_balance.value(),
+    );
 
     (total_sui_balance >= self.target_sui_liquidity, meme_coin)
 }
@@ -125,6 +132,8 @@ public(package) fun dump<Meme>(
         meme_coin_value,
         swap_fee,
         meme_burn_fee_value,
+        self.sui_balance.value(),
+        self.meme_balance.value(),
     );
 
     sui_coin

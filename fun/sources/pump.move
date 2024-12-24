@@ -38,7 +38,7 @@ use sui::{
     clock::Clock,
     coin::{Coin, TreasuryCap},
     sui::SUI,
-    token::Token,
+    token::Token
 };
 
 // === Constants ===
@@ -99,6 +99,8 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
 
     let liquidity_provision = meme_balance.split(pump_config[3]);
 
+    let meme_balance_value = meme_balance.value();
+
     let pump_state = PumpState<Meme> {
         id: object::new(ctx),
         dev_purchase: balance::zero(),
@@ -125,6 +127,9 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
         metadata_names,
         metadata_values,
         ipx_meme_coin_treasury,
+        pump_config[1],
+        pump_config[2],
+        meme_balance_value,
         dev,
         ctx,
     );

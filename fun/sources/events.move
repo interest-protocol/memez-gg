@@ -13,6 +13,9 @@ public struct New has copy, drop {
     config_key: TypeName,
     migration_witness: TypeName,
     ipx_meme_coin_treasury: address,
+    virtual_liquidity: u64,
+    target_sui_liquidity: u64,
+    meme_balance: u64,
 }
 
 public struct Pump has copy, drop {
@@ -21,6 +24,8 @@ public struct Pump has copy, drop {
     sui_amount_in: u64,
     meme_amount_out: u64,
     swap_fee: u64,
+    sui_balance: u64,
+    meme_balance: u64,
 }
 
 public struct Dump has copy, drop {
@@ -30,6 +35,8 @@ public struct Dump has copy, drop {
     meme_amount_in: u64,
     swap_fee: u64,
     meme_burn_amount: u64,
+    sui_balance: u64,
+    meme_balance: u64,
 }
 
 public struct CanMigrate has copy, drop {
@@ -52,6 +59,9 @@ public(package) fun new<Curve, Meme>(
     config_key: TypeName,
     migration_witness: TypeName,
     ipx_meme_coin_treasury: address,
+    virtual_liquidity: u64,
+    target_sui_liquidity: u64,
+    meme_balance: u64,
 ) {
     emit_event(New {
         memez_fun,
@@ -61,6 +71,9 @@ public(package) fun new<Curve, Meme>(
         config_key,
         migration_witness,
         ipx_meme_coin_treasury,
+        virtual_liquidity,
+        target_sui_liquidity,
+        meme_balance,
     });
 }
 
@@ -69,6 +82,8 @@ public(package) fun pump<Meme>(
     sui_amount_in: u64,
     meme_amount_out: u64,
     swap_fee: u64,
+    sui_balance: u64,
+    meme_balance: u64,
 ) {
     emit_event(Pump {
         memez_fun,
@@ -76,6 +91,8 @@ public(package) fun pump<Meme>(
         sui_amount_in,
         meme_amount_out,
         swap_fee,
+        sui_balance,
+        meme_balance,
     });
 }
 
@@ -85,6 +102,8 @@ public(package) fun dump<Meme>(
     meme_amount_in: u64,
     swap_fee: u64,
     meme_burn_amount: u64,
+    sui_balance: u64,
+    meme_balance: u64,
 ) {
     emit_event(Dump {
         memez_fun,
@@ -93,6 +112,8 @@ public(package) fun dump<Meme>(
         meme_amount_in,
         swap_fee,
         meme_burn_amount,
+        sui_balance,
+        meme_balance,
     });
 }
 

@@ -24,17 +24,17 @@ use memez_fun::{
     memez_events,
     memez_migrator_list::MemezMigratorList,
     memez_version::CurrentVersion,
-    memez_versioned::Versioned,
+    memez_versioned::Versioned
 };
 use std::{string::String, type_name::{Self, TypeName}};
 use sui::{
+    bag::{Self, Bag},
     balance::Balance,
     clock::Clock,
     coin::Coin,
     sui::SUI,
-    bag::{Self, Bag},
     token::Token,
-    vec_map::{Self, VecMap},
+    vec_map::{Self, VecMap}
 };
 
 // === Constants ===
@@ -66,7 +66,7 @@ public struct MemezFun<phantom Curve, phantom Meme> has key {
     migration_witness: TypeName,
     progress: Progress,
     // Extra fields for future use
-    extra_fields: Bag
+    extra_fields: Bag,
 }
 
 // === Public Functions ===
@@ -94,6 +94,9 @@ public(package) fun new<Curve, Meme, ConfigKey, MigrationWitness>(
     mut metadata_names: vector<String>,
     mut metadata_values: vector<String>,
     ipx_meme_coin_treasury: address,
+    virtual_liquidity: u64,
+    target_sui_liquidity: u64,
+    meme_balance: u64,
     dev: address,
     ctx: &mut TxContext,
 ): MemezFun<Curve, Meme> {
@@ -113,6 +116,9 @@ public(package) fun new<Curve, Meme, ConfigKey, MigrationWitness>(
         config_key,
         migration_witness,
         ipx_meme_coin_treasury,
+        virtual_liquidity,
+        target_sui_liquidity,
+        meme_balance,
     );
 
     MemezFun {

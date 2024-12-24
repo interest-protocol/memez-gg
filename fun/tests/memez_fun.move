@@ -49,6 +49,9 @@ fun test_new() {
         vector[b"Twitter".to_string()],
         vector[b"https://twitter.com/memez".to_string()],
         @0x7,
+        0,
+        0,
+        0,
         DEV,
         world.scenario.ctx(),
     );
@@ -91,6 +94,9 @@ fun test_new_invalid_witness() {
         vector[b"Twitter".to_string()],
         vector[b"https://twitter.com/memez".to_string()],
         @0x7,
+        0,
+        0,
+        0,
         DEV,
         world.scenario.ctx(),
     );
@@ -115,6 +121,9 @@ fun test_progress_asserts_not_bonding() {
         vector[b"Twitter".to_string()],
         vector[b"https://twitter.com/memez".to_string()],
         @0x7,
+        0,
+        0,
+        0,
         DEV,
         world.scenario.ctx(),
     );
@@ -142,6 +151,9 @@ fun test_progress_asserts_not_migrating() {
         vector[b"Twitter".to_string()],
         vector[b"https://twitter.com/memez".to_string()],
         @0x7,
+        0,
+        0,
+        0,
         DEV,
         world.scenario.ctx(),
     );
@@ -167,6 +179,9 @@ fun test_progress_asserts_not_migrated() {
         vector[b"Twitter".to_string()],
         vector[b"https://twitter.com/memez".to_string()],
         @0x7,
+        0,
+        0,
+        0,
         DEV,
         world.scenario.ctx(),
     );
@@ -192,6 +207,9 @@ fun test_assert_is_dev() {
         vector[b"Twitter".to_string()],
         vector[b"https://twitter.com/memez".to_string()],
         @0x7,
+        0,
+        0,
+        0,
         DEV,
         world.scenario.ctx(),
     );
@@ -220,6 +238,9 @@ fun test_assert_is_dev_invalid_dev() {
         vector[b"Twitter".to_string()],
         vector[b"https://twitter.com/memez".to_string()],
         @0x7,
+        0,
+        0,
+        0,
         DEV,
         world.scenario.ctx(),
     );
@@ -247,6 +268,9 @@ fun test_assert_uses_token() {
         vector[b"Twitter".to_string()],
         vector[b"https://twitter.com/memez".to_string()],
         @0x7,
+        0,
+        0,
+        0,
         DEV,
         world.scenario.ctx(),
     );
@@ -275,6 +299,9 @@ fun test_assert_uses_coin() {
         vector[b"Twitter".to_string()],
         vector[b"https://twitter.com/memez".to_string()],
         @0x7,
+        0,
+        0,
+        0,
         DEV,
         world.scenario.ctx(),
     );
@@ -303,6 +330,9 @@ fun test_assert_uses_coin_invalid() {
         vector[b"Twitter".to_string()],
         vector[b"https://twitter.com/memez".to_string()],
         @0x7,
+        0,
+        0,
+        0,
         DEV,
         world.scenario.ctx(),
     );
@@ -330,6 +360,9 @@ fun test_assert_uses_token_invalid() {
         vector[b"Twitter".to_string()],
         vector[b"https://twitter.com/memez".to_string()],
         @0x7,
+        0,
+        0,
+        0,
         DEV,
         world.scenario.ctx(),
     );
@@ -358,7 +391,10 @@ fun test_progress_asserts() {
         vector[b"Twitter".to_string()],
         vector[b"https://twitter.com/memez".to_string()],
         @0x7,
-        DEV,
+        0,
+        0,
+        0,
+            DEV,
         world.scenario.ctx(),
     );
 
@@ -393,6 +429,9 @@ fun test_migrate() {
         vector[b"Twitter".to_string()],
         vector[b"https://twitter.com/memez".to_string()],
         @0x7,
+        0,
+        0,
+        0,
         DEV,
         world.scenario.ctx(),
     );
@@ -430,6 +469,9 @@ fun test_migrate_invalid_witness() {
         vector[b"Twitter".to_string()],
         vector[b"https://twitter.com/memez".to_string()],
         @0x7,
+        0,
+        0,
+        0,
         DEV,
         world.scenario.ctx(),
     );

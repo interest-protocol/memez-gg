@@ -34,13 +34,7 @@ use memez_fun::{
 };
 use memez_vesting::memez_vesting::{Self, MemezVesting};
 use std::string::String;
-use sui::{
-    balance::Balance,
-    clock::Clock,
-    coin::{Coin, TreasuryCap},
-    sui::SUI,
-    token::Token,
-};
+use sui::{balance::Balance, clock::Clock, coin::{Coin, TreasuryCap}, sui::SUI, token::Token};
 
 // === Constants ===
 
@@ -123,6 +117,8 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
         allocation,
     };
 
+    let meme_balance_value = stable_state.fixed_rate.meme_balance().value();
+
     let inner_state = object::id_address(&stable_state);
 
     let mut memez_fun = memez_fun::new<Stable, Meme, ConfigKey, MigrationWitness>(
@@ -133,6 +129,9 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
         metadata_names,
         metadata_values,
         ipx_meme_coin_treasury,
+        0,
+        stable_config[0],
+        meme_balance_value,
         dev,
         ctx,
     );

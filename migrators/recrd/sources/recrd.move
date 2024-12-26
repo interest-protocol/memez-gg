@@ -6,10 +6,12 @@ use cetus_clmm::{
     pool::{Self, Pool},
     pool_creator::create_pool_v2
 };
+use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
 use memez_acl::acl::AuthWitness;
 use memez_fun::memez_fun::MemezMigrator;
 use recrd::recrd_version::CurrentVersion;
-use sui::{clock::Clock, coin::{Coin, CoinMetadata}, sui::SUI};
+use std::type_name::{Self, TypeName};
+use sui::{clock::Clock, coin::{Coin, CoinMetadata}, event::emit, sui::SUI};
 
 // === Constants ===
 
@@ -26,9 +28,17 @@ const MIN_TICK: u32 = 4294523696;
 
 const MAX_TICK: u32 = 443600;
 
+const MEME_DECIMALS: u8 = 9;
+
+const MEME_TOTAL_SUPPLY: u64 = 1_000_000_000_000_000_000;
+
 // === Errors ===
 
 const EInvalidTickSpacing: u64 = 0;
+
+const EInvalidDecimals: u64 = 1;
+
+const EInvalidTotalSupply: u64 = 2;
 
 // === Structs ===
 
@@ -38,6 +48,16 @@ public struct RecrdConfig has key {
     id: UID,
     initialize_price: u128,
     treasury: address,
+}
+
+// === Events ===
+
+public struct NewPool has copy, drop {
+    pool: address,
+    tick_spacing: u32,
+    meme: TypeName,
+    sui_balance: u64,
+    meme_balance: u64,
 }
 
 // === Initializer ===
@@ -57,6 +77,7 @@ fun init(ctx: &mut TxContext) {
 public fun migrate_to_new_pool<Meme>(
     config: &mut RecrdConfig,
     clock: &Clock,
+    ipx_treasury: &IPXTreasuryStandard,
     cetus_config: &GlobalConfig,
     cetus_pools: &mut Pools,
     sui_metadata: &CoinMetadata<SUI>,
@@ -67,7 +88,13 @@ public fun migrate_to_new_pool<Meme>(
 ) {
     version.assert_is_valid();
 
+    assert!(meme_metadata.get_decimals() == MEME_DECIMALS, EInvalidDecimals);
+    assert!(ipx_treasury.total_supply<Meme>() == MEME_TOTAL_SUPPLY, EInvalidTotalSupply);
+
     let (sui_balance, meme_balance) = migrator.destroy(Witness());
+
+    let sui_balance_value = sui_balance.value();
+    let meme_balance_value = meme_balance.value();
 
     let (position, excess_meme, excess_sui) = create_pool_v2(
         cetus_config,
@@ -86,12 +113,21 @@ public fun migrate_to_new_pool<Meme>(
         ctx,
     );
 
+    emit(NewPool {
+        pool: position.pool_id().to_address(),
+        tick_spacing: TICK_SPACING,
+        meme: type_name::get<Meme>(),
+        sui_balance: sui_balance_value,
+        meme_balance: meme_balance_value,
+    });
+
     transfer::public_transfer(position, DEAD_ADDRESS);
 
     transfer_or_burn(excess_meme, DEAD_ADDRESS);
     transfer_or_burn(excess_sui, config.treasury);
 }
 
+// @dev We do not need to check decimals nor total supply here because we do not set the initial price.
 public fun migrate_to_existing_pool<Meme>(
     config: &mut RecrdConfig,
     clock: &Clock,
@@ -102,7 +138,7 @@ public fun migrate_to_existing_pool<Meme>(
     ctx: &mut TxContext,
 ) {
     version.assert_is_valid();
-    
+
     assert!(pool.tick_spacing() == TICK_SPACING, EInvalidTickSpacing);
 
     let (mut sui_balance, mut meme_balance) = migrator.destroy(Witness());
@@ -127,6 +163,14 @@ public fun migrate_to_existing_pool<Meme>(
     let excess_sui = sui_balance.split(sui_balance_value.min(amount_b)).into_coin(ctx);
 
     pool::repay_add_liquidity(cetus_config, pool, meme_balance, sui_balance, receipt);
+
+    emit(NewPool {
+        pool: position.pool_id().to_address(),
+        tick_spacing: TICK_SPACING,
+        meme: type_name::get<Meme>(),
+        sui_balance: sui_balance_value,
+        meme_balance: meme_balance_value,
+    });
 
     transfer::public_transfer(position, DEAD_ADDRESS);
     transfer_or_burn(excess_meme, DEAD_ADDRESS);

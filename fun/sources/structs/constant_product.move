@@ -77,6 +77,7 @@ public(package) fun pump<Meme>(
         swap_fee,
         total_sui_balance,
         self.meme_balance.value(),
+        self.virtual_liquidity
     );
 
     (total_sui_balance >= self.target_sui_liquidity, meme_coin)
@@ -134,6 +135,7 @@ public(package) fun dump<Meme>(
         meme_burn_fee_value,
         self.sui_balance.value(),
         self.meme_balance.value(),
+        self.virtual_liquidity
     );
 
     sui_coin

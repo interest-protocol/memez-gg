@@ -3,9 +3,10 @@ name = "MemezACL"
 edition = "2024.beta" 
 license = "MIT"           
 authors = ["Jose Cerqueira (jose@interestprotocol.com)"]     
+published-at = "0x11c2848af65397a7fe48e1526b47d50226a72ceb67e77cf77f9bab0bf759c4c0"
 
 [dependencies]
-Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet" }
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }
 
 [addresses]
-memez_acl = "0x1999"
+memez_acl = "0x11c2848af65397a7fe48e1526b47d50226a72ceb67e77cf77f9bab0bf759c4c0"

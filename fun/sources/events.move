@@ -26,6 +26,7 @@ public struct Pump has copy, drop {
     swap_fee: u64,
     sui_balance: u64,
     meme_balance: u64,
+    sui_virtual_liquidity: u64,
 }
 
 public struct Dump has copy, drop {
@@ -37,6 +38,7 @@ public struct Dump has copy, drop {
     meme_burn_amount: u64,
     sui_balance: u64,
     meme_balance: u64,
+    sui_virtual_liquidity: u64,
 }
 
 public struct CanMigrate has copy, drop {
@@ -84,6 +86,7 @@ public(package) fun pump<Meme>(
     swap_fee: u64,
     sui_balance: u64,
     meme_balance: u64,
+    sui_virtual_liquidity: u64,
 ) {
     emit_event(Pump {
         memez_fun,
@@ -93,6 +96,7 @@ public(package) fun pump<Meme>(
         swap_fee,
         sui_balance,
         meme_balance,
+        sui_virtual_liquidity,
     });
 }
 
@@ -104,6 +108,7 @@ public(package) fun dump<Meme>(
     meme_burn_amount: u64,
     sui_balance: u64,
     meme_balance: u64,
+    sui_virtual_liquidity: u64,
 ) {
     emit_event(Dump {
         memez_fun,
@@ -114,6 +119,7 @@ public(package) fun dump<Meme>(
         meme_burn_amount,
         sui_balance,
         meme_balance,
+        sui_virtual_liquidity,
     });
 }
 

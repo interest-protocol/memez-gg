@@ -3,15 +3,14 @@ name = "MemezFun"
 edition = "2024.beta" 
 license = "MIT"           
 authors = ["Jose Cerqueira (jose@interestprotocol.com)"]   
-# published-at = "0xf81fa340866addc0306f73280a8cbaa7700c1629052d46fac132da124e06fa43"
 
 [dependencies]
-Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet", overrides = true }
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet" }
 
-InterestBPS = { git = "https://github.com/interest-protocol/bps.git", rev = "testnet" }
-InterestMath = { git = "https://github.com/interest-protocol/interest-math.git", rev = "testnet" }
-IPXCoinStandard = { git = "https://github.com/interest-protocol/ipx-coin-standard.git", rev = "testnet" }
-ConstantProduct = { git  = "https://github.com/interest-protocol/constant-product.git", rev = "testnet" }
+InterestBPS = { git = "https://github.com/interest-protocol/bps.git", rev = "main" }
+InterestMath = { git = "https://github.com/interest-protocol/interest-math.git", rev = "main" }
+IPXCoinStandard = { git = "https://github.com/interest-protocol/ipx-coin-standard.git", rev = "main" }
+ConstantProduct = { git  = "https://github.com/interest-protocol/constant-product.git", rev = "main" }
 
 MemezACL = { local = "../acl" }
 MemezVesting = { local = "../vesting" }

@@ -1,0 +1,20 @@
+[package]
+name = "MemezFun"
+edition = "2024.beta" 
+license = "MIT"           
+authors = ["Jose Cerqueira (jose@interestprotocol.com)"]   
+published-at = "0x9e7ba1c8563b2aa3a6a0d868d87cb5108669662938944de44d717ad9cc798a3c"
+
+[dependencies]
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet", overrides = true }
+
+InterestBPS = { git = "https://github.com/interest-protocol/bps.git", rev = "testnet" }
+InterestMath = { git = "https://github.com/interest-protocol/interest-math.git", rev = "testnet" }
+IPXCoinStandard = { git = "https://github.com/interest-protocol/ipx-coin-standard.git", rev = "testnet" }
+ConstantProduct = { git  = "https://github.com/interest-protocol/constant-product.git", rev = "testnet" }
+
+MemezACL = { local = "../acl" }
+MemezVesting = { local = "../vesting" }
+
+[addresses]
+memez_fun = "0x9e7ba1c8563b2aa3a6a0d868d87cb5108669662938944de44d717ad9cc798a3c"

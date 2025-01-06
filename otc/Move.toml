@@ -1,0 +1,18 @@
+[package]
+name = "MemezOTC"
+edition = "2024.beta" 
+license = "MIT"           
+authors = ["Jose Cerqueira (jose@interestprotocol.com)"]     
+
+[dependencies]
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet" }
+
+InterestBPS = { git = "https://github.com/interest-protocol/bps.git", rev = "main" }
+InterestMath = { git = "https://github.com/interest-protocol/interest-math.git", rev = "main" }
+
+MemezVesting = { local = "../vesting" }
+MemezACL = { local = "../acl" }
+
+[addresses]
+memez_otc = "0x0"
+treasury = "0x5"

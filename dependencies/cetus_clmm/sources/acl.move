@@ -16,7 +16,7 @@ module cetus_clmm::acl {
 
     struct Member has store, drop, copy {
         address: address,
-        permission: u128
+           permission: u128
     }
 
     /// @notice Create a new ACL (access control list).

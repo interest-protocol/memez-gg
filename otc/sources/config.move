@@ -1,8 +1,7 @@
 module memez_otc::config;
 
-use memez_acl::acl::AuthWitness;
-
 use interest_bps::bps::{Self, BPS};
+use memez_acl::acl::AuthWitness;
 
 // === Constants ===
 
@@ -12,23 +11,23 @@ const ONE_PERCENT: u64 = 100;
 
 public struct MemezOTCConfig has key {
     id: UID,
-    fee: BPS, 
-    treasury: address
+    fee: BPS,
+    treasury: address,
 }
 
-// === Initializer === 
+// === Initializer ===
 
 fun init(ctx: &mut TxContext) {
     let config = MemezOTCConfig {
         id: object::new(ctx),
         fee: bps::new(ONE_PERCENT),
-        treasury: @treasury
+        treasury: @treasury,
     };
 
     transfer::share_object(config);
 }
 
-// === Admin Functions ===  
+// === Admin Functions ===
 
 public fun set_fee(self: &mut MemezOTCConfig, _: &AuthWitness, fee: u64) {
     self.fee = bps::new(fee);
@@ -38,7 +37,7 @@ public fun set_treasury(self: &mut MemezOTCConfig, _: &AuthWitness, treasury: ad
     self.treasury = treasury;
 }
 
-// === Public Read Functions === 
+// === Public Read Functions ===
 
 public fun fee(self: &MemezOTCConfig): BPS {
     self.fee

@@ -46,3 +46,10 @@ public fun fee(self: &MemezOTCConfig): BPS {
 public fun treasury(self: &MemezOTCConfig): address {
     self.treasury
 }
+
+// === Test Only Functions ===
+
+#[test_only] 
+public fun init_for_testing(ctx: &mut TxContext) {
+    init(ctx);
+}

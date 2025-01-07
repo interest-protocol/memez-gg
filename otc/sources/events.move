@@ -13,7 +13,6 @@ public struct New has copy, drop {
     meme_amount: u64,
     desired_sui_amount: u64,
     fee: u64,
-    meme_scalar: u64,
     vesting_duration: Option<u64>,
     deadline: Option<u64>,
 }
@@ -33,6 +32,12 @@ public struct UpdateDeadline has copy, drop {
     meme: TypeName,
 }
 
+public struct UpdateVestingDuration has copy, drop {
+    otc: address,
+    vesting_duration: u64,
+    meme: TypeName,
+}
+
 public struct Destroy has copy, drop {
     otc: address,
     meme: TypeName,
@@ -48,7 +53,6 @@ public(package) fun new<Meme>(
     meme_amount: u64,
     desired_sui_amount: u64,
     fee: u64,
-    meme_scalar: u64,
     vesting_duration: Option<u64>,
     deadline: Option<u64>,
 ) {
@@ -60,7 +64,6 @@ public(package) fun new<Meme>(
         meme_amount,
         desired_sui_amount,
         fee,
-        meme_scalar,
         vesting_duration,
         deadline,
     });
@@ -87,6 +90,10 @@ public(package) fun update_deadline<Meme>(otc: address, deadline: u64) {
     emit(UpdateDeadline { otc, deadline, meme: type_name::get<Meme>() });
 }
 
-public(package) fun destroy(otc: address, meme: TypeName, owner: address) {
-    emit(Destroy { otc, meme, owner });
+public(package) fun update_vesting_duration<Meme>(otc: address, vesting_duration: u64) {
+    emit(UpdateVestingDuration { otc, vesting_duration, meme: type_name::get<Meme>() });
+}
+
+public(package) fun destroy<Meme>(otc: address, owner: address) {
+    emit(Destroy { otc, meme: type_name::get<Meme>(), owner });
 }

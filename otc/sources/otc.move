@@ -274,3 +274,50 @@ fun assert_is_owner<Meme>(otc: &MemezOTC<Meme>, ctx: &TxContext) {
 
 use fun u64::mul_div_up as u64.mul_div_up;
 use fun u64::mul_div_down as u64.mul_div_down;
+
+// === Test Only Functions === 
+
+#[test_only]
+public fun balance<Meme>(otc: &MemezOTC<Meme>): u64 {
+    otc.balance.value()
+}
+
+#[test_only]
+public fun owner<Meme>(otc: &MemezOTC<Meme>): address {
+    otc.owner
+}
+
+#[test_only]
+public fun recipient<Meme>(otc: &MemezOTC<Meme>): address {
+    otc.recipient
+}
+
+#[test_only]
+public fun deposited_meme_amount<Meme>(otc: &MemezOTC<Meme>): u64 {
+    otc.deposited_meme_amount
+}
+
+#[test_only]
+public fun desired_sui_amount<Meme>(otc: &MemezOTC<Meme>): u64 {
+    otc.desired_sui_amount
+}
+
+#[test_only]
+public fun fee<Meme>(otc: &MemezOTC<Meme>): BPS {
+    otc.fee
+}
+
+#[test_only]
+public fun vesting_duration<Meme>(otc: &MemezOTC<Meme>): Option<u64> {
+    otc.vesting_duration
+}
+
+#[test_only]
+public fun deadline<Meme>(otc: &MemezOTC<Meme>): Option<u64> {
+    otc.deadline
+}
+
+#[test_only]
+public fun treasury<Meme>(otc: &MemezOTC<Meme>): address {
+    otc.treasury
+}

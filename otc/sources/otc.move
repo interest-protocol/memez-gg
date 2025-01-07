@@ -30,6 +30,7 @@ public struct MemezOTC<phantom Meme> has key {
 
 public fun new<Meme>(
     config: &MemezOTCConfig,
+    clock: &Clock,
     meme_coin: Coin<Meme>,
     desired_sui_amount: u64,
     recipient: address,
@@ -39,6 +40,10 @@ public fun new<Meme>(
 ): MemezOTC<Meme> {
     assert!(desired_sui_amount != 0, errors::zero_price());
     assert!(recipient != @0x0, errors::invalid_recipient());
+    assert!(
+        deadline.is_none() || *deadline.borrow_with_default(&0) > clock.timestamp_ms(),
+        errors::deadline_in_past(),
+    );
 
     let meme_coin_value = meme_coin.value();
 
@@ -83,9 +88,7 @@ public fun buy<Meme>(
     assert!(self.vesting_duration.is_none(), errors::vested_otc());
     assert!(self.deadline.is_none(), errors::has_deadline());
 
-    let (sui_coin, meme_balance) = self.buy_internal(sui_coin, ctx);
-
-    (sui_coin, meme_balance.into_coin(ctx))
+    self.buy_internal(sui_coin, ctx)
 }
 
 public fun buy_with_deadline<Meme>(
@@ -98,12 +101,10 @@ public fun buy_with_deadline<Meme>(
     assert!(self.vesting_duration.is_none(), errors::vested_otc());
     assert!(*self.deadline.borrow() >= clock.timestamp_ms(), errors::deadline_passed());
 
-    let (sui_coin, meme_balance) = self.buy_internal(sui_coin, ctx);
-
-    (sui_coin, meme_balance.into_coin(ctx))
+    self.buy_internal(sui_coin, ctx)
 }
 
-public fun buy_with_vested<Meme>(
+public fun buy_with_vesting<Meme>(
     self: &mut MemezOTC<Meme>,
     clock: &Clock,
     sui_coin: Coin<SUI>,
@@ -112,13 +113,13 @@ public fun buy_with_vested<Meme>(
     assert!(self.deadline.is_none(), errors::has_deadline());
     assert!(self.vesting_duration.is_some(), errors::normal_otc());
 
-    let (sui_coin, meme_balance) = self.buy_internal(sui_coin, ctx);
+    let (sui_coin, meme_coin) = self.buy_internal(sui_coin, ctx);
 
     let now = clock.timestamp_ms();
 
     let memez_vesting = memez_vesting::new(
         clock,
-        meme_balance.into_coin(ctx),
+        meme_coin,
         now,
         self.vesting_duration.destroy_some(),
         ctx,
@@ -127,7 +128,7 @@ public fun buy_with_vested<Meme>(
     (sui_coin, memez_vesting)
 }
 
-public fun buy_vested_with_deadline<Meme>(
+public fun buy_with_vesting_and_deadline<Meme>(
     self: &mut MemezOTC<Meme>,
     clock: &Clock,
     sui_coin: Coin<SUI>,
@@ -137,13 +138,13 @@ public fun buy_vested_with_deadline<Meme>(
     assert!(self.vesting_duration.is_some(), errors::normal_otc());
     assert!(*self.deadline.borrow() >= clock.timestamp_ms(), errors::deadline_passed());
 
-    let (sui_coin, meme_balance) = self.buy_internal(sui_coin, ctx);
+    let (sui_coin, meme_coin) = self.buy_internal(sui_coin, ctx);
 
     let now = clock.timestamp_ms();
 
     let memez_vesting = memez_vesting::new(
         clock,
-        meme_balance.into_coin(ctx),
+        meme_coin,
         now,
         self.vesting_duration.destroy_some(),
         ctx,
@@ -222,7 +223,7 @@ fun buy_internal<Meme>(
     self: &mut MemezOTC<Meme>,
     mut sui_coin: Coin<SUI>,
     ctx: &mut TxContext,
-): (Coin<SUI>, Balance<Meme>) {
+): (Coin<SUI>, Coin<Meme>) {
     let sui_coin_value = sui_coin.value();
 
     let available_meme_amount = self.balance.value();
@@ -244,7 +245,7 @@ fun buy_internal<Meme>(
             self.vesting_duration,
         );
 
-        (coin::zero(ctx), self.balance.split(amount_out))
+        (coin::zero(ctx), self.balance.split(amount_out).into_coin(ctx))
     } else {
         let (amount_in, fee) = self.amount_in(available_meme_amount);
 
@@ -261,7 +262,7 @@ fun buy_internal<Meme>(
             self.vesting_duration,
         );
 
-        (sui_coin, self.balance.withdraw_all())
+        (sui_coin, self.balance.withdraw_all().into_coin(ctx))
     }
 }
 

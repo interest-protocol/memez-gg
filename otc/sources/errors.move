@@ -22,7 +22,7 @@ const EHasDeadline: u64 = 8;
 
 const EInvalidRecipient: u64 = 9;
 
-const EDeadlineInPast: u64 = 10; 
+const EDeadlineInPast: u64 = 10;
 
 const ENotOwner: u64 = 11;
 

@@ -1,11 +1,9 @@
 #[test_only, allow(unused_mut_ref)]
 module memez_otc::config_tests;
 
-use sui::{test_scenario::{Self as ts, Scenario}, test_utils::{assert_eq, destroy}};
-
-use memez_otc::config::{Self, MemezOTCConfig};
-
 use memez_acl::acl;
+use memez_otc::config::{Self, MemezOTCConfig};
+use sui::{test_scenario::{Self as ts, Scenario}, test_utils::{assert_eq, destroy}};
 
 const ADMIN: address = @0x7;
 
@@ -18,11 +16,11 @@ public struct Dapp {
 
 #[test]
 fun test_init() {
-    let mut dapp = deploy(); 
+    let mut dapp = deploy();
 
     dapp.tx!(|config, _| {
-       assert_eq(config.fee().value(), ONE_PERCENT);
-       assert_eq(config.treasury(), @treasury);
+        assert_eq(config.fee().value(), ONE_PERCENT);
+        assert_eq(config.treasury(), @treasury);
     });
 
     dapp.end();
@@ -30,7 +28,7 @@ fun test_init() {
 
 #[test]
 fun test_admin_functions() {
-    let mut dapp = deploy(); 
+    let mut dapp = deploy();
 
     dapp.tx!(|config, _| {
         assert_eq(config.fee().value(), ONE_PERCENT);
@@ -41,7 +39,6 @@ fun test_admin_functions() {
 
         assert_eq(config.fee().value(), ONE_PERCENT * 3);
     });
-    
 
     dapp.tx!(|config, _| {
         assert_eq(config.treasury(), @treasury);
@@ -70,7 +67,7 @@ macro fun tx($dapp: &mut Dapp, $f: |&mut MemezOTCConfig, &mut Scenario|) {
 fun deploy(): Dapp {
     let mut scenario = ts::begin(ADMIN);
 
-    config::init_for_testing(scenario.ctx()); 
+    config::init_for_testing(scenario.ctx());
 
     scenario.next_tx(ADMIN);
 

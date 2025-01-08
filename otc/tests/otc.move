@@ -112,6 +112,89 @@ fun test_normal_otc_end_to_end() {
     dapp.end();
 }
 
+#[test, expected_failure(abort_code = errors::EVestedOTC, location = memez_otc)]
+fun test_buy_error_vested_otc() {
+    let mut dapp = deploy();
+
+    dapp.tx!(|_, _, otc, scenario| {
+        scenario.next_tx(OWNER);
+
+        let buy_amount = DESIRED_SUI_AMOUNT / 3;
+
+        let (_excess_sui, _meme_coin) = otc.vesting.buy(
+            coin::mint_for_testing<SUI>(buy_amount, scenario.ctx()),
+            scenario.ctx(),
+        );
+
+        abort
+    });
+
+    dapp.end();
+}
+
+#[test, expected_failure(abort_code = errors::EHasDeadline, location = memez_otc)]
+fun test_buy_error_has_deadline() {
+    let mut dapp = deploy();
+
+    dapp.tx!(|_, _, otc, scenario| {
+        scenario.next_tx(OWNER);
+
+        let buy_amount = DESIRED_SUI_AMOUNT / 3;
+
+        let (_excess_sui, _meme_coin) = otc.deadline.buy(
+            coin::mint_for_testing<SUI>(buy_amount, scenario.ctx()),
+            scenario.ctx(),
+        );
+
+        abort
+    });
+
+    dapp.end();
+}
+
+#[test, expected_failure(abort_code = errors::EInvalidBuyAmount, location = memez_otc)]
+fun test_buy_error_invalid_buy_amount() {
+    let mut dapp = deploy();
+
+    dapp.tx!(|_, _, otc, scenario| {
+        scenario.next_tx(OWNER);
+
+        let (_excess_sui, _meme_coin) = otc.normal.buy(
+            coin::mint_for_testing<SUI>(0, scenario.ctx()),
+            scenario.ctx(),
+        );
+
+        abort
+    });
+
+    dapp.end();
+}
+
+#[test, expected_failure(abort_code = errors::EAllMemeSold, location = memez_otc)]
+fun test_buy_error_all_meme_sold() {
+    let mut dapp = deploy();
+
+    dapp.tx!(|_, _, otc, scenario| {
+        scenario.next_tx(OWNER);
+
+        let (amount_in, fee_in) = otc.normal.get_amount_in(SALE_AMOUNT);
+
+        let (_excess_sui, _meme_coin) = otc.normal.buy(
+            coin::mint_for_testing<SUI>(amount_in + fee_in, scenario.ctx()),
+            scenario.ctx(),
+        );
+
+        let (_excess_sui_2, _meme_coin_2) = otc.normal.buy(
+            coin::mint_for_testing<SUI>(amount_in + fee_in, scenario.ctx()),
+            scenario.ctx(),
+        );
+
+        abort
+    });
+
+    dapp.end();
+}
+
 #[test]
 fun test_owner_functions() {
     let mut dapp = deploy();

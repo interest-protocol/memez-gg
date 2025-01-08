@@ -2,10 +2,13 @@ module memez_otc::config;
 
 use interest_bps::bps::{Self, BPS};
 use memez_acl::acl::AuthWitness;
+use memez_otc::errors;
 
 // === Constants ===
 
 const ONE_PERCENT: u64 = 100;
+
+const MAX_FEE: u64 = ONE_PERCENT * 10;
 
 // === Structs ===
 
@@ -30,6 +33,7 @@ fun init(ctx: &mut TxContext) {
 // === Admin Functions ===
 
 public fun set_fee(self: &mut MemezOTCConfig, _: &AuthWitness, fee: u64) {
+    assert!(fee <= MAX_FEE, errors::invalid_fee());
     self.fee = bps::new(fee);
 }
 

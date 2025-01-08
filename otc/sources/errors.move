@@ -28,6 +28,8 @@ const ENotOwner: u64 = 11;
 
 const EAllMemeSold: u64 = 12;
 
+const EInvalidFee: u64 = 13;
+
 // === Public Package Functions ===
 
 public(package) fun wrong_owner(): u64 {
@@ -80,4 +82,8 @@ public(package) fun not_owner(): u64 {
 
 public(package) fun all_meme_sold(): u64 {
     EAllMemeSold
+}
+
+public(package) fun invalid_fee(): u64 {
+    EInvalidFee
 }

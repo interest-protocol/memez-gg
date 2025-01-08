@@ -2,7 +2,7 @@
 module memez_otc::config_tests;
 
 use memez_acl::acl;
-use memez_otc::config::{Self, MemezOTCConfig};
+use memez_otc::{config::{Self, MemezOTCConfig}, errors};
 use sui::{test_scenario::{Self as ts, Scenario}, test_utils::{assert_eq, destroy}};
 
 const ADMIN: address = @0x7;
@@ -49,6 +49,17 @@ fun test_admin_functions() {
 
         assert_eq(config.treasury(), ADMIN);
     });
+
+    dapp.end();
+}
+
+#[test, expected_failure(abort_code = errors::EInvalidFee, location = config)]
+fun test_invalid_fee() {
+    let mut dapp = deploy();
+
+    dapp.tx!(
+        |config, _| { (config.set_fee(&acl::sign_in_for_testing(), ONE_PERCENT * 10 + 1)); },
+    );
 
     dapp.end();
 }

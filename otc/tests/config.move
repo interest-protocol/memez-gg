@@ -57,9 +57,7 @@ fun test_admin_functions() {
 fun test_invalid_fee() {
     let mut dapp = deploy();
 
-    dapp.tx!(
-        |config, _| { (config.set_fee(&acl::sign_in_for_testing(), ONE_PERCENT * 10 + 1)); },
-    );
+    dapp.tx!(|config, _| { config.set_fee(&acl::sign_in_for_testing(), ONE_PERCENT * 10 + 1); });
 
     dapp.end();
 }

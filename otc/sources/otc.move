@@ -273,7 +273,7 @@ fun assert_is_owner<Meme>(otc: &MemezOTC<Meme>, ctx: &TxContext) {
 use fun u64::mul_div_up as u64.mul_div_up;
 use fun u64::mul_div_down as u64.mul_div_down;
 
-// === Test Only Functions === 
+// === Test Only Functions ===
 
 #[test_only]
 public fun balance<Meme>(otc: &MemezOTC<Meme>): u64 {

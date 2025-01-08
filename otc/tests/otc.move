@@ -67,22 +67,24 @@ fun test_normal_otc_end_to_end() {
 
         assert_eq(fee, fee_in);
         assert_eq(buy_amount, amount_in + fee_in);
-        
-        let (excess_sui, meme_coin) = otc.normal.buy(
-            coin::mint_for_testing<SUI>(buy_amount, scenario.ctx()),
-            scenario.ctx(),
-        );
+
+        let (excess_sui, meme_coin) = otc
+            .normal
+            .buy(
+                coin::mint_for_testing<SUI>(buy_amount, scenario.ctx()),
+                scenario.ctx(),
+            );
 
         assert_eq(meme_coin.burn_for_testing(), amount_out);
         assert_eq(excess_sui.burn_for_testing(), 0);
 
-        scenario.next_tx(RECIPIENT); 
+        scenario.next_tx(RECIPIENT);
 
         let recipient_sui_coin = scenario.take_from_sender<Coin<SUI>>();
 
         assert_eq(recipient_sui_coin.burn_for_testing(), buy_amount - fee);
 
-        let treasury_sui_coin = scenario.take_from_address<Coin<SUI>>(@treasury); 
+        let treasury_sui_coin = scenario.take_from_address<Coin<SUI>>(@treasury);
 
         assert_eq(treasury_sui_coin.burn_for_testing(), fee);
 
@@ -98,10 +100,12 @@ fun test_normal_otc_end_to_end() {
 
         let (amount_in, fee_in) = otc.normal.get_amount_in(available_amount);
 
-        let (excess_sui, meme_coin) = otc.normal.buy(
-            coin::mint_for_testing<SUI>(amount_in + fee_in + excess_sui_value, scenario.ctx()),
-            scenario.ctx(),
-        );
+        let (excess_sui, meme_coin) = otc
+            .normal
+            .buy(
+                coin::mint_for_testing<SUI>(amount_in + fee_in + excess_sui_value, scenario.ctx()),
+                scenario.ctx(),
+            );
 
         assert_eq(meme_coin.burn_for_testing(), available_amount);
         assert_eq(excess_sui.burn_for_testing(), excess_sui_value);
@@ -119,10 +123,12 @@ fun test_buy_error_vested_otc() {
     dapp.tx!(|_, _, otc, scenario| {
         let buy_amount = DESIRED_SUI_AMOUNT / 3;
 
-        let (_excess_sui, _meme_coin) = otc.vesting.buy(
-            coin::mint_for_testing<SUI>(buy_amount, scenario.ctx()),
-            scenario.ctx(),
-        );
+        let (_excess_sui, _meme_coin) = otc
+            .vesting
+            .buy(
+                coin::mint_for_testing<SUI>(buy_amount, scenario.ctx()),
+                scenario.ctx(),
+            );
 
         abort
     });
@@ -137,10 +143,12 @@ fun test_buy_error_has_deadline() {
     dapp.tx!(|_, _, otc, scenario| {
         let buy_amount = DESIRED_SUI_AMOUNT / 3;
 
-        let (_excess_sui, _meme_coin) = otc.deadline.buy(
-            coin::mint_for_testing<SUI>(buy_amount, scenario.ctx()),
-            scenario.ctx(),
-        );
+        let (_excess_sui, _meme_coin) = otc
+            .deadline
+            .buy(
+                coin::mint_for_testing<SUI>(buy_amount, scenario.ctx()),
+                scenario.ctx(),
+            );
 
         abort
     });
@@ -153,10 +161,12 @@ fun test_buy_error_invalid_buy_amount() {
     let mut dapp = deploy();
 
     dapp.tx!(|_, _, otc, scenario| {
-        let (_excess_sui, _meme_coin) = otc.normal.buy(
-            coin::mint_for_testing<SUI>(0, scenario.ctx()),
-            scenario.ctx(),
-        );
+        let (_excess_sui, _meme_coin) = otc
+            .normal
+            .buy(
+                coin::mint_for_testing<SUI>(0, scenario.ctx()),
+                scenario.ctx(),
+            );
 
         abort
     });
@@ -171,15 +181,19 @@ fun test_buy_error_all_meme_sold() {
     dapp.tx!(|_, _, otc, scenario| {
         let (amount_in, fee_in) = otc.normal.get_amount_in(SALE_AMOUNT);
 
-        let (_excess_sui, _meme_coin) = otc.normal.buy(
-            coin::mint_for_testing<SUI>(amount_in + fee_in, scenario.ctx()),
-            scenario.ctx(),
-        );
+        let (_excess_sui, _meme_coin) = otc
+            .normal
+            .buy(
+                coin::mint_for_testing<SUI>(amount_in + fee_in, scenario.ctx()),
+                scenario.ctx(),
+            );
 
-        let (_excess_sui_2, _meme_coin_2) = otc.normal.buy(
-            coin::mint_for_testing<SUI>(amount_in + fee_in, scenario.ctx()),
-            scenario.ctx(),
-        );
+        let (_excess_sui_2, _meme_coin_2) = otc
+            .normal
+            .buy(
+                coin::mint_for_testing<SUI>(amount_in + fee_in, scenario.ctx()),
+                scenario.ctx(),
+            );
 
         abort
     });
@@ -196,11 +210,13 @@ fun test_buy_with_deadline() {
 
         clock.set_for_testing(DEADLINE - 1);
 
-        let (excess_sui, meme_coin) = otc.deadline.buy_with_deadline(
-            clock,
-            coin::mint_for_testing<SUI>(amount_in + fee_in, scenario.ctx()),
-            scenario.ctx(),
-        );
+        let (excess_sui, meme_coin) = otc
+            .deadline
+            .buy_with_deadline(
+                clock,
+                coin::mint_for_testing<SUI>(amount_in + fee_in, scenario.ctx()),
+                scenario.ctx(),
+            );
 
         assert_eq(excess_sui.burn_for_testing(), 0);
         assert_eq(meme_coin.burn_for_testing(), SALE_AMOUNT);
@@ -216,11 +232,13 @@ fun test_buy_with_deadline_error_has_no_deadline() {
     let mut dapp = deploy();
 
     dapp.tx!(|_, clock, otc, scenario| {
-        let (_excess_sui, _meme_coin) = otc.normal.buy_with_deadline(
-            clock,
-            coin::mint_for_testing<SUI>(0, scenario.ctx()),
-            scenario.ctx(),
-        );
+        let (_excess_sui, _meme_coin) = otc
+            .normal
+            .buy_with_deadline(
+                clock,
+                coin::mint_for_testing<SUI>(0, scenario.ctx()),
+                scenario.ctx(),
+            );
 
         abort
     });
@@ -233,11 +251,13 @@ fun test_buy_with_deadline_error_vested_otc() {
     let mut dapp = deploy();
 
     dapp.tx!(|_, clock, otc, scenario| {
-        let (_excess_sui, _meme_coin) = otc.deadline_vesting.buy_with_deadline(
-            clock,
-            coin::mint_for_testing<SUI>(0, scenario.ctx()),
-            scenario.ctx(),
-        );
+        let (_excess_sui, _meme_coin) = otc
+            .deadline_vesting
+            .buy_with_deadline(
+                clock,
+                coin::mint_for_testing<SUI>(0, scenario.ctx()),
+                scenario.ctx(),
+            );
 
         abort
     });
@@ -252,11 +272,13 @@ fun test_buy_with_deadline_error_deadline_passed() {
     dapp.tx!(|_, clock, otc, scenario| {
         clock.set_for_testing(DEADLINE + 1);
 
-        let (_excess_sui, _meme_coin) = otc.deadline.buy_with_deadline(
-            clock,
-            coin::mint_for_testing<SUI>(0, scenario.ctx()),
-            scenario.ctx(),
-        );
+        let (_excess_sui, _meme_coin) = otc
+            .deadline
+            .buy_with_deadline(
+                clock,
+                coin::mint_for_testing<SUI>(0, scenario.ctx()),
+                scenario.ctx(),
+            );
 
         abort
     });
@@ -273,11 +295,13 @@ fun test_buy_with_vesting() {
 
         clock.set_for_testing(100);
 
-        let (excess_sui, meme_coin_vesting) = otc.vesting.buy_with_vesting(
-            clock,
-            coin::mint_for_testing<SUI>(amount_in + fee_in, scenario.ctx()),
-            scenario.ctx(),
-        );
+        let (excess_sui, meme_coin_vesting) = otc
+            .vesting
+            .buy_with_vesting(
+                clock,
+                coin::mint_for_testing<SUI>(amount_in + fee_in, scenario.ctx()),
+                scenario.ctx(),
+            );
 
         assert_eq(excess_sui.burn_for_testing(), 0);
         assert_eq(meme_coin_vesting.balance(), SALE_AMOUNT);
@@ -297,11 +321,13 @@ fun test_buy_with_vesting_error_has_deadline() {
     let mut dapp = deploy();
 
     dapp.tx!(|_, clock, otc, scenario| {
-        let (_excess_sui, _meme_vesting) = otc.deadline.buy_with_vesting(
-            clock,
-            coin::mint_for_testing<SUI>(0, scenario.ctx()),
-            scenario.ctx(),
-        );
+        let (_excess_sui, _meme_vesting) = otc
+            .deadline
+            .buy_with_vesting(
+                clock,
+                coin::mint_for_testing<SUI>(0, scenario.ctx()),
+                scenario.ctx(),
+            );
 
         abort
     });
@@ -314,11 +340,13 @@ fun test_buy_with_vesting_error_normal_otc() {
     let mut dapp = deploy();
 
     dapp.tx!(|_, clock, otc, scenario| {
-        let (_excess_sui, _meme_vesting) = otc.normal.buy_with_vesting(
-            clock,
-            coin::mint_for_testing<SUI>(0, scenario.ctx()),
-            scenario.ctx(),
-        );
+        let (_excess_sui, _meme_vesting) = otc
+            .normal
+            .buy_with_vesting(
+                clock,
+                coin::mint_for_testing<SUI>(0, scenario.ctx()),
+                scenario.ctx(),
+            );
 
         abort
     });
@@ -335,11 +363,13 @@ fun test_buy_with_vesting_and_deadline() {
 
         clock.set_for_testing(DEADLINE - 1);
 
-        let (excess_sui, meme_coin_vesting) = otc.deadline_vesting.buy_with_vesting_and_deadline(
-            clock,
-            coin::mint_for_testing<SUI>(amount_in + fee_in, scenario.ctx()),
-            scenario.ctx(),
-        );
+        let (excess_sui, meme_coin_vesting) = otc
+            .deadline_vesting
+            .buy_with_vesting_and_deadline(
+                clock,
+                coin::mint_for_testing<SUI>(amount_in + fee_in, scenario.ctx()),
+                scenario.ctx(),
+            );
 
         assert_eq(excess_sui.burn_for_testing(), 0);
         assert_eq(meme_coin_vesting.balance(), SALE_AMOUNT);
@@ -361,11 +391,13 @@ fun test_buy_with_vesting_and_deadline_error_deadline_passed() {
     dapp.tx!(|_, clock, otc, scenario| {
         clock.set_for_testing(DEADLINE + 1);
 
-        let (_excess_sui, _meme_vesting) = otc.deadline_vesting.buy_with_vesting_and_deadline(
-            clock,
-            coin::mint_for_testing<SUI>(0, scenario.ctx()),
-            scenario.ctx(),
-        );
+        let (_excess_sui, _meme_vesting) = otc
+            .deadline_vesting
+            .buy_with_vesting_and_deadline(
+                clock,
+                coin::mint_for_testing<SUI>(0, scenario.ctx()),
+                scenario.ctx(),
+            );
 
         abort
     });
@@ -378,11 +410,13 @@ fun test_buy_with_vesting_and_deadline_error_normal_otc() {
     let mut dapp = deploy();
 
     dapp.tx!(|_, clock, otc, scenario| {
-        let (_excess_sui, _meme_vesting) = otc.deadline.buy_with_vesting_and_deadline(
-            clock,
-            coin::mint_for_testing<SUI>(0, scenario.ctx()),
-            scenario.ctx(),
-        );
+        let (_excess_sui, _meme_vesting) = otc
+            .deadline
+            .buy_with_vesting_and_deadline(
+                clock,
+                coin::mint_for_testing<SUI>(0, scenario.ctx()),
+                scenario.ctx(),
+            );
 
         abort
     });
@@ -395,11 +429,13 @@ fun test_buy_with_vesting_and_deadline_error_has_no_deadline() {
     let mut dapp = deploy();
 
     dapp.tx!(|_, clock, otc, scenario| {
-        let (_excess_sui, _meme_vesting) = otc.vesting.buy_with_vesting_and_deadline(
-            clock,
-            coin::mint_for_testing<SUI>(0, scenario.ctx()),
-            scenario.ctx(),
-        );
+        let (_excess_sui, _meme_vesting) = otc
+            .vesting
+            .buy_with_vesting_and_deadline(
+                clock,
+                coin::mint_for_testing<SUI>(0, scenario.ctx()),
+                scenario.ctx(),
+            );
 
         abort
     });
@@ -510,7 +546,6 @@ fun test_destroy_not_owner() {
 
     dapp.end();
 }
-
 
 #[test, expected_failure(abort_code = errors::EZeroPrice, location = memez_otc)]
 fun test_new_zero_price() {

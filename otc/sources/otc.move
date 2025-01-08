@@ -249,10 +249,8 @@ fun buy_internal<Meme>(
     } else {
         let (amount_in, fee) = self.amount_in(available_meme_amount);
 
-        let mut sui_coin_to_transfer = sui_coin.split(amount_in, ctx);
-
-        transfer::public_transfer(sui_coin_to_transfer.split(fee, ctx), self.treasury);
-        transfer::public_transfer(sui_coin_to_transfer, self.recipient);
+        transfer::public_transfer(sui_coin.split(fee, ctx), self.treasury);
+        transfer::public_transfer(sui_coin.split(amount_in, ctx), self.recipient);
 
         events::buy<Meme>(
             self.id.to_address(),
@@ -320,4 +318,14 @@ public fun deadline<Meme>(otc: &MemezOTC<Meme>): Option<u64> {
 #[test_only]
 public fun treasury<Meme>(otc: &MemezOTC<Meme>): address {
     otc.treasury
+}
+
+#[test_only]
+public fun get_amount_out<Meme>(otc: &MemezOTC<Meme>, amount_in: u64): (u64, u64) {
+    otc.amount_out(amount_in)
+}
+
+#[test_only]
+public fun get_amount_in<Meme>(otc: &MemezOTC<Meme>, amount_out: u64): (u64, u64) {
+    otc.amount_in(amount_out)
 }

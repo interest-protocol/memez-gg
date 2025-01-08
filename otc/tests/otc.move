@@ -4,7 +4,7 @@ module memez_otc::memez_otc_tests;
 use memez_otc::{config::{Self, MemezOTCConfig}, errors, memez_otc::{Self, MemezOTC}};
 use sui::{
     clock::{Self, Clock},
-    coin,
+    coin::{Self, Coin},
     sui::SUI,
     test_scenario::{Self as ts, Scenario},
     test_utils::{assert_eq, destroy}
@@ -55,6 +55,58 @@ fun test_normal_otc_end_to_end() {
         assert_eq(otc.normal.vesting_duration(), option::none());
         assert_eq(otc.normal.deadline(), option::none());
         assert_eq(otc.normal.treasury(), config.treasury());
+    });
+
+    dapp.tx!(|_, _, otc, scenario| {
+        scenario.next_tx(OWNER);
+
+        let buy_amount = DESIRED_SUI_AMOUNT / 3;
+
+        let (amount_out, fee) = otc.normal.get_amount_out(buy_amount);
+        let (amount_in, fee_in) = otc.normal.get_amount_in(amount_out);
+
+        assert_eq(fee, fee_in);
+        assert_eq(buy_amount, amount_in + fee_in);
+        
+        let (excess_sui, meme_coin) = otc.normal.buy(
+            coin::mint_for_testing<SUI>(buy_amount, scenario.ctx()),
+            scenario.ctx(),
+        );
+
+        assert_eq(meme_coin.burn_for_testing(), amount_out);
+        assert_eq(excess_sui.burn_for_testing(), 0);
+
+        scenario.next_tx(RECIPIENT); 
+
+        let recipient_sui_coin = scenario.take_from_sender<Coin<SUI>>();
+
+        assert_eq(recipient_sui_coin.burn_for_testing(), buy_amount - fee);
+
+        let treasury_sui_coin = scenario.take_from_address<Coin<SUI>>(@treasury); 
+
+        assert_eq(treasury_sui_coin.burn_for_testing(), fee);
+
+        assert_eq(otc.normal.balance(), SALE_AMOUNT - amount_out);
+    });
+
+    dapp.tx!(|_, _, otc, scenario| {
+        scenario.next_tx(OWNER);
+
+        let available_amount = otc.normal.balance();
+
+        let excess_sui_value = 13 * SUI_SCALAR;
+
+        let (amount_in, fee_in) = otc.normal.get_amount_in(available_amount);
+
+        let (excess_sui, meme_coin) = otc.normal.buy(
+            coin::mint_for_testing<SUI>(amount_in + fee_in + excess_sui_value, scenario.ctx()),
+            scenario.ctx(),
+        );
+
+        assert_eq(meme_coin.burn_for_testing(), available_amount);
+        assert_eq(excess_sui.burn_for_testing(), excess_sui_value);
+
+        assert_eq(otc.normal.balance(), 0);
     });
 
     dapp.end();

@@ -1,3 +1,6 @@
+// Copyright (c) DEFI, LDA
+// SPDX-License-Identifier: Apache-2.0
+
 module memez_fun::memez_constant_product;
 
 use constant_product::constant_product::get_amount_out;

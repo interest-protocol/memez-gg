@@ -1,3 +1,6 @@
+// Copyright (c) DEFI, LDA
+// SPDX-License-Identifier: Apache-2.0
+
 #[allow(lint(self_transfer, share_owned))]
 module memez_fun::memez_utils;
 

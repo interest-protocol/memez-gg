@@ -1,3 +1,6 @@
+// Copyright (c) DEFI, LDA
+// SPDX-License-Identifier: Apache-2.0
+
 module memez_fun::memez_burner;
 
 use interest_bps::bps::{Self, max_bps, BPS};

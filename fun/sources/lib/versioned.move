@@ -1,3 +1,6 @@
+// Copyright (c) DEFI, LDA
+// SPDX-License-Identifier: Apache-2.0
+
 // Modify the Mysten Labs Versioned to use Prime objects to easily fetch data
 // Original code: https://github.com/MystenLabs/sui/blob/main/crates/sui-framework/packages/sui-framework/sources/versioned.move
 

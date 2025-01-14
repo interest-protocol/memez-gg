@@ -1,3 +1,6 @@
+// Copyright (c) DEFI, LDA
+// SPDX-License-Identifier: Apache-2.0
+
 /*                                     
         GGGGGGGGGGGGG        GGGGGGGGGGGGG     
      GGG::::::::::::G     GGG::::::::::::G     

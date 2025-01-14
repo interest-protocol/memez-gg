@@ -1,3 +1,6 @@
+// Copyright (c) DEFI, LDA
+// SPDX-License-Identifier: Apache-2.0
+
 module memez_fun::memez_migrator_list;
 
 use memez_acl::acl::AuthWitness;

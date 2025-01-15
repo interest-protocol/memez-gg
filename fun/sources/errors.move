@@ -6,142 +6,142 @@ module memez_fun::memez_errors;
 // === Constants ===
 
 #[test_only]
-const EInsufficientValue: u64 = 3;
+const EInsufficientValue: u64 = 0;
 
 #[test_only]
-const EPreMintNotAllowed: u64 = 4;
+const EPreMintNotAllowed: u64 = 1;
 
 #[test_only]
-const EZeroCoin: u64 = 5;
+const EZeroCoin: u64 = 2;
 
 #[test_only]
-const ESlippage: u64 = 6;
+const ESlippage: u64 = 3;
 
 #[test_only]
-const ENotBonding: u64 = 8;
+const ENotBonding: u64 = 5;
 
 #[test_only]
-const ENotMigrating: u64 = 9;
+const ENotMigrating: u64 = 6;
 
 #[test_only]
-const ENotMigrated: u64 = 10;
+const ENotMigrated: u64 = 7;
 
 #[test_only]
-const EInvalidWitness: u64 = 11;
+const EInvalidWitness: u64 = 8;
 
 #[test_only]
-const EInvalidDev: u64 = 12;
+const EInvalidDev: u64 = 9;
 
 #[test_only]
-const ETokenNotSupported: u64 = 13;
+const ETokenNotSupported: u64 = 10;
 
 #[test_only]
-const ETokenSupported: u64 = 14;
+const ETokenSupported: u64 = 11;
 
 #[test_only]
-const EOutdatedPackageVersion: u64 = 17;
+const EOutdatedPackageVersion: u64 = 14;
 
 #[test_only]
-const EInvalidPercentages: u64 = 18;
+const EInvalidPercentages: u64 = 15;
 
 #[test_only]
-const EInvalidConfig: u64 = 19;
+const EInvalidConfig: u64 = 16;
 
 #[test_only]
-const EInvalidCreationFeeConfig: u64 = 21;
+const EInvalidCreationFeeConfig: u64 = 18;
 
 #[test_only]
-const EZeroTotalSupply: u64 = 22;
+const EZeroTotalSupply: u64 = 19;
 
 #[test_only]
-const ERemoveCurrentVersionNotAllowed: u64 = 24;
+const ERemoveCurrentVersionNotAllowed: u64 = 21;
 
 // === Public Package Functions ===
 
 public(package) macro fun insufficient_value(): u64 {
-    3
+    0
 }
 
 public(package) macro fun pre_mint_not_allowed(): u64 {
-    4
+    1
 }
 
 public(package) macro fun zero_coin(): u64 {
-    5
+    2
 }
 
 public(package) macro fun slippage(): u64 {
-    6
+    3
 }
 
 public(package) macro fun outdated_auction_state_version(): u64 {
-    7
+    4
 }
 
 public(package) macro fun not_bonding(): u64 {
-    8
+    5
 }
 
 public(package) macro fun not_migrating(): u64 {
-    9
+    6
 }
 
 public(package) macro fun not_migrated(): u64 {
-    10
+    7
 }
 
 public(package) macro fun invalid_witness(): u64 {
-    11
+    8
 }
 
 public(package) macro fun invalid_dev(): u64 {
-    12
+    9
 }
 
 public(package) macro fun token_not_supported(): u64 {
-    13
+    10
 }
 
 public(package) macro fun token_supported(): u64 {
-    14
+    11
 }
 
 public(package) macro fun outdated_pump_state_version(): u64 {
-    15
+    12
 }
 
 public(package) macro fun outdated_stable_state_version(): u64 {
-    16
+    13
 }
 
 public(package) macro fun outdated_package_version(): u64 {
-    17
+    14
 }
 
 public(package) macro fun invalid_percentages(): u64 {
-    18
+    15
 }
 
 public(package) macro fun invalid_config(): u64 {
-    19
+    16
 }
 
 public(package) macro fun model_key_not_supported(): u64 {
-    20
+    17
 }
 
 public(package) macro fun invalid_creation_fee_config(): u64 {
-    21
+    18
 }
 
 public(package) macro fun zero_total_supply(): u64 {
-    22
+    19
 }
 
 public(package) macro fun invalid_upgrade(): u64 {
-    23
+    20
 }
 
 public(package) macro fun remove_current_version_not_allowed(): u64 {
-    24
+    21
 }

@@ -1,10 +1,12 @@
 // Copyright (c) DEFI, LDA
 // SPDX-License-Identifier: Apache-2.0
 
+#[allow(implicit_const_copy)]
 module memez_fun::memez_version;
 
 use memez_acl::acl::AuthWitness;
 use memez_fun::memez_errors;
+use sui::vec_set::{Self, VecSet};
 
 // === Constants ===
 
@@ -14,17 +16,17 @@ const VERSION: u64 = 1;
 
 public struct Version has key {
     id: UID,
-    version: u64,
+    allowed_versions: VecSet<u64>,
 }
 
-public struct CurrentVersion(u64) has drop;
+public struct CurrentVersion(vector<u64>) has drop;
 
 // === Initializer ===
 
 fun init(ctx: &mut TxContext) {
     let version = Version {
         id: object::new(ctx),
-        version: VERSION,
+        allowed_versions: vec_set::singleton(VERSION),
     };
 
     transfer::share_object(version);
@@ -33,19 +35,24 @@ fun init(ctx: &mut TxContext) {
 // === Public View Functions ===
 
 public fun get_version(self: &Version): CurrentVersion {
-    CurrentVersion(self.version)
+    CurrentVersion(*self.allowed_versions.keys())
 }
 
 // === Admin Functions ===
 
-public fun update(self: &mut Version, _: &AuthWitness) {
-    self.version = self.version + 1;
+public fun add_version(self: &mut Version, _: &AuthWitness, version: u64) {
+    self.allowed_versions.insert(version);
+}
+
+public fun remove_version(self: &mut Version, _: &AuthWitness, version: u64) {
+    assert!(version != VERSION, memez_errors::remove_current_version_not_allowed());
+    self.allowed_versions.remove(&version);
 }
 
 // === Public Package Functions ===
 
 public(package) fun assert_is_valid(self: &CurrentVersion) {
-    assert!(self.0 == VERSION, memez_errors::outdated_package_version());
+    assert!(self.0.contains(&VERSION), memez_errors::outdated_package_version());
 }
 
 // === Test Functions ===
@@ -56,11 +63,11 @@ public fun init_for_testing(ctx: &mut TxContext) {
 }
 
 #[test_only]
-public fun version(self: &Version): u64 {
-    self.version
+public fun allowed_versions(self: &Version): vector<u64> {
+    *self.allowed_versions.keys()
 }
 
 #[test_only]
 public fun get_version_for_testing(version: u64): CurrentVersion {
-    CurrentVersion(version)
+    CurrentVersion(vector[version])
 }

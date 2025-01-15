@@ -53,6 +53,8 @@ const EZeroTotalSupply: u64 = 22;
 
 const EInvalidUpgrade: u64 = 23;
 
+const ERemoveCurrentVersionNotAllowed: u64 = 24;
+
 // === Public Package Functions ===
 
 public(package) fun already_initialized(): u64 {
@@ -149,4 +151,8 @@ public(package) fun zero_total_supply(): u64 {
 
 public(package) fun invalid_upgrade(): u64 {
     EInvalidUpgrade
+}
+
+public(package) fun remove_current_version_not_allowed(): u64 {
+    ERemoveCurrentVersionNotAllowed
 }

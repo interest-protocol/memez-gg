@@ -44,6 +44,8 @@ const MAX_TARGET_SUI_LIQUIDITY: u64 = 10_000 * POW_9;
 
 const VESTING_PERIOD: u64 = 250;
 
+const TEN_PERCENT: u64 = MAX_BPS / 10;
+
 public struct World {
     config: MemezConfig,
     migrator_list: MemezMigratorList,
@@ -293,9 +295,11 @@ fun test_coin_end_to_end() {
 
     let (sui_balance_after, meme_balance_after) = migrator.destroy(MigrationWitness());
 
+    let migration_fee_value = 1_000 * POW_9;
+
     assert_eq(
         sui_balance_after.destroy_for_testing(),
-        target_sui_liquidity - 200 * POW_9,
+        target_sui_liquidity - migration_fee_value,
     );
     assert_eq(meme_balance_after.destroy_for_testing(), stable_config[1]);
 
@@ -305,9 +309,7 @@ fun test_coin_end_to_end() {
 
     let migration_fee = world.scenario.take_from_address<Coin<SUI>>(ADMIN);
 
-    let fees = world.config.fees<DefaultKey>();
-
-    assert_eq(migration_fee.burn_for_testing(), fees.migration(vector[STAKE_HOLDER]).value());
+    assert_eq(migration_fee.burn_for_testing(), migration_fee_value);
 
     destroy(fr);
     destroy(memez_fun);
@@ -333,7 +335,7 @@ fun test_token_end_to_end() {
             vector[
                 vector[MAX_BPS, 2 * POW_9],
                 vector[MAX_BPS, 0, 0],
-                vector[MAX_BPS, 0, 200 * POW_9],
+                vector[MAX_BPS, 0, TEN_PERCENT],
                 vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 0],
             ],
             vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
@@ -425,9 +427,11 @@ fun test_token_end_to_end() {
 
     let (sui_balance_after, meme_balance_after) = migrator.destroy(MigrationWitness());
 
+    let migration_fee_value = 1_000 * POW_9;
+
     assert_eq(
         sui_balance_after.destroy_for_testing(),
-        target_sui_liquidity - fees.migration(vector[STAKE_HOLDER]).value(),
+        target_sui_liquidity - migration_fee_value,
     );
     assert_eq(meme_balance_after.destroy_for_testing(), stable_config[1]);
 
@@ -456,7 +460,7 @@ fun test_token_end_to_end() {
 
     let migration_fee = world.scenario.take_from_address<Coin<SUI>>(ADMIN);
 
-    assert_eq(migration_fee.burn_for_testing(), fees.migration(vector[STAKE_HOLDER]).value());
+    assert_eq(migration_fee.burn_for_testing(), migration_fee_value);
 
     clock.increment_for_testing(DAY + 1);
 
@@ -486,7 +490,7 @@ fun test_distribute_stake_holders_allocation() {
 
     world.config.set_fees<DefaultKey>(
         &witness,
-        vector[vector[MAX_BPS, 2 * POW_9], vector[MAX_BPS, 0, 30], vector[MAX_BPS, 0, 200 * POW_9], vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 500]],
+        vector[vector[MAX_BPS, 2 * POW_9], vector[MAX_BPS, 0, 30], vector[MAX_BPS, 0, TEN_PERCENT], vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 500]],
         vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
         world.scenario.ctx(),
     );
@@ -575,9 +579,7 @@ fun test_distribute_stake_holders_allocation() {
 
     let migration_fee = world.scenario.take_from_address<Coin<SUI>>(ADMIN);
 
-    let fees = world.config.fees<DefaultKey>();
-
-    assert_eq(migration_fee.burn_for_testing(), fees.migration(vector[STAKE_HOLDER]).value());
+    assert_eq(migration_fee.burn_for_testing(), 1_000 * POW_9);
 
     world.scenario.next_tx(DEV);
 
@@ -800,7 +802,7 @@ fun pump_is_not_bonding() {
             vector[
                 vector[MAX_BPS, 2 * POW_9],
                 vector[MAX_BPS, 0, 0],
-                vector[MAX_BPS, 0, 200 * POW_9],
+                vector[MAX_BPS, 0, TEN_PERCENT],
                 vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 500],
             ],
             vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
@@ -935,7 +937,7 @@ fun dump_is_not_bonding() {
             vector[
                 vector[MAX_BPS, 2 * POW_9],
                 vector[MAX_BPS, 0, 0],
-                vector[MAX_BPS, 0, 200 * POW_9],
+                vector[MAX_BPS, 0, TEN_PERCENT],
                 vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 500],
             ],
             vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
@@ -1024,7 +1026,7 @@ fun migrate_is_not_migrating() {
             vector[
                 vector[MAX_BPS, 2 * POW_9],
                 vector[MAX_BPS, 0, 0],
-                vector[MAX_BPS, 0, 200 * POW_9],
+                vector[MAX_BPS, 0, TEN_PERCENT],
                 vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 500],
             ],
             vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
@@ -1074,7 +1076,7 @@ fun dev_claim_invalid_version() {
             vector[
                 vector[MAX_BPS, 2 * POW_9],
                 vector[MAX_BPS, 0, 0],
-                vector[MAX_BPS, 0, 200 * POW_9],
+                vector[MAX_BPS, 0, TEN_PERCENT],
                 vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 500],
             ],
             vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
@@ -1182,7 +1184,7 @@ fun dev_claim_is_not_dev() {
             vector[
                 vector[MAX_BPS, 2 * POW_9],
                 vector[MAX_BPS, 0, 0],
-                vector[MAX_BPS, 0, 200 * POW_9],
+                vector[MAX_BPS, 0, TEN_PERCENT],
                 vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 500],
             ],
             vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
@@ -1318,7 +1320,7 @@ fun pump_token_is_not_bonding() {
             vector[
                 vector[MAX_BPS, 2 * POW_9],
                 vector[MAX_BPS, 0, 0],
-                vector[MAX_BPS, 0, 200 * POW_9],
+                vector[MAX_BPS, 0, TEN_PERCENT],
                 vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 500],
             ],
             vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
@@ -1464,7 +1466,7 @@ fun dump_token_is_not_bonding() {
             vector[
                 vector[MAX_BPS, 2 * POW_9],
                 vector[MAX_BPS, 0, 0],
-                vector[MAX_BPS, 0, 200 * POW_9],
+                vector[MAX_BPS, 0, TEN_PERCENT],
                 vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 500],
             ],
             vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
@@ -1558,7 +1560,7 @@ fun start(): World {
 
     config.set_fees<DefaultKey>(
         &witness,
-        vector[vector[MAX_BPS, 2 * POW_9], vector[MAX_BPS, 0, 30], vector[MAX_BPS, 0, 200 * POW_9], vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 0]],
+        vector[vector[MAX_BPS, 2 * POW_9], vector[MAX_BPS, 0, 30], vector[MAX_BPS, 0, TEN_PERCENT], vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 0]],
         vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
         scenario.ctx(),
     );

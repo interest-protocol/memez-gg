@@ -48,6 +48,8 @@ const STAKE_HOLDER: address = @0x3;
 
 const VESTING_PERIOD: u64 = 100;
 
+const TEN_PERCENT: u64 = MAX_BPS / 10;
+
 public struct World {
     config: MemezConfig,
     migrator_list: MemezMigratorList,
@@ -278,11 +280,13 @@ fun test_coin_end_to_end() {
 
     let sui_fee_coin = world.scenario.take_from_address<Coin<SUI>>(ADMIN);
 
-    assert_eq(sui_fee_coin.burn_for_testing(), 200 * POW_9);
+    let migration_fee_value = u64::mul_div_up(sui_balance_value, TEN_PERCENT, MAX_BPS);
+
+    assert_eq(sui_fee_coin.burn_for_testing(), migration_fee_value);
 
     let config = world.config.get_pump<DefaultKey>(total_supply);
 
-    assert_eq(sui_balance.destroy_for_testing(), sui_balance_value - 200 * POW_9);
+    assert_eq(sui_balance.destroy_for_testing(), sui_balance_value - migration_fee_value);
     assert_eq(sui_balance_value >= config[2], true);
     assert_eq(meme_balance.destroy_for_testing(), config[3]);
 
@@ -436,11 +440,13 @@ fun test_token_end_to_end() {
 
     let sui_fee_coin = world.scenario.take_from_address<Coin<SUI>>(ADMIN);
 
-    assert_eq(sui_fee_coin.burn_for_testing(), 200 * POW_9);
+    let migration_fee_value = u64::mul_div_up(sui_balance_value, TEN_PERCENT, MAX_BPS);
+
+    assert_eq(sui_fee_coin.burn_for_testing(), migration_fee_value);
 
     let config = world.config.get_pump<DefaultKey>(total_supply);
 
-    assert_eq(sui_balance.destroy_for_testing(), sui_balance_value - 200 * POW_9);
+    assert_eq(sui_balance.destroy_for_testing(), sui_balance_value - migration_fee_value);
     assert_eq(sui_balance_value >= config[2], true);
     assert_eq(meme_balance.destroy_for_testing(), config[3]);
 
@@ -1215,7 +1221,7 @@ fun test_distribute_stake_holders_allocation() {
     world.config
         .set_fees<DefaultKey>(
             &witness,
-            vector[vector[MAX_BPS, 2 * POW_9], vector[MAX_BPS, 0, 30], vector[MAX_BPS, 0, 200 * POW_9], vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 500]],
+            vector[vector[MAX_BPS, 2 * POW_9], vector[MAX_BPS, 0, 30], vector[MAX_BPS, 0, TEN_PERCENT], vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 500]],
             vector[vector[@0x0], vector[@0x0], vector[@0x0], vector[ADMIN]],
             world.scenario.ctx(),
         );
@@ -1293,7 +1299,7 @@ fun test_migrate_full_liquidity() {
     world.config
         .set_fees<DefaultKey>(
             &witness,
-            vector[vector[MAX_BPS, 2 * POW_9], vector[MAX_BPS, 0, 30], vector[MAX_BPS, 0, 200 * POW_9], vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 0]],
+            vector[vector[MAX_BPS, 2 * POW_9], vector[MAX_BPS, 0, 30], vector[MAX_BPS, 0, TEN_PERCENT], vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 0]],
             vector[vector[@0x0], vector[@0x0], vector[@0x0], vector[ADMIN]],
             world.scenario.ctx(),
         );
@@ -1542,7 +1548,7 @@ fun start(): World {
     config
         .set_fees<DefaultKey>(
             &witness,
-            vector[vector[MAX_BPS, 2 * POW_9], vector[MAX_BPS, 0, 30], vector[MAX_BPS, 0, 200 * POW_9], vector[MAX_BPS, 0, 0, 0]],
+            vector[vector[MAX_BPS, 2 * POW_9], vector[MAX_BPS, 0, 30], vector[MAX_BPS, 0, TEN_PERCENT], vector[MAX_BPS, 0, 0, 0]],
             vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
             scenario.ctx(),
         );

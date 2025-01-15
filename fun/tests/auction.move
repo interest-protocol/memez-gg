@@ -48,6 +48,8 @@ const VESTING_PERIOD: u64 = THIRTY_MINUTES_MS * 10;
 
 const DEV: address = @0x2;
 
+const TEN_PERCENT: u64 = MAX_BPS / 10;
+
 public struct Meme has drop ()
 
 public struct MigrationWitness has drop ()
@@ -331,11 +333,13 @@ fun test_coin_end_to_end() {
         world.scenario.ctx(),
     );
 
+    let migration_fee_value = 1_000 * POW_9;
+
     let (sui_balance, meme_balance) = migrator.destroy(MigrationWitness());
 
     let auction_config = world.config.get_auction<DefaultKey>(total_supply);
 
-    assert_eq(sui_balance.value(), 10_000 * POW_9 - 200 * POW_9);
+    assert_eq(sui_balance.value(), 10_000 * POW_9 - migration_fee_value);
     assert_eq(meme_balance.value(), auction_config[4]);
 
     sui_balance.destroy_for_testing();
@@ -347,7 +351,7 @@ fun test_coin_end_to_end() {
 
     let migration_fee = world.scenario.take_from_address<Coin<SUI>>(ADMIN);
 
-    assert_eq(migration_fee.burn_for_testing(), 200 * POW_9);
+    assert_eq(migration_fee.burn_for_testing(), migration_fee_value);
 
     memez_auction::distribute_stake_holders_allocation(&mut memez_fun, &world.clock, memez_allowed_versions::get_allowed_versions_for_testing(1), world.scenario.ctx());
 
@@ -502,7 +506,9 @@ fun test_token_end_to_end() {
 
     let auction_config = world.config.get_auction<DefaultKey>(total_supply);
 
-    assert_eq(sui_balance.value(), 10_000 * POW_9 - 200 * POW_9);
+    let migration_fee_value = 1_000 * POW_9;
+
+    assert_eq(sui_balance.value(), 10_000 * POW_9 - migration_fee_value);
     assert_eq(meme_balance.value(), auction_config[4]);
 
     sui_balance.destroy_for_testing();
@@ -514,7 +520,7 @@ fun test_token_end_to_end() {
 
     let migration_fee = world.scenario.take_from_address<Coin<SUI>>(ADMIN);
 
-    assert_eq(migration_fee.burn_for_testing(), 200 * POW_9);
+    assert_eq(migration_fee.burn_for_testing(), migration_fee_value);
 
     memez_auction::distribute_stake_holders_allocation(&mut memez_fun, &world.clock, memez_allowed_versions::get_allowed_versions_for_testing(1), world.scenario.ctx());
 
@@ -553,7 +559,7 @@ fun test_coin_end_to_end_with_stake_holders() {
 
     world.config.set_fees<DefaultKey>(
         &witness,
-        vector[vector[MAX_BPS / 2, MAX_BPS / 2,  2 * POW_9], vector[3_000, 7_000, 30], vector[2_000, 8_000, 200 * POW_9], vector[0, MAX_BPS, VESTING_PERIOD, 500]],
+        vector[vector[MAX_BPS / 2, MAX_BPS / 2,  2 * POW_9], vector[3_000, 7_000, 30], vector[2_000, 8_000, TEN_PERCENT], vector[0, MAX_BPS, VESTING_PERIOD, 500]],
         vector[vector[ADMIN, STAKE_HOLDER], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
         world.scenario.ctx(),
     );
@@ -736,7 +742,9 @@ fun test_coin_end_to_end_with_stake_holders() {
 
     let auction_config = world.config.get_auction<DefaultKey>(total_supply);
 
-    assert_eq(sui_balance.value(), 10_000 * POW_9 - 200 * POW_9);
+    let migration_fee_value = 1_000 * POW_9;
+
+    assert_eq(sui_balance.value(), 10_000 * POW_9 - migration_fee_value);
     assert_eq(meme_balance.value(), auction_config[4]);
 
     sui_balance.destroy_for_testing();
@@ -746,8 +754,8 @@ fun test_coin_end_to_end_with_stake_holders() {
 
     world.scenario.next_tx(DEV);
 
-    assert_eq(world.scenario.take_from_address<Coin<SUI>>(ADMIN).burn_for_testing(), 200 * POW_9 * 2_000 / 10_000);
-    assert_eq(world.scenario.take_from_address<Coin<SUI>>(STAKE_HOLDER).burn_for_testing(), 200 * POW_9 * 8_000 / 10_000);
+    assert_eq(world.scenario.take_from_address<Coin<SUI>>(ADMIN).burn_for_testing(), migration_fee_value * 2_000 / 10_000);
+    assert_eq(world.scenario.take_from_address<Coin<SUI>>(STAKE_HOLDER).burn_for_testing(), migration_fee_value * 8_000 / 10_000);
 
     memez_auction::distribute_stake_holders_allocation(
         &mut memez_fun,
@@ -1266,7 +1274,7 @@ fun start(): World {
 
     config.set_fees<DefaultKey>(
         &witness,
-        vector[vector[MAX_BPS, 2 * POW_9], vector[MAX_BPS, 30], vector[MAX_BPS, 200 * POW_9], vector[MAX_BPS, VESTING_PERIOD, DEV_ALLOCATION]],
+        vector[vector[MAX_BPS, 2 * POW_9], vector[MAX_BPS, 30], vector[MAX_BPS, TEN_PERCENT], vector[MAX_BPS, VESTING_PERIOD, DEV_ALLOCATION]],
         vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[DEV]],
         scenario.ctx(),
     );

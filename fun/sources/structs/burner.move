@@ -22,7 +22,7 @@ public struct MemezBurner has copy, drop, store {
 // === Public Package Functions ===
 
 public(package) fun new(values: vector<u64>): MemezBurner {
-    assert!(values.length() == VALUES_LENGTH, memez_errors::invalid_config());
+    assert!(values.length() == VALUES_LENGTH, memez_errors::invalid_config!());
 
     MemezBurner {
         fee: bps::new(values[0]),

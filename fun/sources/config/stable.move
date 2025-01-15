@@ -21,7 +21,7 @@ public struct StableConfig has copy, drop, store {
 // === Public Package Functions ===
 
 public(package) fun new(values: vector<u64>): StableConfig {
-    assert!(values.length() == VALUES_LENGTH, memez_errors::invalid_config());
+    assert!(values.length() == VALUES_LENGTH, memez_errors::invalid_config!());
 
     StableConfig {
         max_target_sui_liquidity: values[0],

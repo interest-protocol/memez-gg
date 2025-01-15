@@ -46,7 +46,7 @@ public(package) fun new(
 ): MemezFees {
     assert!(
         values.length() == VALUES_LENGTH && recipients.length() == VALUES_LENGTH,
-        memez_errors::invalid_config(),
+        memez_errors::invalid_config!(),
     );
 
     let mut creation_percentages = values[0];
@@ -68,7 +68,7 @@ public(package) fun new(
     // @dev The other fees include dynamic recipients
     assert!(
         recipients[0].length() == creation_percentages.length(),
-        memez_errors::invalid_creation_fee_config(),
+        memez_errors::invalid_creation_fee_config!(),
     );
 
     MemezFees {
@@ -108,7 +108,7 @@ public(package) fun take<T>(fee: Fee, asset: &mut Coin<T>, ctx: &mut TxContext):
         Fee::Value(value, distributor) => {
             if (value == 0) return 0;
 
-            assert!(asset.value() >= value, memez_errors::insufficient_value());
+            assert!(asset.value() >= value, memez_errors::insufficient_value!());
 
             let payment = asset.split(value, ctx);
             let payment_value = payment.value();
@@ -123,7 +123,7 @@ public(package) fun take<T>(fee: Fee, asset: &mut Coin<T>, ctx: &mut TxContext):
             let asset_value = asset.value();
             let payment_value = bps.calc_up(asset_value);
 
-            assert!(asset_value >= payment_value, memez_errors::insufficient_value());
+            assert!(asset_value >= payment_value, memez_errors::insufficient_value!());
 
             let payment = asset.split(payment_value, ctx);
 

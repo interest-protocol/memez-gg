@@ -22,7 +22,7 @@ public struct PumpConfig has copy, drop, store {
 // === Public Package Functions ===
 
 public(package) fun new(values: vector<u64>): PumpConfig {
-    assert!(values.length() == VALUES_LENGTH, memez_errors::invalid_config());
+    assert!(values.length() == VALUES_LENGTH, memez_errors::invalid_config!());
 
     PumpConfig {
         burn_tax: values[0],

@@ -45,14 +45,14 @@ public fun add(self: &mut MemezAV, _: &AuthWitness, version: u64) {
 }
 
 public fun remove(self: &mut MemezAV, _: &AuthWitness, version: u64) {
-    assert!(version != VERSION, memez_errors::remove_current_version_not_allowed());
+    assert!(version != VERSION, memez_errors::remove_current_version_not_allowed!());
     self.allowed_versions.remove(&version);
 }
 
 // === Public Package Functions ===
 
 public(package) fun assert_pkg_version(self: &AllowedVersions) {
-    assert!(self.0.contains(&VERSION), memez_errors::outdated_package_version());
+    assert!(self.0.contains(&VERSION), memez_errors::outdated_package_version!());
 }
 
 // === Test Functions ===

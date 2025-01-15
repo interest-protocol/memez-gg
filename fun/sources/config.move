@@ -92,7 +92,7 @@ public fun remove<T, Model: drop + store>(
 public(package) fun fees<T>(self: &MemezConfig): MemezFees {
     let key = type_name::get<FeesKey<T>>();
 
-    assert!(df::exists_(&self.id, key), memez_errors::model_key_not_supported());
+    assert!(df::exists_(&self.id, key), memez_errors::model_key_not_supported!());
 
     *df::borrow(&self.id, key)
 }
@@ -117,7 +117,7 @@ macro fun get<$Key, $Model>($self: &MemezConfig, $total_supply: u64): _ {
 
     assert!(
         df::exists_with_type<_, $Model>(&self.id, type_name::get<$Key>()),
-        memez_errors::model_key_not_supported(),
+        memez_errors::model_key_not_supported!(),
     );
 
     df::borrow<_, $Model>(&self.id, type_name::get<$Key>()).get(total_supply)

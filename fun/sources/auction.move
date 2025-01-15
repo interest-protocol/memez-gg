@@ -345,7 +345,7 @@ fun state_mut<Meme>(memez_fun: &mut MemezFun<Auction, Meme>): &mut AuctionState<
 fun maybe_upgrade_state_to_latest(versioned: &mut Versioned) {
     assert!(
         versioned.version() == AUCTION_STATE_VERSION_V1,
-        memez_errors::outdated_auction_state_version(),
+        memez_errors::outdated_auction_state_version!(),
     );
 }
 

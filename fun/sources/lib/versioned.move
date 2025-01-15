@@ -60,7 +60,7 @@ public(package) fun upgrade<T: key + store>(
     new_value: T,
     cap: VersionChangeCap,
 ) {
-    let error = memez_errors::invalid_upgrade();
+    let error = memez_errors::invalid_upgrade!();
 
     let VersionChangeCap { versioned_id, old_version } = cap;
     assert!(versioned_id == object::id(self), error);

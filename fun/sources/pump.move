@@ -312,7 +312,7 @@ fun state_mut<Meme>(memez_fun: &mut MemezFun<Pump, Meme>): &mut PumpState<Meme> 
 fun maybe_upgrade_state_to_latest(versioned: &mut Versioned) {
     assert!(
         versioned.version() == PUMP_STATE_VERSION_V1,
-        memez_errors::outdated_pump_state_version(),
+        memez_errors::outdated_pump_state_version!(),
     );
 }
 

@@ -80,7 +80,7 @@ public fun destroy<Meme, Witness: drop>(
 ): (Balance<SUI>, Balance<Meme>) {
     let MemezMigrator { witness, memez_fun, sui_balance, meme_balance } = migrator;
 
-    assert!(type_name::get<Witness>() == witness, memez_errors::invalid_witness());
+    assert!(type_name::get<Witness>() == witness, memez_errors::invalid_witness!());
 
     memez_events::migrated(memez_fun, witness, sui_balance.value(), meme_balance.value());
 
@@ -382,27 +382,27 @@ public(package) fun set_progress_to_migrating<Curve, Meme>(self: &mut MemezFun<C
 }
 
 public(package) fun assert_is_bonding<Curve, Meme>(self: &MemezFun<Curve, Meme>) {
-    assert!(self.progress == Progress::Bonding, memez_errors::not_bonding());
+    assert!(self.progress == Progress::Bonding, memez_errors::not_bonding!());
 }
 
 public(package) fun assert_is_migrating<Curve, Meme>(self: &MemezFun<Curve, Meme>) {
-    assert!(self.progress == Progress::Migrating, memez_errors::not_migrating());
+    assert!(self.progress == Progress::Migrating, memez_errors::not_migrating!());
 }
 
 public(package) fun assert_migrated<Curve, Meme>(self: &MemezFun<Curve, Meme>) {
-    assert!(self.progress == Progress::Migrated, memez_errors::not_migrated());
+    assert!(self.progress == Progress::Migrated, memez_errors::not_migrated!());
 }
 
 public(package) fun assert_is_dev<Curve, Meme>(self: &MemezFun<Curve, Meme>, ctx: &TxContext) {
-    assert!(self.dev == ctx.sender(), memez_errors::invalid_dev());
+    assert!(self.dev == ctx.sender(), memez_errors::invalid_dev!());
 }
 
 public(package) fun assert_uses_token<Curve, Meme>(self: &MemezFun<Curve, Meme>) {
-    assert!(self.is_token, memez_errors::token_not_supported());
+    assert!(self.is_token, memez_errors::token_not_supported!());
 }
 
 public(package) fun assert_uses_coin<Curve, Meme>(self: &MemezFun<Curve, Meme>) {
-    assert!(!self.is_token, memez_errors::token_supported());
+    assert!(!self.is_token, memez_errors::token_supported!());
 }
 
 // === Public Package Migration Functions ===

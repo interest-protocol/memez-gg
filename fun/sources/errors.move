@@ -5,154 +5,143 @@ module memez_fun::memez_errors;
 
 // === Constants ===
 
-const EAlreadyInitialized: u64 = 0;
-
-const EBurnTaxExceedsMax: u64 = 1;
-
-const EInvalidTargetSuiLiquidity: u64 = 2;
-
+#[test_only]
 const EInsufficientValue: u64 = 3;
 
+#[test_only]
 const EPreMintNotAllowed: u64 = 4;
 
+#[test_only]
 const EZeroCoin: u64 = 5;
 
+#[test_only]
 const ESlippage: u64 = 6;
 
-const EOutdatedAuctionStateVersion: u64 = 7;
-
+#[test_only]
 const ENotBonding: u64 = 8;
 
+#[test_only]
 const ENotMigrating: u64 = 9;
 
+#[test_only]
 const ENotMigrated: u64 = 10;
 
+#[test_only]
 const EInvalidWitness: u64 = 11;
 
+#[test_only]
 const EInvalidDev: u64 = 12;
 
+#[test_only]
 const ETokenNotSupported: u64 = 13;
 
+#[test_only]
 const ETokenSupported: u64 = 14;
 
-const EOutdatedPumpStateVersion: u64 = 15;
-
-const EOutdatedStableStateVersion: u64 = 16;
-
+#[test_only]
 const EOutdatedPackageVersion: u64 = 17;
 
+#[test_only]
 const EInvalidPercentages: u64 = 18;
 
+#[test_only]
 const EInvalidConfig: u64 = 19;
 
-const EModelKeyNotSupported: u64 = 20;
-
+#[test_only]
 const EInvalidCreationFeeConfig: u64 = 21;
 
+#[test_only]
 const EZeroTotalSupply: u64 = 22;
 
-const EInvalidUpgrade: u64 = 23;
-
+#[test_only]
 const ERemoveCurrentVersionNotAllowed: u64 = 24;
 
 // === Public Package Functions ===
 
-public(package) fun already_initialized(): u64 {
-    EAlreadyInitialized
+public(package) macro fun insufficient_value(): u64 {
+    3
 }
 
-public(package) fun burn_tax_exceeds_max(): u64 {
-    EBurnTaxExceedsMax
+public(package) macro fun pre_mint_not_allowed(): u64 {
+    4
 }
 
-public(package) fun invalid_target_sui_liquidity(): u64 {
-    EInvalidTargetSuiLiquidity
+public(package) macro fun zero_coin(): u64 {
+    5
 }
 
-public(package) fun insufficient_value(): u64 {
-    EInsufficientValue
+public(package) macro fun slippage(): u64 {
+    6
 }
 
-public(package) fun pre_mint_not_allowed(): u64 {
-    EPreMintNotAllowed
+public(package) macro fun outdated_auction_state_version(): u64 {
+    7
 }
 
-public(package) fun zero_coin(): u64 {
-    EZeroCoin
+public(package) macro fun not_bonding(): u64 {
+    8
 }
 
-public(package) fun slippage(): u64 {
-    ESlippage
+public(package) macro fun not_migrating(): u64 {
+    9
 }
 
-public(package) fun outdated_auction_state_version(): u64 {
-    EOutdatedAuctionStateVersion
+public(package) macro fun not_migrated(): u64 {
+    10
 }
 
-public(package) fun not_bonding(): u64 {
-    ENotBonding
+public(package) macro fun invalid_witness(): u64 {
+    11
 }
 
-public(package) fun not_migrating(): u64 {
-    ENotMigrating
+public(package) macro fun invalid_dev(): u64 {
+    12
 }
 
-public(package) fun not_migrated(): u64 {
-    ENotMigrated
+public(package) macro fun token_not_supported(): u64 {
+    13
 }
 
-public(package) fun invalid_witness(): u64 {
-    EInvalidWitness
+public(package) macro fun token_supported(): u64 {
+    14
 }
 
-public(package) fun invalid_dev(): u64 {
-    EInvalidDev
+public(package) macro fun outdated_pump_state_version(): u64 {
+    15
 }
 
-public(package) fun token_not_supported(): u64 {
-    ETokenNotSupported
+public(package) macro fun outdated_stable_state_version(): u64 {
+    16
 }
 
-public(package) fun token_supported(): u64 {
-    ETokenSupported
+public(package) macro fun outdated_package_version(): u64 {
+    17
 }
 
-public(package) fun outdated_pump_state_version(): u64 {
-    EOutdatedPumpStateVersion
+public(package) macro fun invalid_percentages(): u64 {
+    18
 }
 
-public(package) fun outdated_stable_state_version(): u64 {
-    EOutdatedStableStateVersion
+public(package) macro fun invalid_config(): u64 {
+    19
 }
 
-public(package) fun outdated_package_version(): u64 {
-    EOutdatedPackageVersion
+public(package) macro fun model_key_not_supported(): u64 {
+    20
 }
 
-public(package) fun invalid_percentages(): u64 {
-    EInvalidPercentages
+public(package) macro fun invalid_creation_fee_config(): u64 {
+    21
 }
 
-public(package) fun invalid_config(): u64 {
-    EInvalidConfig
+public(package) macro fun zero_total_supply(): u64 {
+    22
 }
 
-public(package) fun model_key_not_supported(): u64 {
-    EModelKeyNotSupported
+public(package) macro fun invalid_upgrade(): u64 {
+    23
 }
 
-public(package) fun invalid_creation_fee_config(): u64 {
-    EInvalidCreationFeeConfig
-}
-
-public(package) fun zero_total_supply(): u64 {
-    EZeroTotalSupply
-}
-
-public(package) fun invalid_upgrade(): u64 {
-    EInvalidUpgrade
-}
-
-public(package) fun remove_current_version_not_allowed(): u64 {
-    ERemoveCurrentVersionNotAllowed
+public(package) macro fun remove_current_version_not_allowed(): u64 {
+    24
 }

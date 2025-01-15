@@ -348,7 +348,7 @@ fun state_mut<Meme>(memez_fun: &mut MemezFun<Stable, Meme>): &mut StableState<Me
 fun maybe_upgrade_state_to_latest(versioned: &mut Versioned) {
     assert!(
         versioned.version() == STABLE_STATE_VERSION_V1,
-        memez_errors::outdated_stable_state_version(),
+        memez_errors::outdated_stable_state_version!(),
     );
 }
 

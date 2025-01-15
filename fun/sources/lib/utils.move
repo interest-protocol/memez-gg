@@ -17,12 +17,12 @@ const DEAD_ADDRESS: address = @0x0;
 
 public(package) fun assert_coin_has_value<T>(coin: &Coin<T>): u64 {
     let value = coin.value();
-    assert!(value > 0, memez_errors::zero_coin());
+    assert!(value > 0, memez_errors::zero_coin!());
     value
 }
 
 public(package) fun assert_slippage(amount: u64, minimum_expected: u64) {
-    assert!(amount >= minimum_expected, memez_errors::slippage());
+    assert!(amount >= minimum_expected, memez_errors::slippage!());
 }
 
 public(package) fun destroy_or_burn<Meme>(balance: &mut Balance<Meme>, ctx: &mut TxContext) {
@@ -40,7 +40,7 @@ public(package) fun destroy_or_return<Meme>(coin: Coin<Meme>, ctx: &TxContext) {
 public(package) fun validate_bps(percentages: vector<u64>) {
     assert!(
         percentages.fold!(0, |acc, bps| acc + bps) == bps::max_bps(),
-        memez_errors::invalid_percentages(),
+        memez_errors::invalid_percentages!(),
     );
 }
 
@@ -49,8 +49,8 @@ public(package) fun new_treasury<Meme>(
     total_supply: u64,
     ctx: &mut TxContext,
 ): (address, MetadataCap, Balance<Meme>) {
-    assert!(meme_treasury_cap.total_supply() == 0, memez_errors::pre_mint_not_allowed());
-    assert!(total_supply != 0, memez_errors::zero_total_supply());
+    assert!(meme_treasury_cap.total_supply() == 0, memez_errors::pre_mint_not_allowed!());
+    assert!(total_supply != 0, memez_errors::zero_total_supply!());
 
     let meme_balance = meme_treasury_cap.mint_balance(
         total_supply,

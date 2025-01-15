@@ -84,6 +84,23 @@ fun test_outdated_package_version() {
     end(world);
 }
 
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::ERemoveCurrentVersionNotAllowed,
+        location = memez_allowed_versions,
+    ),
+]
+fun test_remove_current_version_not_allowed() {
+    let mut world = start();
+
+    let witness = acl::sign_in_for_testing();
+
+    world.av.remove(&witness, 1);
+
+    end(world);
+}
+
 fun start(): World {
     let mut scenario = ts::begin(ADMIN);
 

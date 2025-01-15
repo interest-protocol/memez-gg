@@ -29,7 +29,7 @@ fun init(ctx: &mut TxContext) {
 // === Public Package Functions ===
 
 public(package) fun assert_is_whitelisted(self: &MemezMigratorList, witness: TypeName) {
-    assert!(self.whitelisted.contains(&witness), memez_errors::invalid_witness());
+    assert!(self.whitelisted.contains(&witness), memez_errors::invalid_witness!());
 }
 
 // === Admin Functions ===

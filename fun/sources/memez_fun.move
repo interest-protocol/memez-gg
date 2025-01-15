@@ -23,10 +23,10 @@ module memez_fun::memez_fun;
 
 use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
 use memez_fun::{
+    memez_allowed_versions::AllowedVersions,
     memez_errors,
     memez_events,
     memez_migrator_list::MemezMigratorList,
-    memez_version::CurrentVersion,
     memez_versioned::Versioned
 };
 use std::{string::String, type_name::{Self, TypeName}};
@@ -46,7 +46,7 @@ const CONFIG_METADATA_KEY: vector<u8> = b"config_key";
 
 // === Structs ===
 
-public enum Progress has store, drop, copy {
+public enum Progress has copy, drop, store {
     Bonding,
     Migrating,
     Migrated,
@@ -142,13 +142,13 @@ public(package) macro fun cp_pump<$Curve, $Meme, $State>(
     $f: |&mut MemezFun<$Curve, $Meme>| -> &mut $State,
     $sui_coin: Coin<SUI>,
     $min_amount_out: u64,
-    $version: CurrentVersion,
+    $allowed_versions: AllowedVersions,
     $ctx: &mut TxContext,
 ): Coin<$Meme> {
     let self = $self;
-    let version = $version;
+    let allowed_versions = $allowed_versions;
 
-    version.assert_is_valid();
+    allowed_versions.assert_pkg_version();
     self.assert_uses_coin();
     self.assert_is_bonding();
 
@@ -187,17 +187,17 @@ public(package) macro fun cp_pump_token<$Curve, $Meme, $State>(
     $f: |&mut MemezFun<$Curve, $Meme>| -> &mut $State,
     $sui_coin: Coin<SUI>,
     $min_amount_out: u64,
-    $version: CurrentVersion,
+    $allowed_versions: AllowedVersions,
     $ctx: &mut TxContext,
 ): Token<$Meme> {
     let self = $self;
-    let version = $version;
+    let allowed_versions = $allowed_versions;
     let ctx = $ctx;
 
     let sui_coin = $sui_coin;
     let min_amount_out = $min_amount_out;
 
-    version.assert_is_valid();
+    allowed_versions.assert_pkg_version();
     self.assert_uses_token();
     self.assert_is_bonding();
 
@@ -224,14 +224,14 @@ public(package) macro fun cp_dump<$Curve, $Meme, $State>(
     $treasury_cap: &mut IPXTreasuryStandard,
     $meme_coin: Coin<$Meme>,
     $min_amount_out: u64,
-    $version: CurrentVersion,
+    $allowed_versions: AllowedVersions,
     $ctx: &mut TxContext,
 ): Coin<SUI> {
     let self = $self;
-    let version = $version;
+    let allowed_versions = $allowed_versions;
     let ctx = $ctx;
 
-    version.assert_is_valid();
+    allowed_versions.assert_pkg_version();
     self.assert_uses_coin();
     self.assert_is_bonding();
 
@@ -257,14 +257,14 @@ public(package) macro fun cp_dump_token<$Curve, $Meme, $State>(
     $treasury_cap: &mut IPXTreasuryStandard,
     $meme_token: Token<$Meme>,
     $min_amount_out: u64,
-    $version: CurrentVersion,
+    $allowed_versions: AllowedVersions,
     $ctx: &mut TxContext,
 ): Coin<SUI> {
     let self = $self;
-    let version = $version;
+    let allowed_versions = $allowed_versions;
     let ctx = $ctx;
 
-    version.assert_is_valid();
+    allowed_versions.assert_pkg_version();
     self.assert_uses_token();
     self.assert_is_bonding();
 
@@ -305,15 +305,15 @@ public(package) macro fun distribute_stake_holders_allocation<$Curve, $Meme, $St
     $self: &mut MemezFun<$Curve, $Meme>,
     $f: |&mut MemezFun<$Curve, $Meme>| -> &mut $State,
     $clock: &Clock,
-    $version: CurrentVersion,
+    $allowed_versions: AllowedVersions,
     $ctx: &mut TxContext,
 ) {
     let self = $self;
     let clock = $clock;
-    let version = $version;
+    let allowed_versions = $allowed_versions;
     let ctx = $ctx;
 
-    version.assert_is_valid();
+    allowed_versions.assert_pkg_version();
     self.assert_migrated();
 
     let state = $f(self);

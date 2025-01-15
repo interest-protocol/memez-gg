@@ -26,6 +26,7 @@ use interest_bps::bps::{Self, max_bps};
 use interest_math::u64;
 use ipx_coin_standard::ipx_coin_standard::{IPXTreasuryStandard, MetadataCap};
 use memez_fun::{
+    memez_allowed_versions::AllowedVersions,
     memez_config::MemezConfig,
     memez_constant_product::{Self, MemezConstantProduct},
     memez_errors,
@@ -34,7 +35,6 @@ use memez_fun::{
     memez_migrator_list::MemezMigratorList,
     memez_token_cap::{Self, MemezTokenCap},
     memez_utils::{destroy_or_burn, destroy_or_return, new_treasury},
-    memez_version::CurrentVersion,
     memez_versioned::{Self, Versioned}
 };
 use std::string::String;
@@ -75,10 +75,10 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
     metadata_names: vector<String>,
     metadata_values: vector<String>,
     stake_holders: vector<address>,
-    version: CurrentVersion,
+    allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ): MetadataCap {
-    version.assert_is_valid();
+    allowed_versions.assert_pkg_version();
 
     let fees = config.fees<ConfigKey>();
 
@@ -161,14 +161,14 @@ public fun pump<Meme>(
     clock: &Clock,
     sui_coin: Coin<SUI>,
     min_amount_out: u64,
-    version: CurrentVersion,
+    allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ): Coin<Meme> {
     self.cp_pump!<Auction, Meme, AuctionState<Meme>>(|self| {
         let state = self.state_mut();
         state.drip(clock);
         state
-    }, sui_coin, min_amount_out, version, ctx)
+    }, sui_coin, min_amount_out, allowed_versions, ctx)
 }
 
 public fun pump_token<Meme>(
@@ -176,14 +176,14 @@ public fun pump_token<Meme>(
     clock: &Clock,
     sui_coin: Coin<SUI>,
     min_amount_out: u64,
-    version: CurrentVersion,
+    allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ): Token<Meme> {
     self.cp_pump_token!(|self| {
         let state = self.state_mut();
         state.drip(clock);
         state
-    }, sui_coin, min_amount_out, version, ctx)
+    }, sui_coin, min_amount_out, allowed_versions, ctx)
 }
 
 public fun dump<Meme>(
@@ -192,14 +192,14 @@ public fun dump<Meme>(
     treasury_cap: &mut IPXTreasuryStandard,
     meme_coin: Coin<Meme>,
     min_amount_out: u64,
-    version: CurrentVersion,
+    allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ): Coin<SUI> {
     self.cp_dump!(|self| {
         let state = self.state_mut();
         state.drip(clock);
         state
-    }, treasury_cap, meme_coin, min_amount_out, version, ctx)
+    }, treasury_cap, meme_coin, min_amount_out, allowed_versions, ctx)
 }
 
 public fun dump_token<Meme>(
@@ -208,22 +208,22 @@ public fun dump_token<Meme>(
     treasury_cap: &mut IPXTreasuryStandard,
     meme_token: Token<Meme>,
     min_amount_out: u64,
-    version: CurrentVersion,
+    allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ): Coin<SUI> {
     self.cp_dump_token!(|self| {
         let state = self.state_mut();
         state.drip(clock);
         state
-    }, treasury_cap, meme_token, min_amount_out, version, ctx)
+    }, treasury_cap, meme_token, min_amount_out, allowed_versions, ctx)
 }
 
 public fun migrate<Meme>(
     self: &mut MemezFun<Auction, Meme>,
-    version: CurrentVersion,
+    allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ): MemezMigrator<Meme> {
-    version.assert_is_valid();
+    allowed_versions.assert_pkg_version();
     self.assert_is_migrating();
 
     let state = self.state_mut();
@@ -245,10 +245,10 @@ public fun migrate<Meme>(
 public fun distribute_stake_holders_allocation<Meme>(
     self: &mut MemezFun<Auction, Meme>,
     clock: &Clock,
-    version: CurrentVersion,
+    allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ) {
-    self.distribute_stake_holders_allocation!(|self| self.state_mut(), clock, version, ctx)
+    self.distribute_stake_holders_allocation!(|self| self.state_mut(), clock, allowed_versions, ctx)
 }
 
 public fun to_coin<Meme>(

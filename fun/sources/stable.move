@@ -24,6 +24,7 @@ module memez_fun::memez_stable;
 
 use ipx_coin_standard::ipx_coin_standard::MetadataCap;
 use memez_fun::{
+    memez_allowed_versions::AllowedVersions,
     memez_config::MemezConfig,
     memez_errors,
     memez_fees::{Allocation, Fee},
@@ -32,7 +33,6 @@ use memez_fun::{
     memez_migrator_list::MemezMigratorList,
     memez_token_cap::{Self, MemezTokenCap},
     memez_utils::{destroy_or_burn, destroy_or_return, new_treasury},
-    memez_version::CurrentVersion,
     memez_versioned::{Self, Versioned}
 };
 use memez_vesting::memez_vesting::{Self, MemezVesting};
@@ -74,10 +74,10 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
     dev_payload: vector<u64>,
     stake_holders: vector<address>,
     dev: address,
-    version: CurrentVersion,
+    allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ): MetadataCap {
-    version.assert_is_valid();
+    allowed_versions.assert_pkg_version();
 
     let fees = config.fees<ConfigKey>();
 
@@ -154,10 +154,10 @@ public fun pump<Meme>(
     self: &mut MemezFun<Stable, Meme>,
     sui_coin: Coin<SUI>,
     min_amount_out: u64,
-    version: CurrentVersion,
+    allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ): (Coin<SUI>, Coin<Meme>) {
-    version.assert_is_valid();
+    allowed_versions.assert_pkg_version();
     self.assert_is_bonding();
     self.assert_uses_coin();
 
@@ -180,10 +180,10 @@ public fun pump_token<Meme>(
     self: &mut MemezFun<Stable, Meme>,
     sui_coin: Coin<SUI>,
     min_amount_out: u64,
-    version: CurrentVersion,
+    allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ): (Coin<SUI>, Token<Meme>) {
-    version.assert_is_valid();
+    allowed_versions.assert_pkg_version();
     self.assert_is_bonding();
     self.assert_uses_token();
 
@@ -208,10 +208,10 @@ public fun dump<Meme>(
     self: &mut MemezFun<Stable, Meme>,
     meme_coin: Coin<Meme>,
     min_amount_out: u64,
-    version: CurrentVersion,
+    allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ): Coin<SUI> {
-    version.assert_is_valid();
+    allowed_versions.assert_pkg_version();
     self.assert_is_bonding();
     self.assert_uses_coin();
 
@@ -230,10 +230,10 @@ public fun dump_token<Meme>(
     self: &mut MemezFun<Stable, Meme>,
     meme_token: Token<Meme>,
     min_amount_out: u64,
-    version: CurrentVersion,
+    allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ): Coin<SUI> {
-    version.assert_is_valid();
+    allowed_versions.assert_pkg_version();
     self.assert_is_bonding();
     self.assert_uses_token();
 
@@ -252,10 +252,10 @@ public fun dump_token<Meme>(
 
 public fun migrate<Meme>(
     self: &mut MemezFun<Stable, Meme>,
-    version: CurrentVersion,
+    allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ): MemezMigrator<Meme> {
-    version.assert_is_valid();
+    allowed_versions.assert_pkg_version();
     self.assert_is_migrating();
 
     let state = self.state_mut();
@@ -277,10 +277,10 @@ public fun migrate<Meme>(
 public fun dev_allocation_claim<Meme>(
     self: &mut MemezFun<Stable, Meme>,
     clock: &Clock,
-    version: CurrentVersion,
+    allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ): MemezVesting<Meme> {
-    version.assert_is_valid();
+    allowed_versions.assert_pkg_version();
 
     self.assert_migrated();
     self.assert_is_dev(ctx);
@@ -299,10 +299,10 @@ public fun dev_allocation_claim<Meme>(
 public fun distribute_stake_holders_allocation<Meme>(
     self: &mut MemezFun<Stable, Meme>,
     clock: &Clock,
-    version: CurrentVersion,
+    allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ) {
-    self.distribute_stake_holders_allocation!(|self| self.state_mut(), clock, version, ctx)
+    self.distribute_stake_holders_allocation!(|self| self.state_mut(), clock, allowed_versions, ctx)
 }
 
 public fun to_coin<Meme>(

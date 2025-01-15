@@ -173,8 +173,8 @@ public(package) fun migration(self: MemezFees, stake_holders: vector<address>): 
 
     recipients.append(stake_holders);
 
-    Fee::Value(
-        self.migration.value,
+    Fee::Percentage(
+        bps::new(self.migration.value),
         memez_distributor::new(recipients, self.migration.percentages),
     )
 }

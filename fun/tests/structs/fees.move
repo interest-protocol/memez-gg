@@ -24,6 +24,8 @@ const STAKE_HOLDER_2: address = @0x8;
 
 const VESTING_PERIOD: u64 = 101;
 
+const TEN_PERCENT: u64 = 1_000;
+
 public struct Meme()
 
 #[test]
@@ -32,7 +34,7 @@ fun test_new() {
 
     assert_eq(payloads[0].payload_value(), 2 * POW_9);
     assert_eq(payloads[1].payload_value(), 100);
-    assert_eq(payloads[2].payload_value(), 200 * POW_9);
+    assert_eq(payloads[2].payload_value(), TEN_PERCENT);
     assert_eq(payloads[3].payload_value(), 2000);
 
     assert_eq(payloads[0].payload_percentages(), vector[7_000, 3_000]);
@@ -73,7 +75,7 @@ fun test_calculate() {
 
     assert_eq(creation_fee.value(), 2 * POW_9);
     assert_eq(swap_fee.value(), 100);
-    assert_eq(migration_fee.value(), 200 * POW_9);
+    assert_eq(migration_fee.value(), TEN_PERCENT);
     assert_eq(allocation_fee.value(), 200);
 
     // Test Recipient Percentages
@@ -119,10 +121,10 @@ fun test_calculate() {
     ];
     let expected_migration_percentages = vector[4_000, 1_000, 2_500, 2_500];
     let expected_migration_values = vector[
-        200 * POW_9 * 4_000 / 10_000,
-        200 * POW_9 * 1_000 / 10_000,
-        200 * POW_9 * 2_500 / 10_000,
-        200 * POW_9 * 2_500 / 10_000,
+        TEN_PERCENT * 4_000 / 10_000,
+        TEN_PERCENT * 1_000 / 10_000,
+        TEN_PERCENT * 2_500 / 10_000,
+        TEN_PERCENT * 2_500 / 10_000,
     ];
 
     migration_fee_recipients.do!(|recipient_addy, i| {
@@ -130,7 +132,7 @@ fun test_calculate() {
 
         assert_eq(recipient_addy, expected_migration_recipients[i]);
         assert_eq(recipient_bps.value(), expected_migration_percentages[i]);
-        assert_eq(recipient_bps.calc(200 * POW_9), expected_migration_values[i]);
+        assert_eq(recipient_bps.calc(TEN_PERCENT), expected_migration_values[i]);
     });
 
     let expected_allocation_recipients = vector[INTEGRATOR, STAKE_HOLDER_1, STAKE_HOLDER_2];
@@ -195,7 +197,8 @@ fun test_take() {
 
     fees.migration(vector[STAKE_HOLDER_1, STAKE_HOLDER_2]).take(&mut asset, scenario.ctx());
 
-    assert_eq(asset.burn_for_testing(), 0);
+    // Takes 10% of 200 * POW_9
+    assert_eq(asset.burn_for_testing(), 180 * POW_9);
 
     scenario.next_tx(@0x0);
 
@@ -204,10 +207,10 @@ fun test_take() {
     let stake_holder_1_migration_coin = scenario.take_from_address<Coin<Meme>>(STAKE_HOLDER_1);
     let stake_holder_2_migration_coin = scenario.take_from_address<Coin<Meme>>(STAKE_HOLDER_2);
 
-    assert_eq(integrator_migration_coin.burn_for_testing(), 200 * POW_9 * 4_000 / 10_000);
-    assert_eq(interest_migration_coin.burn_for_testing(), 200 * POW_9 * 1_000 / 10_000);
-    assert_eq(stake_holder_1_migration_coin.burn_for_testing(), 200 * POW_9 * 2_500 / 10_000);
-    assert_eq(stake_holder_2_migration_coin.burn_for_testing(), 200 * POW_9 * 2_500 / 10_000);
+    assert_eq(integrator_migration_coin.burn_for_testing(), 20 * POW_9 * 4_000 / 10_000);
+    assert_eq(interest_migration_coin.burn_for_testing(), 20 * POW_9 * 1_000 / 10_000);
+    assert_eq(stake_holder_1_migration_coin.burn_for_testing(), 20 * POW_9 * 2_500 / 10_000);
+    assert_eq(stake_holder_2_migration_coin.burn_for_testing(), 20 * POW_9 * 2_500 / 10_000);
 
     scenario.next_tx(@0x0);
 
@@ -373,7 +376,7 @@ fun default_fees(): MemezFees {
         vector[
             vector[7_000, 3_000, 2 * POW_9],
             vector[5_000, 2_500, 2_500, 100],
-            vector[4_000, 1_000, 2_500, 2_500, 200 * POW_9],
+            vector[4_000, 1_000, 2_500, 2_500, TEN_PERCENT],
             vector[3_000, 3_500, 3_500, VESTING_PERIOD, 2000],
         ],
         vector[

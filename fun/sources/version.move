@@ -40,11 +40,11 @@ public fun get_allowed_versions(self: &MemezAV): AllowedVersions {
 
 // === Admin Functions ===
 
-public fun add_version(self: &mut MemezAV, _: &AuthWitness, version: u64) {
+public fun add(self: &mut MemezAV, _: &AuthWitness, version: u64) {
     self.allowed_versions.insert(version);
 }
 
-public fun remove_version(self: &mut MemezAV, _: &AuthWitness, version: u64) {
+public fun remove(self: &mut MemezAV, _: &AuthWitness, version: u64) {
     assert!(version != VERSION, memez_errors::remove_current_version_not_allowed());
     self.allowed_versions.remove(&version);
 }
@@ -70,4 +70,9 @@ public fun allowed_versions(self: &MemezAV): vector<u64> {
 #[test_only]
 public fun get_allowed_versions_for_testing(version: u64): AllowedVersions {
     AllowedVersions(vector[version])
+}
+
+#[test_only]
+public fun remove_for_testing(self: &mut MemezAV, version: u64) {
+    self.allowed_versions.remove(&version);
 }

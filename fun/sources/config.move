@@ -52,31 +52,31 @@ public fun set_fees<T>(
     add<FeesKey<T>, _>(self, memez_fees::new(values, recipients));
 }
 
-public fun set_auction<T>(
+public fun set_auction<Quote, T>(
     self: &mut MemezConfig,
     _: &AuthWitness,
     values: vector<u64>,
     _ctx: &mut TxContext,
 ) {
-    add<AuctionKey<T>, _>(self, memez_auction_config::new(values));
+    add<AuctionKey<T>, _>(self, memez_auction_config::new<Quote>(values));
 }
 
-public fun set_pump<T>(
+public fun set_pump<Quote, T>(
     self: &mut MemezConfig,
     _: &AuthWitness,
     values: vector<u64>,
     _ctx: &mut TxContext,
 ) {
-    add<PumpKey<T>, _>(self, memez_pump_config::new(values));
+    add<PumpKey<T>, _>(self, memez_pump_config::new<Quote>(values));
 }
 
-public fun set_stable<T>(
+public fun set_stable<Quote, T>(
     self: &mut MemezConfig,
     _: &AuthWitness,
     values: vector<u64>,
     _ctx: &mut TxContext,
 ) {
-    add<StableKey<T>, _>(self, memez_stable_config::new(values));
+    add<StableKey<T>, _>(self, memez_stable_config::new<Quote>(values));
 }
 
 public fun remove<T, Model: drop + store>(
@@ -97,21 +97,21 @@ public(package) fun fees<T>(self: &MemezConfig): MemezFees {
     *df::borrow(&self.id, key)
 }
 
-public(package) fun get_auction<T>(self: &MemezConfig, total_supply: u64): vector<u64> {
-    self.get!<AuctionKey<T>, AuctionConfig>(total_supply)
+public(package) fun get_auction<Quote, T>(self: &MemezConfig, total_supply: u64): vector<u64> {
+    self.get!<AuctionKey<T>, AuctionConfig, Quote>(total_supply)
 }
 
-public(package) fun get_pump<T>(self: &MemezConfig, total_supply: u64): vector<u64> {
-    self.get!<PumpKey<T>, PumpConfig>(total_supply)
+public(package) fun get_pump<Quote, T>(self: &MemezConfig, total_supply: u64): vector<u64> {
+    self.get!<PumpKey<T>, PumpConfig, Quote>(total_supply)
 }
 
-public(package) fun get_stable<T>(self: &MemezConfig, total_supply: u64): vector<u64> {
-    self.get!<StableKey<T>, StableConfig>(total_supply)
+public(package) fun get_stable<Quote, T>(self: &MemezConfig, total_supply: u64): vector<u64> {
+    self.get!<StableKey<T>, StableConfig, Quote>(total_supply)
 }
 
 // === Private Functions ===
 
-macro fun get<$Key, $Model>($self: &MemezConfig, $total_supply: u64): _ {
+macro fun get<$Key, $Model, $Quote>($self: &MemezConfig, $total_supply: u64): _ {
     let self = $self;
     let total_supply = $total_supply;
 
@@ -120,7 +120,7 @@ macro fun get<$Key, $Model>($self: &MemezConfig, $total_supply: u64): _ {
         memez_errors::model_key_not_supported!(),
     );
 
-    df::borrow<_, $Model>(&self.id, type_name::get<$Key>()).get(total_supply)
+    df::borrow<_, $Model>(&self.id, type_name::get<$Key>()).get<$Quote>(total_supply)
 }
 
 fun add<ModelKey, Model: drop + store>(self: &mut MemezConfig, model: Model) {

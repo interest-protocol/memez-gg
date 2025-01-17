@@ -48,7 +48,7 @@ const AUCTION_STATE_VERSION_V1: u64 = 1;
 
 public struct Auction()
 
-public struct AuctionState<phantom Meme> has key, store {
+public struct AuctionState<phantom Meme, phantom Quote> has key, store {
     id: UID,
     start_time: u64,
     migration_fee: Fee,
@@ -58,13 +58,13 @@ public struct AuctionState<phantom Meme> has key, store {
     allocation: Allocation<Meme>,
     meme_reserve: Balance<Meme>,
     liquidity_provision: Balance<Meme>,
-    constant_product: MemezConstantProduct<Meme>,
+    constant_product: MemezConstantProduct<Meme, Quote>,
     meme_token_cap: Option<MemezTokenCap<Meme>>,
 }
 
 // === Public Mutative Functions ===
 
-public fun new<Meme, ConfigKey, MigrationWitness>(
+public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
     config: &MemezConfig,
     migrator_list: &MemezMigratorList,
     clock: &Clock,
@@ -86,7 +86,7 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
 
     creation_fee.destroy_or_return(ctx);
 
-    let auction_config = config.get_auction<ConfigKey>(total_supply);
+    let auction_config = config.get_auction<Quote, ConfigKey>(total_supply);
 
     let meme_token_cap = if (is_token) option::some(memez_token_cap::new(&meme_treasury_cap, ctx))
     else option::none();
@@ -108,7 +108,7 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
 
     let meme_balance_value = meme_balance.value();
 
-    let auction_state = AuctionState<Meme> {
+    let auction_state = AuctionState<Meme, Quote> {
         id: object::new(ctx),
         start_time: clock.timestamp_ms(),
         auction_duration: auction_config[0],
@@ -117,7 +117,7 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
         meme_reserve,
         liquidity_provision,
         allocation,
-        constant_product: memez_constant_product::new(
+        constant_product: memez_constant_product::new<Meme, Quote>(
             auction_config[2],
             auction_config[3],
             meme_balance,
@@ -130,7 +130,7 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
 
     let inner_state = object::id_address(&auction_state);
 
-    let mut memez_fun = memez_fun::new<Auction, Meme, ConfigKey, MigrationWitness>(
+    let mut memez_fun = memez_fun::new<Auction, Meme, Quote, ConfigKey, MigrationWitness>(
         migrator_list,
         memez_versioned::create(AUCTION_STATE_VERSION_V1, auction_state, ctx),
         is_token,
@@ -147,7 +147,7 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
 
     let memez_fun_address = memez_fun.addy();
 
-    let state = memez_fun.state_mut();
+    let state = memez_fun.state_mut<Meme, Quote>();
 
     state.constant_product.set_memez_fun(memez_fun_address);
 
@@ -156,25 +156,25 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
     metadata_cap
 }
 
-public fun pump<Meme>(
+public fun pump<Meme, Quote>(
     self: &mut MemezFun<Auction, Meme>,
     clock: &Clock,
-    sui_coin: Coin<SUI>,
+    quote_coin: Coin<Quote>,
     min_amount_out: u64,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ): Coin<Meme> {
-    self.cp_pump!<Auction, Meme, AuctionState<Meme>>(|self| {
+    self.cp_pump!<Auction, Meme, Quote, AuctionState<Meme, Quote>>(|self| {
         let state = self.state_mut();
         state.drip(clock);
         state
-    }, sui_coin, min_amount_out, allowed_versions, ctx)
+    }, quote_coin, min_amount_out, allowed_versions, ctx)
 }
 
-public fun pump_token<Meme>(
+public fun pump_token<Meme, Quote>(
     self: &mut MemezFun<Auction, Meme>,
     clock: &Clock,
-    sui_coin: Coin<SUI>,
+    quote_coin: Coin<Quote>,
     min_amount_out: u64,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
@@ -183,10 +183,10 @@ public fun pump_token<Meme>(
         let state = self.state_mut();
         state.drip(clock);
         state
-    }, sui_coin, min_amount_out, allowed_versions, ctx)
+    }, quote_coin, min_amount_out, allowed_versions, ctx)
 }
 
-public fun dump<Meme>(
+public fun dump<Meme, Quote>(
     self: &mut MemezFun<Auction, Meme>,
     clock: &Clock,
     treasury_cap: &mut IPXTreasuryStandard,
@@ -194,7 +194,7 @@ public fun dump<Meme>(
     min_amount_out: u64,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
-): Coin<SUI> {
+): Coin<Quote> {
     self.cp_dump!(|self| {
         let state = self.state_mut();
         state.drip(clock);
@@ -202,7 +202,7 @@ public fun dump<Meme>(
     }, treasury_cap, meme_coin, min_amount_out, allowed_versions, ctx)
 }
 
-public fun dump_token<Meme>(
+public fun dump_token<Meme, Quote>(
     self: &mut MemezFun<Auction, Meme>,
     clock: &Clock,
     treasury_cap: &mut IPXTreasuryStandard,
@@ -210,7 +210,7 @@ public fun dump_token<Meme>(
     min_amount_out: u64,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
-): Coin<SUI> {
+): Coin<Quote> {
     self.cp_dump_token!(|self| {
         let state = self.state_mut();
         state.drip(clock);
@@ -218,75 +218,80 @@ public fun dump_token<Meme>(
     }, treasury_cap, meme_token, min_amount_out, allowed_versions, ctx)
 }
 
-public fun migrate<Meme>(
+public fun migrate<Meme, Quote>(
     self: &mut MemezFun<Auction, Meme>,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
-): MemezMigrator<Meme> {
+): MemezMigrator<Meme, Quote> {
     allowed_versions.assert_pkg_version();
     self.assert_is_migrating();
 
     let state = self.state_mut();
 
-    let sui_balance = state.constant_product.sui_balance_mut().withdraw_all();
+    let quote_balance = state.constant_product.quote_balance_mut().withdraw_all();
 
     let liquidity_provision = state.liquidity_provision.withdraw_all();
 
     state.constant_product.meme_balance_mut().destroy_or_burn(ctx);
     state.meme_reserve.destroy_or_burn(ctx);
 
-    let mut sui_coin = sui_balance.into_coin(ctx);
+    let mut quote_coin = quote_balance.into_coin(ctx);
 
-    state.migration_fee.take(&mut sui_coin, ctx);
+    state.migration_fee.take(&mut quote_coin, ctx);
 
-    self.migrate(sui_coin.into_balance(), liquidity_provision)
+    self.migrate(quote_coin.into_balance(), liquidity_provision)
 }
 
-public fun distribute_stake_holders_allocation<Meme>(
+public fun distribute_stake_holders_allocation<Meme, Quote>(
     self: &mut MemezFun<Auction, Meme>,
     clock: &Clock,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ) {
-    self.distribute_stake_holders_allocation!(|self| self.state_mut(), clock, allowed_versions, ctx)
+    self.distribute_stake_holders_allocation!(
+        |self| self.state_mut<Meme, Quote>(),
+        clock,
+        allowed_versions,
+        ctx,
+    )
 }
 
-public fun to_coin<Meme>(
+public fun to_coin<Meme, Quote>(
     self: &mut MemezFun<Auction, Meme>,
     meme_token: Token<Meme>,
     ctx: &mut TxContext,
 ): Coin<Meme> {
-    self.to_coin!(|self| self.state_mut(), meme_token, ctx)
+    self.to_coin!(|self| self.state_mut<Meme, Quote>(), meme_token, ctx)
 }
 
 // === View Functions for FE ===
 
-fun pump_amount<Meme>(
+fun pump_amount<Meme, Quote>(
     self: &mut MemezFun<Auction, Meme>,
     amount_in: u64,
     clock: &Clock,
 ): vector<u64> {
     self.cp_pump_amount!(|self| {
-        let state = self.state();
+        let state = self.state<Meme, Quote>();
         let amount = state.expected_drip_amount(clock);
         (state, amount)
     }, amount_in)
 }
 
-fun dump_amount<Meme>(
+fun dump_amount<Meme, Quote>(
     self: &mut MemezFun<Auction, Meme>,
     amount_in: u64,
     clock: &Clock,
 ): vector<u64> {
     self.cp_dump_amount!(|self| {
-        let state = self.state();
+        let state = self.state<Meme, Quote>();
         let amount = state.expected_drip_amount(clock);
         (state, amount)
     }, amount_in)
 }
 
-fun meme_balance<Meme>(self: &mut MemezFun<Auction, Meme>, clock: &Clock): u64 {
-    let state = self.state();
+fun meme_balance<Meme, Quote>(self: &mut MemezFun<Auction, Meme>, clock: &Clock): u64 {
+    let state = self.state<Meme, Quote>();
 
     let amount = state.expected_drip_amount(clock);
 
@@ -295,7 +300,7 @@ fun meme_balance<Meme>(self: &mut MemezFun<Auction, Meme>, clock: &Clock): u64 {
 
 // === Private Functions ===
 
-fun expected_drip_amount<Meme>(self: &AuctionState<Meme>, clock: &Clock): u64 {
+fun expected_drip_amount<Meme, Quote>(self: &AuctionState<Meme, Quote>, clock: &Clock): u64 {
     let current_time = clock.timestamp_ms();
 
     let progress = current_time - self.start_time;
@@ -319,24 +324,26 @@ fun expected_drip_amount<Meme>(self: &AuctionState<Meme>, clock: &Clock): u64 {
     meme_delta.min(current_meme_reserve)
 }
 
-fun drip<Meme>(state: &mut AuctionState<Meme>, clock: &Clock) {
+fun drip<Meme, Quote>(state: &mut AuctionState<Meme, Quote>, clock: &Clock) {
     let amount = state.expected_drip_amount(clock);
 
     state.accrued_meme_balance = state.accrued_meme_balance + amount;
     state.constant_product.meme_balance_mut().join(state.meme_reserve.split(amount));
 }
 
-fun token_cap<Meme>(state: &AuctionState<Meme>): &MemezTokenCap<Meme> {
+fun token_cap<Meme, Quote>(state: &AuctionState<Meme, Quote>): &MemezTokenCap<Meme> {
     state.meme_token_cap.borrow()
 }
 
-fun state<Meme>(memez_fun: &mut MemezFun<Auction, Meme>): &AuctionState<Meme> {
+fun state<Meme, Quote>(memez_fun: &mut MemezFun<Auction, Meme>): &AuctionState<Meme, Quote> {
     let versioned = memez_fun.versioned_mut();
     maybe_upgrade_state_to_latest(versioned);
     versioned.load_value()
 }
 
-fun state_mut<Meme>(memez_fun: &mut MemezFun<Auction, Meme>): &mut AuctionState<Meme> {
+fun state_mut<Meme, Quote>(
+    memez_fun: &mut MemezFun<Auction, Meme>,
+): &mut AuctionState<Meme, Quote> {
     let versioned = memez_fun.versioned_mut();
     maybe_upgrade_state_to_latest(versioned);
     versioned.load_value_mut()
@@ -359,53 +366,58 @@ use fun destroy_or_return as Coin.destroy_or_return;
 // === Test Only Functions ===
 
 #[test_only]
-public fun start_time<Meme>(self: &mut MemezFun<Auction, Meme>): u64 {
-    self.state().start_time
+public fun start_time<Meme, Quote>(self: &mut MemezFun<Auction, Meme>): u64 {
+    self.state<Meme, Quote>().start_time
 }
 
 #[test_only]
-public fun auction_duration<Meme>(self: &mut MemezFun<Auction, Meme>): u64 {
-    self.state().auction_duration
+public fun auction_duration<Meme, Quote>(self: &mut MemezFun<Auction, Meme>): u64 {
+    self.state<Meme, Quote>().auction_duration
 }
 
 #[test_only]
-public fun initial_reserve<Meme>(self: &mut MemezFun<Auction, Meme>): u64 {
-    self.state().initial_reserve
+public fun initial_reserve<Meme, Quote>(self: &mut MemezFun<Auction, Meme>): u64 {
+    self.state<Meme, Quote>().initial_reserve
 }
 
 #[test_only]
-public fun meme_reserve<Meme>(self: &mut MemezFun<Auction, Meme>): u64 {
-    self.state().meme_reserve.value()
+public fun meme_reserve<Meme, Quote>(self: &mut MemezFun<Auction, Meme>): u64 {
+    self.state<Meme, Quote>().meme_reserve.value()
 }
 
 #[test_only]
-public fun constant_product<Meme>(self: &mut MemezFun<Auction, Meme>): &MemezConstantProduct<Meme> {
-    &self.state().constant_product
+public fun constant_product<Meme, Quote>(
+    self: &mut MemezFun<Auction, Meme>,
+): &MemezConstantProduct<Meme, Quote> {
+    &self.state<Meme, Quote>().constant_product
 }
 
 #[test_only]
-public fun liquidity_provision<Meme>(self: &mut MemezFun<Auction, Meme>): u64 {
-    self.state().liquidity_provision.value()
+public fun liquidity_provision<Meme, Quote>(self: &mut MemezFun<Auction, Meme>): u64 {
+    self.state<Meme, Quote>().liquidity_provision.value()
 }
 
 #[test_only]
-public fun market_cap<Meme>(
+public fun market_cap<Meme, Quote>(
     self: &mut MemezFun<Auction, Meme>,
     clock: &Clock,
     decimals: u8,
     total_supply: u64,
 ): u64 {
-    let amounts = dump_amount(self, 10u64.pow(decimals), clock);
+    let amounts = dump_amount<Meme, Quote>(self, 10u64.pow(decimals), clock);
 
     u64::mul_div_up(amounts[1], total_supply, 10u64.pow(decimals))
 }
 
 #[test_only]
-public fun current_meme_balance<Meme>(self: &mut MemezFun<Auction, Meme>, clock: &Clock): u64 {
-    meme_balance(self, clock)
+public fun current_meme_balance<Meme, Quote>(
+    self: &mut MemezFun<Auction, Meme>,
+    clock: &Clock,
+): u64 {
+    meme_balance<Meme, Quote>(self, clock)
 }
 
 #[test_only]
-public fun allocation<Meme>(self: &mut MemezFun<Auction, Meme>): &Allocation<Meme> {
-    &self.state().allocation
+public fun allocation<Meme, Quote>(self: &mut MemezFun<Auction, Meme>): &Allocation<Meme> {
+    &self.state<Meme, Quote>().allocation
 }

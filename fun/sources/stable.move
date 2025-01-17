@@ -47,13 +47,13 @@ const STABLE_STATE_VERSION_V1: u64 = 1;
 
 public struct Stable()
 
-public struct StableState<phantom Meme> has key, store {
+public struct StableState<phantom Meme, phantom Quote> has key, store {
     id: UID,
     meme_reserve: Balance<Meme>,
     dev_allocation: Balance<Meme>,
     dev_vesting_period: u64,
     liquidity_provision: Balance<Meme>,
-    fixed_rate: FixedRate<Meme>,
+    fixed_rate: FixedRate<Meme, Quote>,
     meme_token_cap: Option<MemezTokenCap<Meme>>,
     migration_fee: Fee,
     allocation: Allocation<Meme>,
@@ -61,12 +61,12 @@ public struct StableState<phantom Meme> has key, store {
 
 // === Public Mutative Functions ===
 
-public fun new<Meme, ConfigKey, MigrationWitness>(
+public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
     config: &MemezConfig,
     migrator_list: &MemezMigratorList,
     meme_treasury_cap: TreasuryCap<Meme>,
     mut creation_fee: Coin<SUI>,
-    target_sui_liquidity: u64,
+    target_quote_liquidity: u64,
     total_supply: u64,
     is_token: bool,
     metadata_names: vector<String>,
@@ -85,7 +85,7 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
 
     creation_fee.destroy_or_return(ctx);
 
-    let stable_config = config.get_stable<ConfigKey>(total_supply);
+    let stable_config = config.get_stable<Quote, ConfigKey>(total_supply);
 
     let meme_token_cap = if (is_token) option::some(memez_token_cap::new(&meme_treasury_cap, ctx))
     else option::none();
@@ -102,13 +102,13 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
 
     let liquidity_provision = meme_reserve.split(stable_config[1]);
 
-    let fixed_rate = memez_fixed_rate::new(
-        target_sui_liquidity.min(stable_config[0]),
+    let fixed_rate = memez_fixed_rate::new<Meme, Quote>(
+        target_quote_liquidity.min(stable_config[0]),
         meme_reserve.split(stable_config[2]),
         fees.swap(stake_holders),
     );
 
-    let stable_state = StableState {
+    let stable_state = StableState<Meme, Quote> {
         id: object::new(ctx),
         meme_reserve,
         dev_allocation,
@@ -124,7 +124,7 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
 
     let inner_state = object::id_address(&stable_state);
 
-    let mut memez_fun = memez_fun::new<Stable, Meme, ConfigKey, MigrationWitness>(
+    let mut memez_fun = memez_fun::new<Stable, Meme, Quote, ConfigKey, MigrationWitness>(
         migrator_list,
         memez_versioned::create(STABLE_STATE_VERSION_V1, stable_state, ctx),
         is_token,
@@ -141,7 +141,7 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
 
     let memez_fun_address = memez_fun.addy();
 
-    let state = memez_fun.state_mut();
+    let state = memez_fun.state_mut<Meme, Quote>();
 
     state.fixed_rate.set_memez_fun(memez_fun_address);
 
@@ -150,49 +150,49 @@ public fun new<Meme, ConfigKey, MigrationWitness>(
     metadata_cap
 }
 
-public fun pump<Meme>(
+public fun pump<Meme, Quote>(
     self: &mut MemezFun<Stable, Meme>,
-    sui_coin: Coin<SUI>,
+    quote_coin: Coin<Quote>,
     min_amount_out: u64,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
-): (Coin<SUI>, Coin<Meme>) {
+): (Coin<Quote>, Coin<Meme>) {
     allowed_versions.assert_pkg_version();
     self.assert_is_bonding();
     self.assert_uses_coin();
 
     let state = self.state_mut();
 
-    let (start_migrating, excess_sui_coin, meme_coin) = state
+    let (start_migrating, excess_quote_coin, meme_coin) = state
         .fixed_rate
         .pump(
-            sui_coin,
+            quote_coin,
             min_amount_out,
             ctx,
         );
 
     if (start_migrating) self.set_progress_to_migrating();
 
-    (excess_sui_coin, meme_coin)
+    (excess_quote_coin, meme_coin)
 }
 
-public fun pump_token<Meme>(
+public fun pump_token<Meme, Quote>(
     self: &mut MemezFun<Stable, Meme>,
-    sui_coin: Coin<SUI>,
+    quote_coin: Coin<Quote>,
     min_amount_out: u64,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
-): (Coin<SUI>, Token<Meme>) {
+): (Coin<Quote>, Token<Meme>) {
     allowed_versions.assert_pkg_version();
     self.assert_is_bonding();
     self.assert_uses_token();
 
     let state = self.state_mut();
 
-    let (start_migrating, excess_sui_coin, meme_coin) = state
+    let (start_migrating, excess_quote_coin, meme_coin) = state
         .fixed_rate
         .pump(
-            sui_coin,
+            quote_coin,
             min_amount_out,
             ctx,
         );
@@ -201,16 +201,16 @@ public fun pump_token<Meme>(
 
     if (start_migrating) self.set_progress_to_migrating();
 
-    (excess_sui_coin, meme_token)
+    (excess_quote_coin, meme_token)
 }
 
-public fun dump<Meme>(
+public fun dump<Meme, Quote>(
     self: &mut MemezFun<Stable, Meme>,
     meme_coin: Coin<Meme>,
     min_amount_out: u64,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
-): Coin<SUI> {
+): Coin<Quote> {
     allowed_versions.assert_pkg_version();
     self.assert_is_bonding();
     self.assert_uses_coin();
@@ -226,13 +226,13 @@ public fun dump<Meme>(
         )
 }
 
-public fun dump_token<Meme>(
+public fun dump_token<Meme, Quote>(
     self: &mut MemezFun<Stable, Meme>,
     meme_token: Token<Meme>,
     min_amount_out: u64,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
-): Coin<SUI> {
+): Coin<Quote> {
     allowed_versions.assert_pkg_version();
     self.assert_is_bonding();
     self.assert_uses_token();
@@ -250,31 +250,31 @@ public fun dump_token<Meme>(
         )
 }
 
-public fun migrate<Meme>(
+public fun migrate<Meme, Quote>(
     self: &mut MemezFun<Stable, Meme>,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
-): MemezMigrator<Meme> {
+): MemezMigrator<Meme, Quote> {
     allowed_versions.assert_pkg_version();
     self.assert_is_migrating();
 
-    let state = self.state_mut();
+    let state = self.state_mut<Meme, Quote>();
 
-    let sui_balance = state.fixed_rate.sui_balance_mut().withdraw_all();
+    let quote_balance = state.fixed_rate.quote_balance_mut().withdraw_all();
 
     let liquidity_provision = state.liquidity_provision.withdraw_all();
 
     state.meme_reserve.destroy_or_burn(ctx);
     state.fixed_rate.meme_balance_mut().destroy_or_burn(ctx);
 
-    let mut sui_coin = sui_balance.into_coin(ctx);
+    let mut quote_coin = quote_balance.into_coin(ctx);
 
-    state.migration_fee.take(&mut sui_coin, ctx);
+    state.migration_fee.take(&mut quote_coin, ctx);
 
-    self.migrate(sui_coin.into_balance(), liquidity_provision)
+    self.migrate(quote_coin.into_balance(), liquidity_provision)
 }
 
-public fun dev_allocation_claim<Meme>(
+public fun dev_allocation_claim<Meme, Quote>(
     self: &mut MemezFun<Stable, Meme>,
     clock: &Clock,
     allowed_versions: AllowedVersions,
@@ -285,7 +285,7 @@ public fun dev_allocation_claim<Meme>(
     self.assert_migrated();
     self.assert_is_dev(ctx);
 
-    let state = self.state_mut();
+    let state = self.state_mut<Meme, Quote>();
 
     memez_vesting::new(
         clock,
@@ -296,50 +296,55 @@ public fun dev_allocation_claim<Meme>(
     )
 }
 
-public fun distribute_stake_holders_allocation<Meme>(
+public fun distribute_stake_holders_allocation<Meme, Quote>(
     self: &mut MemezFun<Stable, Meme>,
     clock: &Clock,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ) {
-    self.distribute_stake_holders_allocation!(|self| self.state_mut(), clock, allowed_versions, ctx)
+    self.distribute_stake_holders_allocation!(
+        |self| self.state_mut<Meme, Quote>(),
+        clock,
+        allowed_versions,
+        ctx,
+    )
 }
 
-public fun to_coin<Meme>(
+public fun to_coin<Meme, Quote>(
     self: &mut MemezFun<Stable, Meme>,
     meme_token: Token<Meme>,
     ctx: &mut TxContext,
 ): Coin<Meme> {
-    self.to_coin!(|self| self.state_mut(), meme_token, ctx)
+    self.to_coin!(|self| self.state_mut<Meme, Quote>(), meme_token, ctx)
 }
 
 // === View Functions for FE ===
 
-fun pump_amount<Meme>(self: &mut MemezFun<Stable, Meme>, amount_in: u64): vector<u64> {
-    let state = self.state();
+fun pump_amount<Meme, Quote>(self: &mut MemezFun<Stable, Meme>, amount_in: u64): vector<u64> {
+    let state = self.state<Meme, Quote>();
 
     state.fixed_rate.pump_amount(amount_in)
 }
 
-fun dump_amount<Meme>(self: &mut MemezFun<Stable, Meme>, amount_in: u64): vector<u64> {
-    let state = self.state();
+fun dump_amount<Meme, Quote>(self: &mut MemezFun<Stable, Meme>, amount_in: u64): vector<u64> {
+    let state = self.state<Meme, Quote>();
 
     state.fixed_rate.dump_amount(amount_in)
 }
 
 // === Private Functions ===
 
-fun token_cap<Meme>(state: &StableState<Meme>): &MemezTokenCap<Meme> {
+fun token_cap<Meme, Quote>(state: &StableState<Meme, Quote>): &MemezTokenCap<Meme> {
     state.meme_token_cap.borrow()
 }
 
-fun state<Meme>(memez_fun: &mut MemezFun<Stable, Meme>): &StableState<Meme> {
+fun state<Meme, Quote>(memez_fun: &mut MemezFun<Stable, Meme>): &StableState<Meme, Quote> {
     let versioned = memez_fun.versioned_mut();
     maybe_upgrade_state_to_latest(versioned);
     versioned.load_value()
 }
 
-fun state_mut<Meme>(memez_fun: &mut MemezFun<Stable, Meme>): &mut StableState<Meme> {
+fun state_mut<Meme, Quote>(memez_fun: &mut MemezFun<Stable, Meme>): &mut StableState<Meme, Quote> {
     let versioned = memez_fun.versioned_mut();
     maybe_upgrade_state_to_latest(versioned);
     versioned.load_value_mut()
@@ -362,28 +367,28 @@ use fun destroy_or_return as Coin.destroy_or_return;
 // === Public Test Only Functions ===
 
 #[test_only]
-public fun dev_allocation<Meme>(self: &mut MemezFun<Stable, Meme>): u64 {
-    let state = self.state();
+public fun dev_allocation<Meme, Quote>(self: &mut MemezFun<Stable, Meme>): u64 {
+    let state = self.state<Meme, Quote>();
     state.dev_allocation.value()
 }
 
 #[test_only]
-public fun liquidity_provision<Meme>(self: &mut MemezFun<Stable, Meme>): u64 {
-    let state = self.state();
+public fun liquidity_provision<Meme, Quote>(self: &mut MemezFun<Stable, Meme>): u64 {
+    let state = self.state<Meme, Quote>();
     state.liquidity_provision.value()
 }
 
 #[test_only]
-public fun fixed_rate<Meme>(self: &mut MemezFun<Stable, Meme>): &FixedRate<Meme> {
-    &self.state().fixed_rate
+public fun fixed_rate<Meme, Quote>(self: &mut MemezFun<Stable, Meme>): &FixedRate<Meme, Quote> {
+    &self.state<Meme, Quote>().fixed_rate
 }
 
 #[test_only]
-public fun meme_reserve<Meme>(self: &mut MemezFun<Stable, Meme>): &Balance<Meme> {
-    &self.state().meme_reserve
+public fun meme_reserve<Meme, Quote>(self: &mut MemezFun<Stable, Meme>): &Balance<Meme> {
+    &self.state<Meme, Quote>().meme_reserve
 }
 
 #[test_only]
-public fun dev_vesting_period<Meme>(self: &mut MemezFun<Stable, Meme>): u64 {
-    self.state().dev_vesting_period
+public fun dev_vesting_period<Meme, Quote>(self: &mut MemezFun<Stable, Meme>): u64 {
+    self.state<Meme, Quote>().dev_vesting_period
 }

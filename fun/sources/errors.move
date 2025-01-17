@@ -145,3 +145,7 @@ public(package) macro fun invalid_upgrade(): u64 {
 public(package) macro fun remove_current_version_not_allowed(): u64 {
     21
 }
+
+public(package) macro fun invalid_quote_type(): u64 {
+    22
+}

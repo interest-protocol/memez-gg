@@ -43,7 +43,7 @@ public(package) fun get<Quote>(self: &StableConfig, total_supply: u64): vector<u
     vector[self.max_target_quote_liquidity, liquidity_provision, meme_sale_amount]
 }
 
-// === Test Only Functions === 
+// === Test Only Functions ===
 
 #[test_only]
 public fun quote_type(self: &StableConfig): TypeName {

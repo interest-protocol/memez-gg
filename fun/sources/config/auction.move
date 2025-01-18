@@ -57,7 +57,7 @@ public(package) fun get<Quote>(self: &AuctionConfig, total_supply: u64): vector<
     ]
 }
 
-// === Test Only Functions === 
+// === Test Only Functions ===
 
 #[test_only]
 public fun quote_type(self: &AuctionConfig): TypeName {

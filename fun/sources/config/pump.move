@@ -42,3 +42,10 @@ public(package) fun get<Quote>(self: &PumpConfig, total_supply: u64): vector<u64
 
     vector[self.burn_tax, self.virtual_liquidity, self.target_quote_liquidity, liquidity_provision]
 }
+
+// === Test Only Functions === 
+
+#[test_only]
+public fun quote_type(self: &PumpConfig): TypeName {
+    self.quote_type
+}

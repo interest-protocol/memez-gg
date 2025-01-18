@@ -1,113 +1,113 @@
-// #[test_only]
-// module memez_fun::memez_auction_tests;
+#[test_only]
+module memez_fun::memez_auction_tests;
 
-// use interest_bps::bps;
-// use interest_math::u64;
-// use memez_vesting::memez_vesting::MemezVesting;
-// use constant_product::constant_product::get_amount_out;
-// use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
-// use memez_acl::acl;
-// use memez_fun::{
-//     memez_auction::{Self, Auction},
-//     memez_config::{Self, MemezConfig, DefaultKey},
-//     memez_errors,
-//     memez_fees,
-//     memez_fun::{Self, MemezFun},
-//     memez_migrator_list::{Self, MemezMigratorList},
-//     memez_allowed_versions,
-//     memez_test_helpers::add_fee
-// };
-// use sui::{
-//     clock::{Self, Clock},
-//     coin::{mint_for_testing, create_treasury_cap_for_testing, Coin},
-//     sui::SUI,
-//     test_scenario::{Self as ts, Scenario},
-//     test_utils::{assert_eq, destroy},
-//     token
-// };
+use interest_bps::bps;
+use interest_math::u64;
+use memez_vesting::memez_vesting::MemezVesting;
+use constant_product::constant_product::get_amount_out;
+use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
+use memez_acl::acl;
+use memez_fun::{
+    memez_auction::{Self, Auction},
+    memez_config::{Self, MemezConfig, DefaultKey},
+    memez_errors,
+    memez_fees,
+    memez_fun::{Self, MemezFun},
+    memez_migrator_list::{Self, MemezMigratorList},
+    memez_allowed_versions,
+    memez_test_helpers::add_fee
+};
+use sui::{
+    clock::{Self, Clock},
+    coin::{mint_for_testing, create_treasury_cap_for_testing, Coin},
+    sui::SUI,
+    test_scenario::{Self as ts, Scenario},
+    test_utils::{assert_eq, destroy},
+    token
+};
 
-// const ADMIN: address = @0x1;
+const ADMIN: address = @0x1;
 
-// const STAKE_HOLDER: address = @0x2;
+const STAKE_HOLDER: address = @0x2;
 
-// // @dev Sui Decimal Scale
-// const POW_9: u64 = 1__000_000_000;
+// @dev Sui Decimal Scale
+const POW_9: u64 = 1__000_000_000;
 
-// const MAX_BPS: u64 = 10_000;
+const MAX_BPS: u64 = 10_000;
 
-// const THIRTY_MINUTES_MS: u64 = 30 * 60 * 1_000;
+const THIRTY_MINUTES_MS: u64 = 30 * 60 * 1_000;
 
-// const DEV_ALLOCATION: u64 = 100;
-// const BURN_TAX: u64 = 2000;
-// const VIRTUAL_LIQUIDITY: u64 = 1_000 * POW_9;
-// const TARGET_LIQUIDITY: u64 = 10_000 * POW_9;
-// const PROVISION_LIQUIDITY: u64 = 500;
-// const SEED_LIQUIDITY: u64 = 1;
+const DEV_ALLOCATION: u64 = 100;
+const BURN_TAX: u64 = 2000;
+const VIRTUAL_LIQUIDITY: u64 = 1_000 * POW_9;
+const TARGET_LIQUIDITY: u64 = 10_000 * POW_9;
+const PROVISION_LIQUIDITY: u64 = 500;
+const SEED_LIQUIDITY: u64 = 1;
 
-// const VESTING_PERIOD: u64 = THIRTY_MINUTES_MS * 10;
+const VESTING_PERIOD: u64 = THIRTY_MINUTES_MS * 10;
 
-// const DEV: address = @0x2;
+const DEV: address = @0x2;
 
-// const TEN_PERCENT: u64 = MAX_BPS / 10;
+const TEN_PERCENT: u64 = MAX_BPS / 10;
 
-// public struct Meme has drop ()
+public struct Meme has drop ()
 
-// public struct MigrationWitness has drop ()
+public struct MigrationWitness has drop ()
 
-// public struct World {
-//     config: MemezConfig,
-//     migrator_list: MemezMigratorList,
-//     clock: Clock,
-//     scenario: Scenario,
-// }
+public struct World {
+    config: MemezConfig,
+    migrator_list: MemezMigratorList,
+    clock: Clock,
+    scenario: Scenario,
+}
 
-// #[test]
-// fun test_new() {
-//     let mut world = start();
+#[test]
+fun test_new() {
+    let mut world = start();
 
-//     let total_supply = 2_500_000_000 * POW_9;
+    let total_supply = 2_500_000_000 * POW_9;
 
-//     let start_time = 100;
+    let start_time = 100;
 
-//     world.clock.increment_for_testing(start_time);
+    world.clock.increment_for_testing(start_time);
 
-//     let fees = world.config.fees<DefaultKey>();
+    let fees = world.config.fees<DefaultKey>();
 
-//     let auction_config = world.config.get_auction<DefaultKey>(total_supply);
+    let auction_config = world.config.get_auction<SUI, DefaultKey>(total_supply);
 
-//     let mut memez_fun = set_up_pool(&mut world, false, total_supply);
+    let mut memez_fun = set_up_pool(&mut world, false, total_supply);
 
-//     assert_eq(memez_auction::start_time(&mut memez_fun), start_time);
+    assert_eq(memez_auction::start_time<Meme, SUI>(&mut memez_fun), start_time);
 
-//     let expected_allocation_value = bps::new(fees.payloads()[3].payload_value()).calc(total_supply);
+    let expected_allocation_value = bps::new(fees.payloads()[3].payload_value()).calc(total_supply);
 
-//     assert_eq(memez_auction::auction_duration(&mut memez_fun), THIRTY_MINUTES_MS);
-//     assert_eq(
-//         memez_auction::initial_reserve(&mut memez_fun),
-//         total_supply - expected_allocation_value - auction_config[4] - auction_config[5],
-//     );
-//     assert_eq(
-//         memez_auction::meme_reserve(&mut memez_fun),
-//         total_supply - expected_allocation_value - auction_config[4] - auction_config[5],
-//     );
-//     assert_eq(memez_auction::allocation(&mut memez_fun).value(), expected_allocation_value);
-//     assert_eq(memez_auction::liquidity_provision(&mut memez_fun), auction_config[4]);
+    assert_eq(memez_auction::auction_duration<Meme, SUI>(&mut memez_fun), THIRTY_MINUTES_MS);
+    assert_eq(
+        memez_auction::initial_reserve<Meme, SUI>(&mut memez_fun),
+        total_supply - expected_allocation_value - auction_config[4] - auction_config[5],
+    );
+    assert_eq(
+        memez_auction::meme_reserve<Meme, SUI>(&mut memez_fun),
+        total_supply - expected_allocation_value - auction_config[4] - auction_config[5],
+    );
+    assert_eq(memez_auction::allocation<Meme, SUI>(&mut memez_fun).value(), expected_allocation_value);
+    assert_eq(memez_auction::liquidity_provision<Meme, SUI>(&mut memez_fun), auction_config[4]);
 
-//     let cp = memez_auction::constant_product(&mut memez_fun);
+    let cp = memez_auction::constant_product<Meme, SUI>(&mut memez_fun);
 
-//     assert_eq(cp.virtual_liquidity(), auction_config[2]);
-//     assert_eq(cp.target_sui_liquidity(), auction_config[3]);
-//     assert_eq(cp.burner().fee().value(), auction_config[1]);
-//     assert_eq(cp.meme_balance().value(), auction_config[5]);
-//     assert_eq(cp.sui_balance().value(), 0);
+    assert_eq(cp.virtual_liquidity(), auction_config[2]);
+    assert_eq(cp.target_quote_liquidity(), auction_config[3]);
+    assert_eq(cp.burner().fee().value(), auction_config[1]);
+    assert_eq(cp.meme_balance().value(), auction_config[5]);
+    assert_eq(cp.quote_balance().value(), 0);
 
-//     memez_fun.assert_is_bonding();
-//     memez_fun.assert_uses_coin();
+    memez_fun.assert_is_bonding();
+    memez_fun.assert_uses_coin();
 
-//     destroy(memez_fun);
+    destroy(memez_fun);
 
-//     world.end();
-// }
+    world.end();
+}
 
 // #[test]
 // fun test_new_token() {
@@ -1229,73 +1229,73 @@
 //     world.end();
 // }
 
-// fun set_up_pool(world: &mut World, is_token: bool, total_supply: u64): MemezFun<Auction, Meme> {
-//     let ctx = world.scenario.ctx();
+fun set_up_pool(world: &mut World, is_token: bool, total_supply: u64): MemezFun<Auction, Meme, SUI> {
+    let ctx = world.scenario.ctx();
 
-//     let metadata_cap = memez_auction::new<Meme, DefaultKey, MigrationWitness>(
-//         &world.config,
-//         &world.migrator_list,
-//         &world.clock,
-//         create_treasury_cap_for_testing(ctx),
-//         mint_for_testing(2_000_000_000, ctx),
-//         total_supply,
-//         is_token,
-//         vector[],
-//         vector[],
-//         vector[],
-//         memez_allowed_versions::get_allowed_versions_for_testing(1),
-//         ctx,
-//     );
+    let metadata_cap = memez_auction::new<Meme, SUI, DefaultKey, MigrationWitness>(
+        &world.config,
+        &world.migrator_list,
+        &world.clock,
+        create_treasury_cap_for_testing(ctx),
+        mint_for_testing(2_000_000_000, ctx),
+        total_supply,
+        is_token,
+        vector[],
+        vector[],
+        vector[],
+        memez_allowed_versions::get_allowed_versions_for_testing(1),
+        ctx,
+    );
 
-//     destroy(metadata_cap);
+    destroy(metadata_cap);
 
-//     world.scenario.next_tx(ADMIN);
+    world.scenario.next_tx(ADMIN);
 
-//     world.scenario.take_shared<MemezFun<Auction, Meme>>()
-// }
+    world.scenario.take_shared<MemezFun<Auction, Meme, SUI>>()
+}
 
-// fun start(): World {
-//     let mut scenario = ts::begin(ADMIN);
+fun start(): World {
+    let mut scenario = ts::begin(ADMIN);
 
-//     memez_config::init_for_testing(scenario.ctx());
-//     memez_migrator_list::init_for_testing(scenario.ctx());
+    memez_config::init_for_testing(scenario.ctx());
+    memez_migrator_list::init_for_testing(scenario.ctx());
 
-//     scenario.next_tx(ADMIN);
+    scenario.next_tx(ADMIN);
 
-//     let mut config = scenario.take_shared<MemezConfig>();
-//     let mut migrator_list = scenario.take_shared<MemezMigratorList>();
+    let mut config = scenario.take_shared<MemezConfig>();
+    let mut migrator_list = scenario.take_shared<MemezMigratorList>();
 
-//     let witness = acl::sign_in_for_testing();
+    let witness = acl::sign_in_for_testing();
 
-//     migrator_list.add<MigrationWitness>(&witness);
+    migrator_list.add<MigrationWitness>(&witness);
 
-//     let witness = acl::sign_in_for_testing();
+    let witness = acl::sign_in_for_testing();
 
-//     config.set_fees<DefaultKey>(
-//         &witness,
-//         vector[vector[MAX_BPS, 2 * POW_9], vector[MAX_BPS, 30], vector[MAX_BPS, TEN_PERCENT], vector[MAX_BPS, VESTING_PERIOD, DEV_ALLOCATION]],
-//         vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[DEV]],
-//         scenario.ctx(),
-//     );
+    config.set_fees<DefaultKey>(
+        &witness,
+        vector[vector[MAX_BPS, 2 * POW_9], vector[MAX_BPS, 30], vector[MAX_BPS, TEN_PERCENT], vector[MAX_BPS, VESTING_PERIOD, DEV_ALLOCATION]],
+        vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[DEV]],
+        scenario.ctx(),
+    );
 
-//     config.set_auction<DefaultKey>(
-//         &witness,
-//         vector[
-//             THIRTY_MINUTES_MS,
-//             BURN_TAX,
-//             VIRTUAL_LIQUIDITY,
-//             TARGET_LIQUIDITY,
-//             PROVISION_LIQUIDITY,
-//             SEED_LIQUIDITY,
-//         ],
-//         scenario.ctx(),
-//     );
+    config.set_auction<SUI, DefaultKey>(
+        &witness,
+        vector[
+            THIRTY_MINUTES_MS,
+            BURN_TAX,
+            VIRTUAL_LIQUIDITY,
+            TARGET_LIQUIDITY,
+            PROVISION_LIQUIDITY,
+            SEED_LIQUIDITY,
+        ],
+        scenario.ctx(),
+    );
 
-//     let clock = clock::create_for_testing(scenario.ctx());
+    let clock = clock::create_for_testing(scenario.ctx());
 
-//     World { config, migrator_list, clock, scenario }
-// }
+    World { config, migrator_list, clock, scenario }
+}
 
-// fun end(world: World) {
-//     destroy(world);
-// }
+fun end(world: World) {
+    destroy(world);
+}

@@ -162,7 +162,7 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
 }
 
 public fun pump<Meme, Quote>(
-    self: &mut MemezFun<Pump, Meme>,
+    self: &mut MemezFun<Pump, Meme, Quote>,
     quote_coin: Coin<Quote>,
     min_amount_out: u64,
     allowed_versions: AllowedVersions,
@@ -178,7 +178,7 @@ public fun pump<Meme, Quote>(
 }
 
 public fun pump_token<Meme, Quote>(
-    self: &mut MemezFun<Pump, Meme>,
+    self: &mut MemezFun<Pump, Meme, Quote>,
     quote_coin: Coin<Quote>,
     min_amount_out: u64,
     allowed_versions: AllowedVersions,
@@ -194,7 +194,7 @@ public fun pump_token<Meme, Quote>(
 }
 
 public fun dump<Meme, Quote>(
-    self: &mut MemezFun<Pump, Meme>,
+    self: &mut MemezFun<Pump, Meme, Quote>,
     treasury_cap: &mut IPXTreasuryStandard,
     meme_coin: Coin<Meme>,
     min_amount_out: u64,
@@ -212,7 +212,7 @@ public fun dump<Meme, Quote>(
 }
 
 public fun dump_token<Meme, Quote>(
-    self: &mut MemezFun<Pump, Meme>,
+    self: &mut MemezFun<Pump, Meme, Quote>,
     treasury_cap: &mut IPXTreasuryStandard,
     meme_token: Token<Meme>,
     min_amount_out: u64,
@@ -230,7 +230,7 @@ public fun dump_token<Meme, Quote>(
 }
 
 public fun migrate<Meme, Quote>(
-    self: &mut MemezFun<Pump, Meme>,
+    self: &mut MemezFun<Pump, Meme, Quote>,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ): MemezMigrator<Meme, Quote> {
@@ -256,7 +256,7 @@ public fun migrate<Meme, Quote>(
 }
 
 public fun dev_purchase_claim<Meme, Quote>(
-    self: &mut MemezFun<Pump, Meme>,
+    self: &mut MemezFun<Pump, Meme, Quote>,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ): Coin<Meme> {
@@ -271,7 +271,7 @@ public fun dev_purchase_claim<Meme, Quote>(
 }
 
 public fun distribute_stake_holders_allocation<Meme, Quote>(
-    self: &mut MemezFun<Pump, Meme>,
+    self: &mut MemezFun<Pump, Meme, Quote>,
     clock: &Clock,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
@@ -285,7 +285,7 @@ public fun distribute_stake_holders_allocation<Meme, Quote>(
 }
 
 public fun to_coin<Meme, Quote>(
-    self: &mut MemezFun<Pump, Meme>,
+    self: &mut MemezFun<Pump, Meme, Quote>,
     meme_token: Token<Meme>,
     ctx: &mut TxContext,
 ): Coin<Meme> {
@@ -294,11 +294,11 @@ public fun to_coin<Meme, Quote>(
 
 // === View Functions for FE ===
 
-fun pump_amount<Meme, Quote>(self: &mut MemezFun<Pump, Meme>, amount_in: u64): vector<u64> {
+fun pump_amount<Meme, Quote>(self: &mut MemezFun<Pump, Meme, Quote>, amount_in: u64): vector<u64> {
     self.cp_pump_amount!(|self| (self.state<Meme, Quote>(), 0), amount_in)
 }
 
-fun dump_amount<Meme, Quote>(self: &mut MemezFun<Pump, Meme>, amount_in: u64): vector<u64> {
+fun dump_amount<Meme, Quote>(self: &mut MemezFun<Pump, Meme, Quote>, amount_in: u64): vector<u64> {
     self.cp_dump_amount!(|self| (self.state<Meme, Quote>(), 0), amount_in)
 }
 
@@ -308,13 +308,15 @@ fun token_cap<Meme, Quote>(state: &PumpState<Meme, Quote>): &MemezTokenCap<Meme>
     state.meme_token_cap.borrow()
 }
 
-fun state<Meme, Quote>(memez_fun: &mut MemezFun<Pump, Meme>): &PumpState<Meme, Quote> {
+fun state<Meme, Quote>(memez_fun: &mut MemezFun<Pump, Meme, Quote>): &PumpState<Meme, Quote> {
     let versioned = memez_fun.versioned_mut();
     maybe_upgrade_state_to_latest(versioned);
     versioned.load_value()
 }
 
-fun state_mut<Meme, Quote>(memez_fun: &mut MemezFun<Pump, Meme>): &mut PumpState<Meme, Quote> {
+fun state_mut<Meme, Quote>(
+    memez_fun: &mut MemezFun<Pump, Meme, Quote>,
+): &mut PumpState<Meme, Quote> {
     let versioned = memez_fun.versioned_mut();
     maybe_upgrade_state_to_latest(versioned);
     versioned.load_value_mut()
@@ -337,19 +339,19 @@ use fun destroy_or_return as Coin.destroy_or_return;
 // === Public Test Only Functions ===
 
 #[test_only]
-public fun liquidity_provision<Meme, Quote>(self: &mut MemezFun<Pump, Meme>): u64 {
+public fun liquidity_provision<Meme, Quote>(self: &mut MemezFun<Pump, Meme, Quote>): u64 {
     let state = self.state<Meme, Quote>();
     state.liquidity_provision.value()
 }
 
 #[test_only]
 public fun constant_product_mut<Meme, Quote>(
-    self: &mut MemezFun<Pump, Meme>,
+    self: &mut MemezFun<Pump, Meme, Quote>,
 ): &mut MemezConstantProduct<Meme, Quote> {
     &mut self.state_mut<Meme, Quote>().constant_product
 }
 
 #[test_only]
-public fun dev_purchase<Meme, Quote>(self: &mut MemezFun<Pump, Meme>): u64 {
+public fun dev_purchase<Meme, Quote>(self: &mut MemezFun<Pump, Meme, Quote>): u64 {
     self.state_mut<Meme, Quote>().dev_purchase.value()
 }

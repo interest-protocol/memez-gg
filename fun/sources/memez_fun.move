@@ -58,7 +58,7 @@ public struct MemezMigrator<phantom Meme, phantom Quote> {
     meme_balance: Balance<Meme>,
 }
 
-public struct MemezFun<phantom Curve, phantom Meme> has key {
+public struct MemezFun<phantom Curve, phantom Meme, phantom Quote> has key {
     id: UID,
     dev: address,
     is_token: bool,
@@ -81,7 +81,12 @@ public fun destroy<Meme, Quote, Witness: drop>(
 
     assert!(type_name::get<Witness>() == witness, memez_errors::invalid_witness!());
 
-    memez_events::migrated<Meme, Quote>(memez_fun, witness, quote_balance.value(), meme_balance.value());
+    memez_events::migrated<Meme, Quote>(
+        memez_fun,
+        witness,
+        quote_balance.value(),
+        meme_balance.value(),
+    );
 
     (quote_balance, meme_balance)
 }
@@ -101,7 +106,7 @@ public(package) fun new<Curve, Meme, Quote, ConfigKey, MigrationWitness>(
     meme_balance: u64,
     dev: address,
     ctx: &mut TxContext,
-): MemezFun<Curve, Meme> {
+): MemezFun<Curve, Meme, Quote> {
     let config_key = type_name::get<ConfigKey>();
     let migration_witness = type_name::get<MigrationWitness>();
 
@@ -137,8 +142,8 @@ public(package) fun new<Curve, Meme, Quote, ConfigKey, MigrationWitness>(
 }
 
 public(package) macro fun cp_pump<$Curve, $Meme, $Quote, $State>(
-    $self: &mut MemezFun<$Curve, $Meme>,
-    $f: |&mut MemezFun<$Curve, $Meme>| -> &mut $State,
+    $self: &mut MemezFun<$Curve, $Meme, $Quote>,
+    $f: |&mut MemezFun<$Curve, $Meme, $Quote>| -> &mut $State,
     $quote_coin: Coin<$Quote>,
     $min_amount_out: u64,
     $allowed_versions: AllowedVersions,
@@ -155,8 +160,8 @@ public(package) macro fun cp_pump<$Curve, $Meme, $Quote, $State>(
 }
 
 public(package) macro fun cp_pump_unchecked<$Curve, $Meme, $Quote, $State>(
-    $self: &mut MemezFun<$Curve, $Meme>,
-    $f: |&mut MemezFun<$Curve, $Meme>| -> &mut $State,
+    $self: &mut MemezFun<$Curve, $Meme, $Quote>,
+    $f: |&mut MemezFun<$Curve, $Meme, $Quote>| -> &mut $State,
     $quote_coin: Coin<$Quote>,
     $min_amount_out: u64,
     $ctx: &mut TxContext,
@@ -182,8 +187,8 @@ public(package) macro fun cp_pump_unchecked<$Curve, $Meme, $Quote, $State>(
 }
 
 public(package) macro fun cp_pump_token<$Curve, $Meme, $Quote, $State>(
-    $self: &mut MemezFun<$Curve, $Meme>,
-    $f: |&mut MemezFun<$Curve, $Meme>| -> &mut $State,
+    $self: &mut MemezFun<$Curve, $Meme, $Quote>,
+    $f: |&mut MemezFun<$Curve, $Meme, $Quote>| -> &mut $State,
     $quote_coin: Coin<$Quote>,
     $min_amount_out: u64,
     $allowed_versions: AllowedVersions,
@@ -218,8 +223,8 @@ public(package) macro fun cp_pump_token<$Curve, $Meme, $Quote, $State>(
 }
 
 public(package) macro fun cp_dump<$Curve, $Meme, $Quote, $State>(
-    $self: &mut MemezFun<$Curve, $Meme>,
-    $f: |&mut MemezFun<$Curve, $Meme>| -> &mut $State,
+    $self: &mut MemezFun<$Curve, $Meme, $Quote>,
+    $f: |&mut MemezFun<$Curve, $Meme, $Quote>| -> &mut $State,
     $treasury_cap: &mut IPXTreasuryStandard,
     $meme_coin: Coin<$Meme>,
     $min_amount_out: u64,
@@ -251,8 +256,8 @@ public(package) macro fun cp_dump<$Curve, $Meme, $Quote, $State>(
 }
 
 public(package) macro fun cp_dump_token<$Curve, $Meme, $Quote, $State>(
-    $self: &mut MemezFun<$Curve, $Meme>,
-    $f: |&mut MemezFun<$Curve, $Meme>| -> &mut $State,
+    $self: &mut MemezFun<$Curve, $Meme, $Quote>,
+    $f: |&mut MemezFun<$Curve, $Meme, $Quote>| -> &mut $State,
     $treasury_cap: &mut IPXTreasuryStandard,
     $meme_token: Token<$Meme>,
     $min_amount_out: u64,
@@ -285,9 +290,9 @@ public(package) macro fun cp_dump_token<$Curve, $Meme, $Quote, $State>(
         )
 }
 
-public(package) macro fun to_coin<$Curve, $Meme, $State>(
-    $self: &mut MemezFun<$Curve, $Meme>,
-    $f: |&mut MemezFun<$Curve, $Meme>| -> &mut $State,
+public(package) macro fun to_coin<$Curve, $Meme, $Quote, $State>(
+    $self: &mut MemezFun<$Curve, $Meme, $Quote>,
+    $f: |&mut MemezFun<$Curve, $Meme, $Quote>| -> &mut $State,
     $meme_token: Token<$Meme>,
     $ctx: &mut TxContext,
 ): Coin<$Meme> {
@@ -300,9 +305,9 @@ public(package) macro fun to_coin<$Curve, $Meme, $State>(
     $f(self).token_cap().to_coin(meme_token, ctx)
 }
 
-public(package) macro fun distribute_stake_holders_allocation<$Curve, $Meme, $State>(
-    $self: &mut MemezFun<$Curve, $Meme>,
-    $f: |&mut MemezFun<$Curve, $Meme>| -> &mut $State,
+public(package) macro fun distribute_stake_holders_allocation<$Curve, $Meme, $Quote, $State>(
+    $self: &mut MemezFun<$Curve, $Meme, $Quote>,
+    $f: |&mut MemezFun<$Curve, $Meme, $Quote>| -> &mut $State,
     $clock: &Clock,
     $allowed_versions: AllowedVersions,
     $ctx: &mut TxContext,
@@ -320,9 +325,9 @@ public(package) macro fun distribute_stake_holders_allocation<$Curve, $Meme, $St
     state.allocation.take(clock, ctx);
 }
 
-public(package) macro fun cp_pump_amount<$Curve, $Meme, $State>(
-    $self: &mut MemezFun<$Curve, $Meme>,
-    $f: |&mut MemezFun<$Curve, $Meme>| -> (&$State, u64),
+public(package) macro fun cp_pump_amount<$Curve, $Meme, $Quote, $State>(
+    $self: &mut MemezFun<$Curve, $Meme, $Quote>,
+    $f: |&mut MemezFun<$Curve, $Meme, $Quote>| -> (&$State, u64),
     $amount_in: u64,
 ): vector<u64> {
     let amount_in = $amount_in;
@@ -337,9 +342,9 @@ public(package) macro fun cp_pump_amount<$Curve, $Meme, $State>(
         )
 }
 
-public(package) macro fun cp_dump_amount<$Curve, $Meme, $State>(
-    $self: &mut MemezFun<$Curve, $Meme>,
-    $f: |&mut MemezFun<$Curve, $Meme>| -> (&$State, u64),
+public(package) macro fun cp_dump_amount<$Curve, $Meme, $Quote, $State>(
+    $self: &mut MemezFun<$Curve, $Meme, $Quote>,
+    $f: |&mut MemezFun<$Curve, $Meme, $Quote>| -> (&$State, u64),
     $amount_in: u64,
 ): vector<u64> {
     let amount_in = $amount_in;
@@ -354,60 +359,69 @@ public(package) macro fun cp_dump_amount<$Curve, $Meme, $State>(
         )
 }
 
-public(package) fun share<Curve, Meme>(self: MemezFun<Curve, Meme>) {
+public(package) fun share<Curve, Meme, Quote>(self: MemezFun<Curve, Meme, Quote>) {
     transfer::share_object(self);
 }
 
-public(package) fun addy<Curve, Meme>(self: &MemezFun<Curve, Meme>): address {
+public(package) fun addy<Curve, Meme, Quote>(self: &MemezFun<Curve, Meme, Quote>): address {
     self.id.to_address()
 }
 
-public(package) fun migration_witness<Curve, Meme>(self: &MemezFun<Curve, Meme>): TypeName {
+public(package) fun migration_witness<Curve, Meme, Quote>(
+    self: &MemezFun<Curve, Meme, Quote>,
+): TypeName {
     self.migration_witness
 }
 
-public(package) fun versioned<Curve, Meme>(self: &MemezFun<Curve, Meme>): &Versioned {
+public(package) fun versioned<Curve, Meme, Quote>(self: &MemezFun<Curve, Meme, Quote>): &Versioned {
     &self.state
 }
 
-public(package) fun versioned_mut<Curve, Meme>(self: &mut MemezFun<Curve, Meme>): &mut Versioned {
+public(package) fun versioned_mut<Curve, Meme, Quote>(
+    self: &mut MemezFun<Curve, Meme, Quote>,
+): &mut Versioned {
     &mut self.state
 }
 
-public(package) fun set_progress_to_migrating<Curve, Meme>(self: &mut MemezFun<Curve, Meme>) {
+public(package) fun set_progress_to_migrating<Curve, Meme, Quote>(
+    self: &mut MemezFun<Curve, Meme, Quote>,
+) {
     self.progress = Progress::Migrating;
 
     memez_events::can_migrate(self.id.to_address(), self.migration_witness);
 }
 
-public(package) fun assert_is_bonding<Curve, Meme>(self: &MemezFun<Curve, Meme>) {
+public(package) fun assert_is_bonding<Curve, Meme, Quote>(self: &MemezFun<Curve, Meme, Quote>) {
     assert!(self.progress == Progress::Bonding, memez_errors::not_bonding!());
 }
 
-public(package) fun assert_is_migrating<Curve, Meme>(self: &MemezFun<Curve, Meme>) {
+public(package) fun assert_is_migrating<Curve, Meme, Quote>(self: &MemezFun<Curve, Meme, Quote>) {
     assert!(self.progress == Progress::Migrating, memez_errors::not_migrating!());
 }
 
-public(package) fun assert_migrated<Curve, Meme>(self: &MemezFun<Curve, Meme>) {
+public(package) fun assert_migrated<Curve, Meme, Quote>(self: &MemezFun<Curve, Meme, Quote>) {
     assert!(self.progress == Progress::Migrated, memez_errors::not_migrated!());
 }
 
-public(package) fun assert_is_dev<Curve, Meme>(self: &MemezFun<Curve, Meme>, ctx: &TxContext) {
+public(package) fun assert_is_dev<Curve, Meme, Quote>(
+    self: &MemezFun<Curve, Meme, Quote>,
+    ctx: &TxContext,
+) {
     assert!(self.dev == ctx.sender(), memez_errors::invalid_dev!());
 }
 
-public(package) fun assert_uses_token<Curve, Meme>(self: &MemezFun<Curve, Meme>) {
+public(package) fun assert_uses_token<Curve, Meme, Quote>(self: &MemezFun<Curve, Meme, Quote>) {
     assert!(self.is_token, memez_errors::token_not_supported!());
 }
 
-public(package) fun assert_uses_coin<Curve, Meme>(self: &MemezFun<Curve, Meme>) {
+public(package) fun assert_uses_coin<Curve, Meme, Quote>(self: &MemezFun<Curve, Meme, Quote>) {
     assert!(!self.is_token, memez_errors::token_supported!());
 }
 
 // === Public Package Migration Functions ===
 
 public(package) fun migrate<Curve, Meme, Quote>(
-    self: &mut MemezFun<Curve, Meme>,
+    self: &mut MemezFun<Curve, Meme, Quote>,
     quote_balance: Balance<Quote>,
     meme_balance: Balance<Meme>,
 ): MemezMigrator<Meme, Quote> {
@@ -422,17 +436,19 @@ public(package) fun migrate<Curve, Meme, Quote>(
 }
 
 #[test_only]
-public fun dev<Curve, Meme>(self: &MemezFun<Curve, Meme>): address {
+public fun dev<Curve, Meme, Quote>(self: &MemezFun<Curve, Meme, Quote>): address {
     self.dev
 }
 
 #[test_only]
-public fun metadata<Curve, Meme>(self: &MemezFun<Curve, Meme>): &VecMap<String, String> {
+public fun metadata<Curve, Meme, Quote>(
+    self: &MemezFun<Curve, Meme, Quote>,
+): &VecMap<String, String> {
     &self.metadata
 }
 
 #[test_only]
-public fun ip_meme_coin_treasury<Curve, Meme>(self: &MemezFun<Curve, Meme>): address {
+public fun ip_meme_coin_treasury<Curve, Meme, Quote>(self: &MemezFun<Curve, Meme, Quote>): address {
     self.ipx_meme_coin_treasury
 }
 

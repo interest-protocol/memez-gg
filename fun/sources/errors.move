@@ -56,6 +56,9 @@ const EZeroTotalSupply: u64 = 19;
 #[test_only]
 const ERemoveCurrentVersionNotAllowed: u64 = 21;
 
+#[test_only]
+const EInvalidQuoteType: u64 = 22;
+
 // === Public Package Functions ===
 
 public(package) macro fun insufficient_value(): u64 {

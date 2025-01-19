@@ -9,6 +9,7 @@ use memez_acl::acl;
 use memez_fun::{
     memez_allowed_versions,
     memez_auction::{Self, Auction},
+    memez_auction_config,
     memez_config::{Self, MemezConfig, DefaultKey},
     memez_errors,
     memez_fees,
@@ -60,6 +61,8 @@ public struct World {
     clock: Clock,
     scenario: Scenario,
 }
+
+public struct InvalidQuote()
 
 #[test]
 fun test_new() {
@@ -878,6 +881,41 @@ fun new_invalid_version() {
 
     destroy(metadata_cap);
 
+    world.end();
+}
+
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EInvalidQuoteType,
+        location = memez_auction_config,
+    ),
+]
+fun new_invalid_quote_type() {
+    let mut world = start();
+
+    let config = &world.config;
+    let migrator_list = &world.migrator_list;
+    let clock = &world.clock;
+
+    let ctx = world.scenario.ctx();
+
+    let metadata_cap = memez_auction::new<Meme, InvalidQuote, DefaultKey, MigrationWitness>(
+        config,
+        migrator_list,
+        clock,
+        create_treasury_cap_for_testing(ctx),
+        mint_for_testing(2_000_000_000, ctx),
+        1_000_000_000 * POW_9,
+        true,
+        vector[],
+        vector[],
+        vector[],
+        memez_allowed_versions::get_allowed_versions_for_testing(1),
+        ctx,
+    );
+
+    destroy(metadata_cap);
     world.end();
 }
 

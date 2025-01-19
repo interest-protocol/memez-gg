@@ -14,9 +14,9 @@ public struct MemezMetadata has key, store {
     id: UID,
 }
 
-// === Package Functions ===
+// === Public Functions === 
 
-public(package) fun new(
+public fun new(
     metadata_names: vector<String>,
     metadata_values: vector<String>,
     ctx: &mut TxContext,
@@ -31,6 +31,8 @@ public(package) fun new(
         id,
     }
 }
+
+// === Package Functions ===
 
 public(package) fun borrow(self: &MemezMetadata): &VecMap<String, String> {
     df::borrow(&self.id, Key())

@@ -30,12 +30,12 @@ use memez_fun::{
     memez_errors,
     memez_fees::{Allocation, Fee},
     memez_fun::{Self, MemezFun, MemezMigrator},
+    memez_metadata::MemezMetadata,
     memez_migrator_list::MemezMigratorList,
     memez_token_cap::{Self, MemezTokenCap},
     memez_utils::{destroy_or_burn, destroy_or_return, new_treasury},
     memez_versioned::{Self, Versioned}
 };
-use std::string::String;
 use sui::{
     balance::{Self, Balance},
     clock::Clock,
@@ -72,8 +72,7 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
     total_supply: u64,
     is_token: bool,
     first_purchase: Coin<Quote>,
-    metadata_names: vector<String>,
-    metadata_values: vector<String>,
+    metadata: MemezMetadata,
     stake_holders: vector<address>,
     dev: address,
     allowed_versions: AllowedVersions,
@@ -127,8 +126,7 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
         memez_versioned::create(PUMP_STATE_VERSION_V1, pump_state, ctx),
         is_token,
         inner_state,
-        metadata_names,
-        metadata_values,
+        metadata,
         ipx_meme_coin_treasury,
         pump_config[1],
         pump_config[2],

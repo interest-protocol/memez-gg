@@ -19,6 +19,7 @@ G:::::G        G::::GG:::::G        G::::G
      GGG::::::GGG:::G     GGG::::::GGG:::G     
         GGGGGG   GGGG        GGGGGG   GGGG                                           
 */
+#[allow(unused_function)]
 module memez_fun::memez_fun;
 
 use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
@@ -26,6 +27,7 @@ use memez_fun::{
     memez_allowed_versions::AllowedVersions,
     memez_errors,
     memez_events,
+    memez_metadata::MemezMetadata,
     memez_migrator_list::MemezMigratorList,
     memez_versioned::Versioned
 };
@@ -36,7 +38,7 @@ use sui::{
     clock::Clock,
     coin::Coin,
     token::Token,
-    vec_map::{Self, VecMap}
+    vec_map::VecMap
 };
 
 // === Constants ===
@@ -64,7 +66,7 @@ public struct MemezFun<phantom Curve, phantom Meme, phantom Quote> has key {
     is_token: bool,
     state: Versioned,
     ipx_meme_coin_treasury: address,
-    metadata: VecMap<String, String>,
+    metadata: MemezMetadata,
     migration_witness: TypeName,
     progress: Progress,
     // Extra fields for future use
@@ -98,8 +100,7 @@ public(package) fun new<Curve, Meme, Quote, ConfigKey, MigrationWitness>(
     state: Versioned,
     is_token: bool,
     inner_state: address,
-    mut metadata_names: vector<String>,
-    mut metadata_values: vector<String>,
+    mut metadata: MemezMetadata,
     ipx_meme_coin_treasury: address,
     virtual_liquidity: u64,
     target_quote_liquidity: u64,
@@ -112,8 +113,9 @@ public(package) fun new<Curve, Meme, Quote, ConfigKey, MigrationWitness>(
 
     migrator.assert_is_whitelisted(migration_witness);
 
-    metadata_names.push_back(CONFIG_METADATA_KEY.to_string());
-    metadata_values.push_back(config_key.into_string().to_string());
+    metadata
+        .borrow_mut()
+        .insert(CONFIG_METADATA_KEY.to_string(), config_key.into_string().to_string());
 
     let id = object::new(ctx);
 
@@ -133,7 +135,7 @@ public(package) fun new<Curve, Meme, Quote, ConfigKey, MigrationWitness>(
         dev,
         is_token,
         ipx_meme_coin_treasury,
-        metadata: vec_map::from_keys_values(metadata_names, metadata_values),
+        metadata,
         migration_witness,
         progress: Progress::Bonding,
         state,
@@ -435,16 +437,24 @@ public(package) fun migrate<Curve, Meme, Quote>(
     }
 }
 
+// === Private Functions for Frontend ===
+
+fun metadata<Curve, Meme, Quote>(self: &MemezFun<Curve, Meme, Quote>): VecMap<String, String> {
+    *self.metadata.borrow()
+}
+
+// === Test Only Functions ===
+
 #[test_only]
 public fun dev<Curve, Meme, Quote>(self: &MemezFun<Curve, Meme, Quote>): address {
     self.dev
 }
 
 #[test_only]
-public fun metadata<Curve, Meme, Quote>(
+public fun metadata_for_testing<Curve, Meme, Quote>(
     self: &MemezFun<Curve, Meme, Quote>,
 ): &VecMap<String, String> {
-    &self.metadata
+    self.metadata.borrow()
 }
 
 #[test_only]

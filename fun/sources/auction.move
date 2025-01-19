@@ -32,12 +32,12 @@ use memez_fun::{
     memez_errors,
     memez_fees::{Fee, Allocation},
     memez_fun::{Self, MemezFun, MemezMigrator},
+    memez_metadata::MemezMetadata,
     memez_migrator_list::MemezMigratorList,
     memez_token_cap::{Self, MemezTokenCap},
     memez_utils::{destroy_or_burn, destroy_or_return, new_treasury},
     memez_versioned::{Self, Versioned}
 };
-use std::string::String;
 use sui::{balance::Balance, clock::Clock, coin::{Coin, TreasuryCap}, sui::SUI, token::Token};
 
 // === Constants ===
@@ -72,8 +72,7 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
     mut creation_fee: Coin<SUI>,
     total_supply: u64,
     is_token: bool,
-    metadata_names: vector<String>,
-    metadata_values: vector<String>,
+    metadata: MemezMetadata,
     stake_holders: vector<address>,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
@@ -135,8 +134,7 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
         memez_versioned::create(AUCTION_STATE_VERSION_V1, auction_state, ctx),
         is_token,
         inner_state,
-        metadata_names,
-        metadata_values,
+        metadata,
         ipx_meme_coin_treasury,
         auction_config[2],
         auction_config[3],

@@ -30,13 +30,13 @@ use memez_fun::{
     memez_fees::{Allocation, Fee},
     memez_fixed_rate::{Self, FixedRate},
     memez_fun::{Self, MemezFun, MemezMigrator},
+    memez_metadata::MemezMetadata,
     memez_migrator_list::MemezMigratorList,
     memez_token_cap::{Self, MemezTokenCap},
     memez_utils::{destroy_or_burn, destroy_or_return, new_treasury},
     memez_versioned::{Self, Versioned}
 };
 use memez_vesting::memez_vesting::{Self, MemezVesting};
-use std::string::String;
 use sui::{balance::Balance, clock::Clock, coin::{Coin, TreasuryCap}, sui::SUI, token::Token};
 
 // === Constants ===
@@ -69,8 +69,7 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
     target_quote_liquidity: u64,
     total_supply: u64,
     is_token: bool,
-    metadata_names: vector<String>,
-    metadata_values: vector<String>,
+    metadata: MemezMetadata,
     dev_payload: vector<u64>,
     stake_holders: vector<address>,
     dev: address,
@@ -129,8 +128,7 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
         memez_versioned::create(STABLE_STATE_VERSION_V1, stable_state, ctx),
         is_token,
         inner_state,
-        metadata_names,
-        metadata_values,
+        metadata,
         ipx_meme_coin_treasury,
         0,
         stable_config[0],

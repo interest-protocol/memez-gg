@@ -12,10 +12,11 @@ use memez_fun::{
     memez_errors,
     memez_fees,
     memez_fun::{Self, MemezFun},
+    memez_metadata,
     memez_migrator_list::{Self, MemezMigratorList},
     memez_pump::{Self, Pump},
-    memez_test_helpers::add_fee,
-    memez_pump_config
+    memez_pump_config,
+    memez_test_helpers::add_fee
 };
 use memez_vesting::memez_vesting::MemezVesting;
 use sui::{
@@ -497,8 +498,11 @@ fun new_invalid_version() {
         1_000_000_000_000_000_000,
         false,
         coin::zero(world.scenario.ctx()),
-        vector[],
-        vector[],
+        memez_metadata::new(
+            vector[],
+            vector[],
+            world.scenario.ctx(),
+        ),
         vector[DEV],
         DEV,
         memez_allowed_versions::get_allowed_versions_for_testing(2),
@@ -522,8 +526,11 @@ fun new_low_creation_fee() {
         1_000_000_000_000_000_000,
         false,
         coin::zero(world.scenario.ctx()),
-        vector[],
-        vector[],
+        memez_metadata::new(
+            vector[],
+            vector[],
+            world.scenario.ctx(),
+        ),
         vector[DEV],
         DEV,
         memez_allowed_versions::get_allowed_versions_for_testing(1),
@@ -1547,8 +1554,11 @@ fun new_invalid_quote_type() {
         1_000_000_000_000_000_000,
         false,
         mint_for_testing(0, ctx),
-        vector[],
-        vector[],
+        memez_metadata::new(
+            vector[],
+            vector[],
+            ctx,
+        ),
         vector[STAKE_HOLDER],
         DEV,
         version,
@@ -1577,8 +1587,11 @@ fun set_up_pool(
         total_supply,
         is_token,
         first_purchase,
-        vector[],
-        vector[],
+        memez_metadata::new(
+            vector[],
+            vector[],
+            ctx,
+        ),
         vector[STAKE_HOLDER],
         DEV,
         version,

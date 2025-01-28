@@ -82,7 +82,7 @@ public fun migrate_to_new_pool<Meme>(
     cetus_pools: &mut Pools,
     sui_metadata: &CoinMetadata<SUI>,
     meme_metadata: &CoinMetadata<Meme>,
-    migrator: MemezMigrator<Meme>,
+    migrator: MemezMigrator<Meme, SUI>,
     version: &CurrentVersion,
     ctx: &mut TxContext,
 ) {
@@ -133,7 +133,7 @@ public fun migrate_to_existing_pool<Meme>(
     clock: &Clock,
     cetus_config: &GlobalConfig,
     pool: &mut Pool<Meme, SUI>,
-    migrator: MemezMigrator<Meme>,
+    migrator: MemezMigrator<Meme, SUI>,
     version: &CurrentVersion,
     ctx: &mut TxContext,
 ) {

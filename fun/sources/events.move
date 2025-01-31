@@ -4,7 +4,7 @@
 module memez_fun::memez_events;
 
 use memez_fun::memez_events_wrapper::emit_event;
-use std::type_name::{Self, TypeName};
+use std::{ascii::String as ASCIIString, string::String as UTF8String, type_name::{Self, TypeName}};
 
 // === Events ===
 
@@ -20,6 +20,9 @@ public struct New has copy, drop {
     virtual_liquidity: u64,
     target_quote_liquidity: u64,
     meme_balance: u64,
+    meme_name: UTF8String,
+    meme_symbol: ASCIIString,
+    meme_total_supply: u64,
 }
 
 public struct Pump has copy, drop {
@@ -72,6 +75,9 @@ public(package) fun new<Curve, Meme, Quote>(
     virtual_liquidity: u64,
     target_quote_liquidity: u64,
     meme_balance: u64,
+    meme_name: UTF8String,
+    meme_symbol: ASCIIString,
+    meme_total_supply: u64,
 ) {
     emit_event(New {
         memez_fun,
@@ -85,6 +91,9 @@ public(package) fun new<Curve, Meme, Quote>(
         virtual_liquidity,
         target_quote_liquidity,
         meme_balance,
+        meme_name,
+        meme_symbol,
+        meme_total_supply,
     });
 }
 

@@ -105,6 +105,7 @@ public(package) fun new<Curve, Meme, Quote, ConfigKey, MigrationWitness>(
     virtual_liquidity: u64,
     target_quote_liquidity: u64,
     meme_balance: u64,
+    total_supply: u64,
     dev: address,
     ctx: &mut TxContext,
 ): MemezFun<Curve, Meme, Quote> {
@@ -128,6 +129,9 @@ public(package) fun new<Curve, Meme, Quote, ConfigKey, MigrationWitness>(
         virtual_liquidity,
         target_quote_liquidity,
         meme_balance,
+        metadata.name(),
+        metadata.symbol(),
+        total_supply,
     );
 
     MemezFun {

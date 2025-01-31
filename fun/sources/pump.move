@@ -131,6 +131,7 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
         pump_config[1],
         pump_config[2],
         meme_balance_value,
+        total_supply,
         dev,
         ctx,
     );

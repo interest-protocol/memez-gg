@@ -139,6 +139,7 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
         auction_config[2],
         auction_config[3],
         meme_balance_value,
+        total_supply,
         ctx.sender(),
         ctx,
     );

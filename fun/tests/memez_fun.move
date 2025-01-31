@@ -40,6 +40,8 @@ public struct World {
     versioned: vector<Versioned>,
 }
 
+const TOTAL_SUPPLY: u64 = 1_000_000_000_000_000_000;
+
 #[test]
 fun test_new() {
     let mut world = start();
@@ -48,20 +50,21 @@ fun test_new() {
 
     let inner_state = object::id_address(&versioned);
 
+    let mut metadata = memez_metadata::new_for_test(world.scenario.ctx());
+
+    metadata.borrow_mut().insert(b"Twitter".to_string(), b"https://twitter.com/memez".to_string());
+
     let memez_fun = memez_fun::new<Curve, Meme, SUI, ConfigKey, MigrationWitness>(
         &world.migrator_list,
         versioned,
         false,
         inner_state,
-        memez_metadata::new(
-            vector[b"Twitter".to_string()],
-            vector[b"https://twitter.com/memez".to_string()],
-            world.scenario.ctx(),
-        ),
+        metadata,
         @0x7,
         0,
         0,
         0,
+        TOTAL_SUPPLY,
         DEV,
         world.scenario.ctx(),
     );
@@ -101,15 +104,12 @@ fun test_new_invalid_witness() {
         versioned,
         false,
         inner_state,
-        memez_metadata::new(
-            vector[b"Twitter".to_string()],
-            vector[b"https://twitter.com/memez".to_string()],
-            world.scenario.ctx(),
-        ),
+        memez_metadata::new_for_test(world.scenario.ctx()),
         @0x7,
         0,
         0,
         0,
+        TOTAL_SUPPLY,
         DEV,
         world.scenario.ctx(),
     );
@@ -131,15 +131,12 @@ fun test_progress_asserts_not_bonding() {
         versioned,
         false,
         inner_state,
-        memez_metadata::new(
-            vector[b"Twitter".to_string()],
-            vector[b"https://twitter.com/memez".to_string()],
-            world.scenario.ctx(),
-        ),
+        memez_metadata::new_for_test(world.scenario.ctx()),
         @0x7,
         0,
         0,
         0,
+        TOTAL_SUPPLY,
         DEV,
         world.scenario.ctx(),
     );
@@ -164,15 +161,12 @@ fun test_progress_asserts_not_migrating() {
         versioned,
         false,
         inner_state,
-        memez_metadata::new(
-            vector[b"Twitter".to_string()],
-            vector[b"https://twitter.com/memez".to_string()],
-            world.scenario.ctx(),
-        ),
+        memez_metadata::new_for_test(world.scenario.ctx()),
         @0x7,
         0,
         0,
         0,
+        TOTAL_SUPPLY,
         DEV,
         world.scenario.ctx(),
     );
@@ -195,15 +189,12 @@ fun test_progress_asserts_not_migrated() {
         versioned,
         false,
         inner_state,
-        memez_metadata::new(
-            vector[b"Twitter".to_string()],
-            vector[b"https://twitter.com/memez".to_string()],
-            world.scenario.ctx(),
-        ),
+        memez_metadata::new_for_test(world.scenario.ctx()),
         @0x7,
         0,
         0,
         0,
+        TOTAL_SUPPLY,
         DEV,
         world.scenario.ctx(),
     );
@@ -226,15 +217,12 @@ fun test_assert_is_dev() {
         versioned,
         false,
         inner_state,
-        memez_metadata::new(
-            vector[b"Twitter".to_string()],
-            vector[b"https://twitter.com/memez".to_string()],
-            world.scenario.ctx(),
-        ),
+        memez_metadata::new_for_test(world.scenario.ctx()),
         @0x7,
         0,
         0,
         0,
+        TOTAL_SUPPLY,
         DEV,
         world.scenario.ctx(),
     );
@@ -260,15 +248,12 @@ fun test_assert_is_dev_invalid_dev() {
         versioned,
         false,
         inner_state,
-        memez_metadata::new(
-            vector[b"Twitter".to_string()],
-            vector[b"https://twitter.com/memez".to_string()],
-            world.scenario.ctx(),
-        ),
+        memez_metadata::new_for_test(world.scenario.ctx()),
         @0x7,
         0,
         0,
         0,
+        TOTAL_SUPPLY,
         DEV,
         world.scenario.ctx(),
     );
@@ -293,15 +278,12 @@ fun test_assert_uses_token() {
         versioned,
         true,
         inner_state,
-        memez_metadata::new(
-            vector[b"Twitter".to_string()],
-            vector[b"https://twitter.com/memez".to_string()],
-            world.scenario.ctx(),
-        ),
+        memez_metadata::new_for_test(world.scenario.ctx()),
         @0x7,
         0,
         0,
         0,
+        TOTAL_SUPPLY,
         DEV,
         world.scenario.ctx(),
     );
@@ -327,15 +309,12 @@ fun test_assert_uses_coin() {
         versioned,
         false,
         inner_state,
-        memez_metadata::new(
-            vector[b"Twitter".to_string()],
-            vector[b"https://twitter.com/memez".to_string()],
-            world.scenario.ctx(),
-        ),
+        memez_metadata::new_for_test(world.scenario.ctx()),
         @0x7,
         0,
         0,
         0,
+        TOTAL_SUPPLY,
         DEV,
         world.scenario.ctx(),
     );
@@ -361,15 +340,12 @@ fun test_assert_uses_coin_invalid() {
         versioned,
         true,
         inner_state,
-        memez_metadata::new(
-            vector[b"Twitter".to_string()],
-            vector[b"https://twitter.com/memez".to_string()],
-            world.scenario.ctx(),
-        ),
+        memez_metadata::new_for_test(world.scenario.ctx()),
         @0x7,
         0,
         0,
         0,
+        TOTAL_SUPPLY,
         DEV,
         world.scenario.ctx(),
     );
@@ -394,15 +370,12 @@ fun test_assert_uses_token_invalid() {
         versioned,
         false,
         inner_state,
-        memez_metadata::new(
-            vector[b"Twitter".to_string()],
-            vector[b"https://twitter.com/memez".to_string()],
-            world.scenario.ctx(),
-        ),
+        memez_metadata::new_for_test(world.scenario.ctx()),
         @0x7,
         0,
         0,
         0,
+        TOTAL_SUPPLY,
         DEV,
         world.scenario.ctx(),
     );
@@ -428,15 +401,12 @@ fun test_progress_asserts() {
         versioned,
         false,
         inner_state,
-        memez_metadata::new(
-            vector[b"Twitter".to_string()],
-            vector[b"https://twitter.com/memez".to_string()],
-            world.scenario.ctx(),
-        ),
+        memez_metadata::new_for_test(world.scenario.ctx()),
         @0x7,
         0,
         0,
         0,
+        TOTAL_SUPPLY,
         DEV,
         world.scenario.ctx(),
     );
@@ -469,15 +439,12 @@ fun test_migrate() {
         versioned,
         false,
         inner_state,
-        memez_metadata::new(
-            vector[b"Twitter".to_string()],
-            vector[b"https://twitter.com/memez".to_string()],
-            world.scenario.ctx(),
-        ),
+        memez_metadata::new_for_test(world.scenario.ctx()),
         @0x7,
         0,
         0,
         0,
+        TOTAL_SUPPLY,
         DEV,
         world.scenario.ctx(),
     );
@@ -512,15 +479,12 @@ fun test_migrate_invalid_witness() {
         versioned,
         false,
         inner_state,
-        memez_metadata::new(
-            vector[b"Twitter".to_string()],
-            vector[b"https://twitter.com/memez".to_string()],
-            world.scenario.ctx(),
-        ),
+        memez_metadata::new_for_test(world.scenario.ctx()),
         @0x7,
         0,
         0,
         0,
+        TOTAL_SUPPLY,
         DEV,
         world.scenario.ctx(),
     );

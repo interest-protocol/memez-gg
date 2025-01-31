@@ -133,6 +133,7 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
         0,
         stable_config[0],
         meme_balance_value,
+        total_supply,
         dev,
         ctx,
     );

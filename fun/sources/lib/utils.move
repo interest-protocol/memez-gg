@@ -1,7 +1,6 @@
 // Copyright (c) DEFI, LDA
 // SPDX-License-Identifier: Apache-2.0
 
-#[allow(lint(self_transfer, share_owned))]
 module memez_fun::memez_utils;
 
 use interest_bps::bps;
@@ -9,46 +8,56 @@ use ipx_coin_standard::ipx_coin_standard::{Self, MetadataCap};
 use memez_fun::memez_errors;
 use sui::{balance::Balance, coin::{Coin, TreasuryCap}};
 
-// === Constants ===
-
-const DEAD_ADDRESS: address = @0x0;
-
 // === Public Package Functions ===
 
-public(package) fun assert_coin_has_value<T>(coin: &Coin<T>): u64 {
+public(package) macro fun assert_coin_has_value<$T>($coin: &Coin<$T>): u64 {
+    let coin = $coin;
     let value = coin.value();
     assert!(value > 0, memez_errors::zero_coin!());
     value
 }
 
-public(package) fun assert_slippage(amount: u64, minimum_expected: u64) {
+public(package) macro fun assert_slippage($amount: u64, $minimum_expected: u64) {
+    let amount = $amount;
+    let minimum_expected = $minimum_expected;
     assert!(amount >= minimum_expected, memez_errors::slippage!());
 }
 
-public(package) fun destroy_or_burn<Meme>(balance: &mut Balance<Meme>, ctx: &mut TxContext) {
+public(package) macro fun destroy_or_burn<$Meme>(
+    $balance: &mut Balance<$Meme>,
+    $ctx: &mut TxContext,
+) {
+    let balance = $balance;
+    let ctx = $ctx;
     let bal = balance.withdraw_all();
 
     if (bal.value() == 0) bal.destroy_zero()
-    else transfer::public_transfer(bal.into_coin(ctx), DEAD_ADDRESS);
+    else transfer::public_transfer(bal.into_coin(ctx), @0x0);
 }
 
-public(package) fun destroy_or_return<Meme>(coin: Coin<Meme>, ctx: &TxContext) {
+public(package) macro fun destroy_or_return<$Meme>($coin: Coin<$Meme>, $ctx: &TxContext) {
+    let coin = $coin;
+    let ctx = $ctx;
     if (coin.value() == 0) coin.destroy_zero()
     else transfer::public_transfer(coin, ctx.sender());
 }
 
-public(package) fun validate_bps(percentages: vector<u64>) {
+public(package) macro fun validate_bps($percentages: vector<u64>) {
+    let percentages = $percentages;
     assert!(
         percentages.fold!(0, |acc, bps| acc + bps) == bps::max_bps(),
         memez_errors::invalid_percentages!(),
     );
 }
 
-public(package) fun new_treasury<Meme>(
-    mut meme_treasury_cap: TreasuryCap<Meme>,
-    total_supply: u64,
-    ctx: &mut TxContext,
-): (address, MetadataCap, Balance<Meme>) {
+public(package) macro fun new_treasury<$Meme>(
+    $mut_meme_treasury_cap: TreasuryCap<$Meme>,
+    $total_supply: u64,
+    $ctx: &mut TxContext,
+): (address, MetadataCap, Balance<$Meme>) {
+    let mut meme_treasury_cap = $mut_meme_treasury_cap;
+    let total_supply = $total_supply;
+    let ctx = $ctx;
     assert!(meme_treasury_cap.total_supply() == 0, memez_errors::pre_mint_not_allowed!());
     assert!(total_supply != 0, memez_errors::zero_total_supply!());
 
@@ -73,7 +82,7 @@ public(package) fun new_treasury<Meme>(
 
     let metadata_cap = witness.create_metadata_cap(ctx);
 
-    ipx_treasury_standard.destroy_witness<Meme>(witness);
+    ipx_treasury_standard.destroy_witness<$Meme>(witness);
 
     transfer::public_share_object(
         ipx_treasury_standard,

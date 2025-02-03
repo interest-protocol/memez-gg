@@ -3,14 +3,7 @@ module memez_fun::memez_constant_product_tests;
 
 use constant_product::constant_product::get_amount_out;
 use ipx_coin_standard::ipx_coin_standard;
-use memez_fun::{
-    memez_burner,
-    memez_constant_product,
-    memez_distributor,
-    memez_errors,
-    memez_fees,
-    memez_utils
-};
+use memez_fun::{memez_burner, memez_constant_product, memez_distributor, memez_errors, memez_fees};
 use sui::{balance, coin::{Self, mint_for_testing}, sui::SUI, test_utils::{assert_eq, destroy}};
 
 public struct Meme()
@@ -637,7 +630,13 @@ fun test_dump_amount_no_fees() {
     destroy(cp);
 }
 
-#[test, expected_failure(abort_code = memez_errors::EZeroCoin, location = memez_utils)]
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EZeroCoin,
+        location = memez_fun::memez_constant_product,
+    ),
+]
 fun test_pump_zero_coin() {
     let mut ctx = tx_context::dummy();
 
@@ -670,7 +669,13 @@ fun test_pump_zero_coin() {
     abort
 }
 
-#[test, expected_failure(abort_code = memez_errors::ESlippage, location = memez_utils)]
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::ESlippage,
+        location = memez_fun::memez_constant_product,
+    ),
+]
 fun test_pump_slippage() {
     let mut ctx = tx_context::dummy();
 
@@ -707,7 +712,13 @@ fun test_pump_slippage() {
     abort
 }
 
-#[test, expected_failure(abort_code = memez_errors::EZeroCoin, location = memez_utils)]
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EZeroCoin,
+        location = memez_fun::memez_constant_product,
+    ),
+]
 fun test_dump_zero_coin() {
     let mut ctx = tx_context::dummy();
 
@@ -748,7 +759,13 @@ fun test_dump_zero_coin() {
     abort
 }
 
-#[test, expected_failure(abort_code = memez_errors::ESlippage, location = memez_utils)]
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::ESlippage,
+        location = memez_fun::memez_constant_product,
+    ),
+]
 fun test_dump_slippage() {
     let mut ctx = tx_context::dummy();
 

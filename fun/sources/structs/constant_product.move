@@ -60,7 +60,7 @@ public(package) fun pump<Meme, Quote>(
 ): (bool, Coin<Meme>) {
     let swap_fee = self.swap_fee.take(&mut quote_coin, ctx);
 
-    let quote_coin_value = assert_coin_has_value(&quote_coin);
+    let quote_coin_value = assert_coin_has_value!(&quote_coin);
 
     let meme_balance_value = self.meme_balance.value();
 
@@ -70,7 +70,7 @@ public(package) fun pump<Meme, Quote>(
         meme_balance_value,
     );
 
-    assert_slippage(meme_coin_value_out, min_amount_out);
+    assert_slippage!(meme_coin_value_out, min_amount_out);
 
     let meme_coin = self.meme_balance.split(meme_coin_value_out).into_coin(ctx);
 
@@ -98,7 +98,7 @@ public(package) fun dump<Meme, Quote>(
 ): Coin<Quote> {
     let swap_fee = self.swap_fee.take(&mut meme_coin, ctx);
 
-    let meme_coin_value = assert_coin_has_value(&meme_coin);
+    let meme_coin_value = assert_coin_has_value!(&meme_coin);
 
     let meme_balance_value = self.meme_balance.value();
 
@@ -117,7 +117,7 @@ public(package) fun dump<Meme, Quote>(
 
     if (dynamic_burn_tax.value() != 0) treasury_cap.burn(meme_coin.split(meme_burn_fee_value, ctx));
 
-    let meme_coin_value = assert_coin_has_value(&meme_coin);
+    let meme_coin_value = assert_coin_has_value!(&meme_coin);
 
     let quote_value_out = get_amount_out(
         meme_coin_value,
@@ -129,7 +129,7 @@ public(package) fun dump<Meme, Quote>(
 
     let quote_coin_amount_out = quote_value_out.min(quote_balance_value);
 
-    assert_slippage(quote_coin_amount_out, min_amount_out);
+    assert_slippage!(quote_coin_amount_out, min_amount_out);
 
     let quote_coin = self.quote_balance.split(quote_coin_amount_out).into_coin(ctx);
 

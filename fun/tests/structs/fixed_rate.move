@@ -1,7 +1,7 @@
 #[test_only]
 module memez_fun::memez_fixed_rate_tests;
 
-use memez_fun::{memez_errors, memez_fixed_rate, memez_utils, memez_fees, memez_distributor};
+use memez_fun::{memez_distributor, memez_errors, memez_fees, memez_fixed_rate};
 use sui::{balance, coin::mint_for_testing, sui::SUI, test_utils::{assert_eq, destroy}};
 
 public struct Meme()
@@ -170,7 +170,10 @@ fun test_dump() {
         &mut ctx,
     );
 
-    assert_eq(sui_coin_out.burn_for_testing(), 200 * (amount_in -  swap_fee.calculate(amount_in)) / 1000);
+    assert_eq(
+        sui_coin_out.burn_for_testing(),
+        200 * (amount_in -  swap_fee.calculate(amount_in)) / 1000,
+    );
 
     let amount_in = 1000;
 
@@ -182,7 +185,10 @@ fun test_dump() {
         &mut ctx,
     );
 
-    assert_eq(sui_coin_out.burn_for_testing(), 200 * (amount_in - swap_fee.calculate(amount_in)) / 1000);
+    assert_eq(
+        sui_coin_out.burn_for_testing(),
+        200 * (amount_in - swap_fee.calculate(amount_in)) / 1000,
+    );
 
     let amount_out = 2000;
 
@@ -194,7 +200,10 @@ fun test_dump() {
         &mut ctx,
     );
 
-    assert_eq(sui_coin_out.burn_for_testing(), 400 * (amount_out - swap_fee.calculate(amount_out)) / 2000);
+    assert_eq(
+        sui_coin_out.burn_for_testing(),
+        400 * (amount_out - swap_fee.calculate(amount_out)) / 2000,
+    );
 
     let amount_out = 1000;
 
@@ -206,7 +215,10 @@ fun test_dump() {
         &mut ctx,
     );
 
-    assert_eq(sui_coin_out.burn_for_testing(), 200 * (amount_out - swap_fee.calculate(amount_out)) / 1000);
+    assert_eq(
+        sui_coin_out.burn_for_testing(),
+        200 * (amount_out - swap_fee.calculate(amount_out)) / 1000,
+    );
 
     let amount_out = 2000;
 
@@ -311,13 +323,13 @@ fun test_pump_and_dump_amounts() {
 
     let amounts = fixed_rate.dump_amount(1000);
 
-        assert_eq(amounts[0], 1000 * 1000 / 5000);
+    assert_eq(amounts[0], 1000 * 1000 / 5000);
     assert_eq(amounts[1], 0);
 
     destroy(fixed_rate);
 }
 
-#[test, expected_failure(abort_code = memez_errors::EZeroCoin, location = memez_utils)]
+#[test, expected_failure(abort_code = memez_errors::EZeroCoin, location = memez_fixed_rate)]
 fun test_pump_zero_coin() {
     let mut ctx = tx_context::dummy();
 
@@ -352,7 +364,7 @@ fun test_pump_zero_coin() {
     destroy(fixed_rate);
 }
 
-#[test, expected_failure(abort_code = memez_errors::ESlippage, location = memez_utils)]
+#[test, expected_failure(abort_code = memez_errors::ESlippage, location = memez_fixed_rate)]
 fun test_pump_slippage() {
     let mut ctx = tx_context::dummy();
 
@@ -389,7 +401,7 @@ fun test_pump_slippage() {
     destroy(fixed_rate);
 }
 
-#[test, expected_failure(abort_code = memez_errors::EZeroCoin, location = memez_utils)]
+#[test, expected_failure(abort_code = memez_errors::EZeroCoin, location = memez_fixed_rate)]
 fun test_dump_zero_coin() {
     let mut ctx = tx_context::dummy();
 
@@ -423,16 +435,18 @@ fun test_dump_zero_coin() {
 
     let amounts = fixed_rate.dump_amount(1000);
 
-    fixed_rate.dump(
-        mint_for_testing<Meme>(0, &mut ctx),
-        amounts[0] + 1,
-        &mut ctx,
-    ).burn_for_testing();
+    fixed_rate
+        .dump(
+            mint_for_testing<Meme>(0, &mut ctx),
+            amounts[0] + 1,
+            &mut ctx,
+        )
+        .burn_for_testing();
 
     abort
 }
 
-#[test, expected_failure(abort_code = memez_errors::ESlippage, location = memez_utils)]
+#[test, expected_failure(abort_code = memez_errors::ESlippage, location = memez_fixed_rate)]
 fun test_dump_slippage() {
     let mut ctx = tx_context::dummy();
 
@@ -466,11 +480,13 @@ fun test_dump_slippage() {
 
     let amounts = fixed_rate.dump_amount(1000);
 
-    fixed_rate.dump(
-        mint_for_testing<Meme>(1000, &mut ctx),
-        amounts[0] + 1,
-        &mut ctx,
-    ).burn_for_testing();
+    fixed_rate
+        .dump(
+            mint_for_testing<Meme>(1000, &mut ctx),
+            amounts[0] + 1,
+            &mut ctx,
+        )
+        .burn_for_testing();
 
     abort
 }

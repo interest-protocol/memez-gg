@@ -25,17 +25,23 @@ fun test_assert_coin_has_value() {
     let mut ctx = tx_context::dummy();
 
     let coin = mint_for_testing<Meme>(1000, &mut ctx);
-    let value = memez_utils::assert_coin_has_value(&coin);
+    let value = memez_utils::assert_coin_has_value!(&coin);
 
     assert_eq!(value, coin.burn_for_testing());
 }
 
-#[test, expected_failure(abort_code = memez_errors::EZeroCoin, location = memez_utils)]
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EZeroCoin,
+        location = memez_fun::memez_utils_tests,
+    ),
+]
 fun test_assert_coin_has_value_zero() {
     let mut ctx = tx_context::dummy();
     let coin = mint_for_testing<Meme>(0, &mut ctx);
 
-    memez_utils::assert_coin_has_value(&coin);
+    memez_utils::assert_coin_has_value!(&coin);
 
     coin.destroy_zero();
 }
@@ -45,7 +51,7 @@ fun test_destroy_or_burn() {
     let mut scenario = ts::begin(DEAD_ADDRESS);
     let mut balance = balance::create_for_testing<Meme>(1000);
 
-    memez_utils::destroy_or_burn(&mut balance, scenario.ctx());
+    memez_utils::destroy_or_burn!(&mut balance, scenario.ctx());
 
     balance.destroy_zero();
 
@@ -57,7 +63,7 @@ fun test_destroy_or_burn() {
 
     let mut balance_zero = balance::zero<Meme>();
 
-    memez_utils::destroy_or_burn(&mut balance_zero, scenario.ctx());
+    memez_utils::destroy_or_burn!(&mut balance_zero, scenario.ctx());
 
     balance_zero.destroy_zero();
 
@@ -68,7 +74,7 @@ fun test_destroy_or_burn() {
 fun test_destroy_or_return() {
     let mut scenario = ts::begin(DEAD_ADDRESS);
 
-    memez_utils::destroy_or_return(mint_for_testing<Meme>(1000, scenario.ctx()), scenario.ctx());
+    memez_utils::destroy_or_return!(mint_for_testing<Meme>(1000, scenario.ctx()), scenario.ctx());
 
     scenario.next_tx(DEAD_ADDRESS);
 
@@ -80,21 +86,21 @@ fun test_destroy_or_return() {
 
     let zero_coin = mint_for_testing<Meme>(0, scenario.ctx());
 
-    memez_utils::destroy_or_return(zero_coin, scenario.ctx());
+    memez_utils::destroy_or_return!(zero_coin, scenario.ctx());
 
     scenario.end();
 }
 
 #[test]
 fun test_slippage() {
-    memez_utils::assert_slippage(100, 100);
-    memez_utils::assert_slippage(100, 99);
+    memez_utils::assert_slippage!(100, 100);
+    memez_utils::assert_slippage!(100, 99);
 }
 
 #[test]
 fun test_validate_bps() {
-    memez_utils::validate_bps(vector[2_500, 2_500, 2_500, 2_500]);
-    memez_utils::validate_bps(vector[5_000, 5_000]);
+    memez_utils::validate_bps!(vector[2_500, 2_500, 2_500, 2_500]);
+    memez_utils::validate_bps!(vector[5_000, 5_000]);
 }
 
 #[test]
@@ -103,7 +109,7 @@ fun set_up_treasury() {
 
     let treasury_cap = coin::create_treasury_cap_for_testing<SUI>(scenario.ctx());
 
-    let (meme_treasury_address, metadata_cap, meme_balance) = memez_utils::new_treasury(
+    let (meme_treasury_address, metadata_cap, meme_balance) = memez_utils::new_treasury!(
         treasury_cap,
         TOTAL_MEME_SUPPLY,
         scenario.ctx(),
@@ -128,13 +134,19 @@ fun set_up_treasury() {
     scenario.end();
 }
 
-#[test, expected_failure(abort_code = memez_errors::EZeroTotalSupply, location = memez_utils)]
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EZeroTotalSupply,
+        location = memez_fun::memez_utils_tests,
+    ),
+]
 fun set_up_treasury_zero_total_supply() {
     let mut scenario = ts::begin(DEAD_ADDRESS);
 
     let treasury_cap = coin::create_treasury_cap_for_testing<SUI>(scenario.ctx());
 
-    let (_meme_treasury_address, _metadata_cap, _meme_balance) = memez_utils::new_treasury(
+    let (_meme_treasury_address, _metadata_cap, _meme_balance) = memez_utils::new_treasury!(
         treasury_cap,
         0,
         scenario.ctx(),
@@ -143,7 +155,13 @@ fun set_up_treasury_zero_total_supply() {
     abort
 }
 
-#[test, expected_failure(abort_code = memez_errors::EPreMintNotAllowed, location = memez_utils)]
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EPreMintNotAllowed,
+        location = memez_fun::memez_utils_tests,
+    ),
+]
 fun set_up_treasury_pre_mint() {
     let mut scenario = ts::begin(DEAD_ADDRESS);
 
@@ -151,7 +169,7 @@ fun set_up_treasury_pre_mint() {
 
     treasury_cap.mint(100, scenario.ctx()).burn_for_testing();
 
-    let (_addy, _metadata_cap, _meme_balance) = memez_utils::new_treasury(
+    let (_addy, _metadata_cap, _meme_balance) = memez_utils::new_treasury!(
         treasury_cap,
         TOTAL_MEME_SUPPLY,
         scenario.ctx(),
@@ -160,13 +178,25 @@ fun set_up_treasury_pre_mint() {
     abort
 }
 
-#[test, expected_failure(abort_code = memez_errors::ESlippage, location = memez_utils)]
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::ESlippage,
+        location = memez_fun::memez_utils_tests,
+    ),
+]
 fun test_slippage_error() {
-    memez_utils::assert_slippage(100, 101);
-    memez_utils::assert_slippage(100, 99);
+    memez_utils::assert_slippage!(100, 101);
+    memez_utils::assert_slippage!(100, 99);
 }
 
-#[test, expected_failure(abort_code = memez_errors::EInvalidPercentages, location = memez_utils)]
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EInvalidPercentages,
+        location = memez_fun::memez_utils_tests,
+    ),
+]
 fun test_validate_bps_invalid_total() {
-    memez_utils::validate_bps(vector[2_500, 2_500, 2_500, 2_500 - 1]);
+    memez_utils::validate_bps!(vector[2_500, 2_500, 2_500, 2_500 - 1]);
 }

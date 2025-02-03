@@ -60,10 +60,10 @@ public(package) fun new(
     let allocation_value = allocation_percentages.pop_back();
     let vesting_period = allocation_percentages.pop_back();
 
-    creation_percentages.validate();
-    swap_percentages.validate();
-    migration_percentages.validate();
-    allocation_percentages.validate();
+    creation_percentages.validate!();
+    swap_percentages.validate!();
+    migration_percentages.validate!();
+    allocation_percentages.validate!();
 
     // @dev The other fees include dynamic recipients
     assert!(

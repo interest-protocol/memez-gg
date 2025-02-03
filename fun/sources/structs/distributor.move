@@ -1,6 +1,7 @@
 // Copyright (c) DEFI, LDA
 // SPDX-License-Identifier: Apache-2.0
 
+#[allow(lint(share_owned, self_transfer))]
 module memez_fun::memez_distributor;
 
 use interest_bps::bps::{Self, BPS};
@@ -84,7 +85,7 @@ macro fun distribute_internal<$T>(
         $f(coin_to_send.split(value_to_transfer, ctx), beneficiary.addy, ctx);
     });
 
-    coin_to_send.destroy_or_return(ctx);
+    coin_to_send.destroy_or_return!(ctx);
 }
 // === Method Aliases ===
 

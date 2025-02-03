@@ -1,7 +1,7 @@
 #[test_only]
 module memez_fun::memez_fees_tests;
 
-use memez_fun::{memez_errors, memez_fees::{Self, MemezFees}, memez_test_helpers, memez_utils};
+use memez_fun::{memez_errors, memez_fees::{Self, MemezFees}, memez_test_helpers};
 use memez_vesting::memez_vesting::MemezVesting;
 use sui::{
     clock,
@@ -59,7 +59,10 @@ fun test_calculate() {
     let creation_fee = fees.creation();
     let swap_fee = fees.swap(vector[STAKE_HOLDER_1, STAKE_HOLDER_2]);
     let migration_fee = fees.migration(vector[STAKE_HOLDER_1, STAKE_HOLDER_2]);
-    let allocation_fee = fees.allocation(&mut allocation_balance, vector[STAKE_HOLDER_1, STAKE_HOLDER_2]);
+    let allocation_fee = fees.allocation(
+        &mut allocation_balance,
+        vector[STAKE_HOLDER_1, STAKE_HOLDER_2],
+    );
 
     let creation_fee_recipients = creation_fee.distributor().recipient_addys();
     let swap_fee_recipients = swap_fee.distributor().recipient_addys();
@@ -218,7 +221,10 @@ fun test_take() {
 
     let clock = clock::create_for_testing(scenario.ctx());
 
-    let mut allocation_fee = fees.allocation(&mut allocation_balance, vector[STAKE_HOLDER_1, STAKE_HOLDER_2]);
+    let mut allocation_fee = fees.allocation(
+        &mut allocation_balance,
+        vector[STAKE_HOLDER_1, STAKE_HOLDER_2],
+    );
 
     allocation_fee.take(&clock, scenario.ctx());
 
@@ -229,7 +235,7 @@ fun test_take() {
     scenario.next_tx(@0x0);
 
     let integrator_allocation_vesting = scenario.take_from_address<MemezVesting<Meme>>(INTEGRATOR);
-    
+
     let stake_holder_1_allocation_vesting = scenario.take_from_address<MemezVesting<Meme>>(
         STAKE_HOLDER_1,
     );
@@ -300,7 +306,7 @@ fun test_new_invalid_config() {
     );
 }
 
-#[test, expected_failure(abort_code = memez_errors::EInvalidPercentages, location = memez_utils)]
+#[test, expected_failure(abort_code = memez_errors::EInvalidPercentages, location = memez_fees)]
 fun test_new_invalid_creation_percentages() {
     memez_fees::new(
         vector[
@@ -313,7 +319,7 @@ fun test_new_invalid_creation_percentages() {
     );
 }
 
-#[test, expected_failure(abort_code = memez_errors::EInvalidPercentages, location = memez_utils)]
+#[test, expected_failure(abort_code = memez_errors::EInvalidPercentages, location = memez_fees)]
 fun test_new_invalid_swap_percentages() {
     memez_fees::new(
         vector[
@@ -326,7 +332,7 @@ fun test_new_invalid_swap_percentages() {
     );
 }
 
-#[test, expected_failure(abort_code = memez_errors::EInvalidPercentages, location = memez_utils)]
+#[test, expected_failure(abort_code = memez_errors::EInvalidPercentages, location = memez_fees)]
 fun test_new_invalid_migration_percentages() {
     memez_fees::new(
         vector[
@@ -339,7 +345,7 @@ fun test_new_invalid_migration_percentages() {
     );
 }
 
-#[test, expected_failure(abort_code = memez_errors::EInvalidPercentages, location = memez_utils)]
+#[test, expected_failure(abort_code = memez_errors::EInvalidPercentages, location = memez_fees)]
 fun test_new_invalid_allocation_percentages() {
     memez_fees::new(
         vector[

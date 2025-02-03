@@ -55,7 +55,7 @@ public(package) fun pump<Meme, Quote>(
 ): (bool, Coin<Quote>, Coin<Meme>) {
     let swap_fee = self.swap_fee.take(&mut quote_coin, ctx);
 
-    let quote_coin_value = assert_coin_has_value(&quote_coin);
+    let quote_coin_value = assert_coin_has_value!(&quote_coin);
 
     let quote_amount_left = self.quote_raise_amount - self.quote_balance.value();
 
@@ -72,7 +72,7 @@ public(package) fun pump<Meme, Quote>(
             u64::mul_div_down(quote_coin_value, self.meme_sale_amount, self.quote_raise_amount),
         );
 
-    assert_slippage(meme_coin_value_out, min_amount_out);
+    assert_slippage!(meme_coin_value_out, min_amount_out);
 
     let meme_coin = self.meme_balance.split(meme_coin_value_out).into_coin(ctx);
 
@@ -99,7 +99,7 @@ public(package) fun dump<Meme, Quote>(
 ): Coin<Quote> {
     let swap_fee = self.swap_fee.take(&mut meme_coin, ctx);
 
-    let meme_coin_value = assert_coin_has_value(&meme_coin);
+    let meme_coin_value = assert_coin_has_value!(&meme_coin);
 
     let quote_coin_value_out = self
         .quote_balance
@@ -108,7 +108,7 @@ public(package) fun dump<Meme, Quote>(
             u64::mul_div_down(meme_coin_value, self.quote_raise_amount, self.meme_sale_amount),
         );
 
-    assert_slippage(quote_coin_value_out, min_amount_out);
+    assert_slippage!(quote_coin_value_out, min_amount_out);
 
     self.meme_balance.join(meme_coin.into_balance());
 

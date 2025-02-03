@@ -19,7 +19,8 @@ G:::::G        G::::GG:::::G        G::::G
      GGG::::::GGG:::G     GGG::::::GGG:::G     
         GGGGGG   GGGG        GGGGGG   GGGG                                           
 */
-#[allow(lint(share_owned), unused_function, unused_mut_parameter)]
+
+#[allow(lint(share_owned, self_transfer), unused_function, unused_mut_parameter)]
 module memez_fun::memez_pump;
 
 use ipx_coin_standard::ipx_coin_standard::{IPXTreasuryStandard, MetadataCap};
@@ -84,14 +85,14 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
 
     fees.creation().take(&mut creation_fee, ctx);
 
-    creation_fee.destroy_or_return(ctx);
+    creation_fee.destroy_or_return!(ctx);
 
     let pump_config = config.get_pump<Quote, ConfigKey>(total_supply);
 
     let meme_token_cap = if (is_token) option::some(memez_token_cap::new(&meme_treasury_cap, ctx))
     else option::none();
 
-    let (ipx_meme_coin_treasury, metadata_cap, mut meme_balance) = new_treasury(
+    let (ipx_meme_coin_treasury, metadata_cap, mut meme_balance) = new_treasury!(
         meme_treasury_cap,
         total_supply,
         ctx,
@@ -243,7 +244,7 @@ public fun migrate<Meme, Quote>(
     let liquidity_provision = if (state.liquidity_provision.value() == 0) {
         state.constant_product.meme_balance_mut().withdraw_all()
     } else {
-        state.constant_product.meme_balance_mut().destroy_or_burn(ctx);
+        state.constant_product.meme_balance_mut().destroy_or_burn!(ctx);
         state.liquidity_provision.withdraw_all()
     };
 

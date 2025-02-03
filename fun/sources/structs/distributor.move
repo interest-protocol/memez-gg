@@ -1,7 +1,7 @@
 // Copyright (c) DEFI, LDA
 // SPDX-License-Identifier: Apache-2.0
 
-#[allow(lint(share_owned, self_transfer))]
+#[allow(lint(self_transfer))]
 module memez_fun::memez_distributor;
 
 use interest_bps::bps::{Self, BPS};

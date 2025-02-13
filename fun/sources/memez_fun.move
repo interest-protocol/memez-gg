@@ -336,9 +336,12 @@ public(package) macro fun cp_pump_amount<$Curve, $Meme, $Quote, $State>(
     $f: |&mut MemezFun<$Curve, $Meme, $Quote>| -> (&$State, u64),
     $amount_in: u64,
 ): vector<u64> {
+    let self = $self;
     let amount_in = $amount_in;
 
-    let (state, amount) = $f($self);
+    self.assert_is_bonding();
+
+    let (state, amount) = $f(self);
 
     state
         .constant_product
@@ -353,9 +356,12 @@ public(package) macro fun cp_dump_amount<$Curve, $Meme, $Quote, $State>(
     $f: |&mut MemezFun<$Curve, $Meme, $Quote>| -> (&$State, u64),
     $amount_in: u64,
 ): vector<u64> {
+    let self = $self;
     let amount_in = $amount_in;
 
-    let (state, amount) = $f($self);
+    self.assert_is_bonding();
+
+    let (state, amount) = $f(self);
 
     state
         .constant_product

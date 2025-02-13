@@ -153,7 +153,6 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
 public fun pump<Meme, Quote>(
     self: &mut MemezFun<Stable, Meme, Quote>,
     quote_coin: Coin<Quote>,
-    min_amount_out: u64,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ): (Coin<Quote>, Coin<Meme>) {
@@ -167,7 +166,6 @@ public fun pump<Meme, Quote>(
         .fixed_rate
         .pump(
             quote_coin,
-            min_amount_out,
             ctx,
         );
 
@@ -179,7 +177,6 @@ public fun pump<Meme, Quote>(
 public fun pump_token<Meme, Quote>(
     self: &mut MemezFun<Stable, Meme, Quote>,
     quote_coin: Coin<Quote>,
-    min_amount_out: u64,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ): (Coin<Quote>, Token<Meme>) {
@@ -193,7 +190,6 @@ public fun pump_token<Meme, Quote>(
         .fixed_rate
         .pump(
             quote_coin,
-            min_amount_out,
             ctx,
         );
 
@@ -207,7 +203,6 @@ public fun pump_token<Meme, Quote>(
 public fun dump<Meme, Quote>(
     self: &mut MemezFun<Stable, Meme, Quote>,
     meme_coin: Coin<Meme>,
-    min_amount_out: u64,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ): Coin<Quote> {
@@ -221,7 +216,6 @@ public fun dump<Meme, Quote>(
         .fixed_rate
         .dump(
             meme_coin,
-            min_amount_out,
             ctx,
         )
 }
@@ -229,7 +223,6 @@ public fun dump<Meme, Quote>(
 public fun dump_token<Meme, Quote>(
     self: &mut MemezFun<Stable, Meme, Quote>,
     meme_token: Token<Meme>,
-    min_amount_out: u64,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ): Coin<Quote> {
@@ -245,7 +238,6 @@ public fun dump_token<Meme, Quote>(
         .fixed_rate
         .dump(
             meme_coin,
-            min_amount_out,
             ctx,
         )
 }

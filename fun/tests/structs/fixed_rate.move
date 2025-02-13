@@ -70,7 +70,6 @@ fun test_pump() {
 
     let (can_migrate, excess_sui_coin, meme_coin_out) = fixed_rate.pump(
         mint_for_testing<SUI>(amount_in, &mut ctx),
-        amounts[1],
         &mut ctx,
     );
 
@@ -86,7 +85,6 @@ fun test_pump() {
 
     let (can_migrate, excess_sui_coin, meme_coin_out) = fixed_rate.pump(
         mint_for_testing<SUI>(amount_in, &mut ctx),
-        amounts[1],
         &mut ctx,
     );
 
@@ -101,7 +99,6 @@ fun test_pump() {
 
     let (can_migrate, excess_sui_coin, meme_coin_out) = fixed_rate.pump(
         mint_for_testing<SUI>(amount_in, &mut ctx),
-        amounts[1],
         &mut ctx,
     );
 
@@ -116,7 +113,6 @@ fun test_pump() {
 
     let (can_migrate, excess_sui_coin, meme_coin_out) = fixed_rate.pump(
         mint_for_testing<SUI>(amount_in, &mut ctx),
-        amounts[1],
         &mut ctx,
     );
 
@@ -153,7 +149,6 @@ fun test_dump() {
 
     let (_, excess_sui_coin, meme_coin_out) = fixed_rate.pump(
         mint_for_testing<SUI>(1000, &mut ctx),
-        0,
         &mut ctx,
     );
 
@@ -162,11 +157,8 @@ fun test_dump() {
 
     let amount_in = 1000;
 
-    let amounts = fixed_rate.dump_amount(amount_in);
-
     let sui_coin_out = fixed_rate.dump(
         mint_for_testing<Meme>(amount_in, &mut ctx),
-        amounts[0],
         &mut ctx,
     );
 
@@ -177,11 +169,8 @@ fun test_dump() {
 
     let amount_in = 1000;
 
-    let amounts = fixed_rate.dump_amount(amount_in);
-
     let sui_coin_out = fixed_rate.dump(
         mint_for_testing<Meme>(amount_in, &mut ctx),
-        amounts[0],
         &mut ctx,
     );
 
@@ -192,11 +181,8 @@ fun test_dump() {
 
     let amount_out = 2000;
 
-    let amounts = fixed_rate.dump_amount(amount_out);
-
     let sui_coin_out = fixed_rate.dump(
         mint_for_testing<Meme>(amount_out, &mut ctx),
-        amounts[0],
         &mut ctx,
     );
 
@@ -207,11 +193,8 @@ fun test_dump() {
 
     let amount_out = 1000;
 
-    let amounts = fixed_rate.dump_amount(amount_out);
-
     let sui_coin_out = fixed_rate.dump(
         mint_for_testing<Meme>(amount_out, &mut ctx),
-        amounts[0],
         &mut ctx,
     );
 
@@ -226,7 +209,6 @@ fun test_dump() {
 
     let sui_coin_out = fixed_rate.dump(
         mint_for_testing<Meme>(amount_out, &mut ctx),
-        amounts[0],
         &mut ctx,
     );
 
@@ -236,7 +218,6 @@ fun test_dump() {
 
     let sui_coin_out = fixed_rate.dump(
         mint_for_testing<Meme>(amount_out, &mut ctx),
-        amounts[0],
         &mut ctx,
     );
 
@@ -354,44 +335,6 @@ fun test_pump_zero_coin() {
 
     let (_, excess_sui_coin, meme_coin_out) = fixed_rate.pump(
         mint_for_testing<SUI>(0, &mut ctx),
-        0,
-        &mut ctx,
-    );
-
-    meme_coin_out.burn_for_testing();
-    excess_sui_coin.burn_for_testing();
-
-    destroy(fixed_rate);
-}
-
-#[test, expected_failure(abort_code = memez_errors::ESlippage, location = memez_fixed_rate)]
-fun test_pump_slippage() {
-    let mut ctx = tx_context::dummy();
-
-    let sui_raise_amount = 1000;
-    let meme_balance_value = 5000;
-
-    let swap_fee = memez_fees::new_percentage_fee(
-        30,
-        memez_distributor::new(
-            vector[@0x0],
-            vector[BPS_MAX],
-        ),
-    );
-
-    let meme_balance = balance::create_for_testing<Meme>(meme_balance_value);
-
-    let mut fixed_rate = memez_fixed_rate::new(
-        sui_raise_amount,
-        meme_balance,
-        swap_fee,
-    );
-
-    let amounts = fixed_rate.pump_amount(400);
-
-    let (_, excess_sui_coin, meme_coin_out) = fixed_rate.pump(
-        mint_for_testing<SUI>(400, &mut ctx),
-        amounts[1] + 1,
         &mut ctx,
     );
 
@@ -426,64 +369,15 @@ fun test_dump_zero_coin() {
 
     let (_, excess_sui_coin, meme_coin_out) = fixed_rate.pump(
         mint_for_testing<SUI>(1000, &mut ctx),
-        0,
         &mut ctx,
     );
 
     excess_sui_coin.burn_for_testing();
     meme_coin_out.burn_for_testing();
-
-    let amounts = fixed_rate.dump_amount(1000);
 
     fixed_rate
         .dump(
             mint_for_testing<Meme>(0, &mut ctx),
-            amounts[0] + 1,
-            &mut ctx,
-        )
-        .burn_for_testing();
-
-    abort
-}
-
-#[test, expected_failure(abort_code = memez_errors::ESlippage, location = memez_fixed_rate)]
-fun test_dump_slippage() {
-    let mut ctx = tx_context::dummy();
-
-    let sui_raise_amount = 1000;
-    let meme_balance_value = 5000;
-
-    let meme_balance = balance::create_for_testing<Meme>(meme_balance_value);
-
-    let swap_fee = memez_fees::new_percentage_fee(
-        30,
-        memez_distributor::new(
-            vector[@0x0],
-            vector[BPS_MAX],
-        ),
-    );
-
-    let mut fixed_rate = memez_fixed_rate::new(
-        sui_raise_amount,
-        meme_balance,
-        swap_fee,
-    );
-
-    let (_, excess_sui_coin, meme_coin_out) = fixed_rate.pump(
-        mint_for_testing<SUI>(1000, &mut ctx),
-        0,
-        &mut ctx,
-    );
-
-    excess_sui_coin.burn_for_testing();
-    meme_coin_out.burn_for_testing();
-
-    let amounts = fixed_rate.dump_amount(1000);
-
-    fixed_rate
-        .dump(
-            mint_for_testing<Meme>(1000, &mut ctx),
-            amounts[0] + 1,
             &mut ctx,
         )
         .burn_for_testing();

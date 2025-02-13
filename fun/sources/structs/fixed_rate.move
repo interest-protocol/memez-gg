@@ -7,7 +7,7 @@ use interest_math::u64;
 use memez_fun::{
     memez_events,
     memez_fees::Fee,
-    memez_utils::{assert_slippage, assert_coin_has_value}
+    memez_utils::assert_coin_has_value
 };
 use sui::{balance::{Self, Balance}, coin::{Self, Coin}};
 
@@ -50,7 +50,6 @@ public(package) fun set_memez_fun<Meme, Quote>(
 public(package) fun pump<Meme, Quote>(
     self: &mut FixedRate<Meme, Quote>,
     mut quote_coin: Coin<Quote>,
-    min_amount_out: u64,
     ctx: &mut TxContext,
 ): (bool, Coin<Quote>, Coin<Meme>) {
     let swap_fee = self.swap_fee.take(&mut quote_coin, ctx);
@@ -72,8 +71,6 @@ public(package) fun pump<Meme, Quote>(
             u64::mul_div_down(quote_coin_value, self.meme_sale_amount, self.quote_raise_amount),
         );
 
-    assert_slippage!(meme_coin_value_out, min_amount_out);
-
     let meme_coin = self.meme_balance.split(meme_coin_value_out).into_coin(ctx);
 
     let total_quote_balance = self.quote_balance.join(quote_coin.into_balance());
@@ -94,7 +91,6 @@ public(package) fun pump<Meme, Quote>(
 public(package) fun dump<Meme, Quote>(
     self: &mut FixedRate<Meme, Quote>,
     mut meme_coin: Coin<Meme>,
-    min_amount_out: u64,
     ctx: &mut TxContext,
 ): Coin<Quote> {
     let swap_fee = self.swap_fee.take(&mut meme_coin, ctx);
@@ -107,8 +103,6 @@ public(package) fun dump<Meme, Quote>(
         .min(
             u64::mul_div_down(meme_coin_value, self.quote_raise_amount, self.meme_sale_amount),
         );
-
-    assert_slippage!(quote_coin_value_out, min_amount_out);
 
     self.meme_balance.join(meme_coin.into_balance());
 

@@ -60,6 +60,10 @@ public struct NewPool has copy, drop {
     meme_balance: u64,
 }
 
+public struct SetTreasury(address, address) has copy, drop;
+
+public struct SetInitializePrice(u128, u128) has copy, drop;
+
 // === Initializer ===
 
 fun init(ctx: &mut TxContext) {
@@ -180,7 +184,14 @@ public fun migrate_to_existing_pool<Meme>(
 // === Admin Functions ===
 
 public fun set_initialize_price(self: &mut RecrdConfig, _: &AuthWitness, initialize_price: u128) {
+    assert!(initialize_price != 0);
+    emit(SetInitializePrice(self.initialize_price, initialize_price));
     self.initialize_price = initialize_price;
+}
+
+public fun set_treasury(self: &mut RecrdConfig, _: &AuthWitness, treasury: address) {
+    emit(SetTreasury(self.treasury, treasury));
+    self.treasury = treasury;
 }
 
 // === Private Functions ===

@@ -24,7 +24,7 @@ public struct PumpConfig has copy, drop, store {
 // === Public Package Functions ===
 
 public(package) fun new<Quote>(values: vector<u64>): PumpConfig {
-    assert!(values.length() == VALUES_LENGTH, memez_errors::invalid_config!());
+    assert_values(values);
 
     PumpConfig {
         burn_tax: values[0],
@@ -41,6 +41,14 @@ public(package) fun get<Quote>(self: &PumpConfig, total_supply: u64): vector<u64
     let liquidity_provision = self.liquidity_provision.calc(total_supply);
 
     vector[self.burn_tax, self.virtual_liquidity, self.target_quote_liquidity, liquidity_provision]
+}
+
+// === Private Functions ===
+
+fun assert_values(values: vector<u64>) {
+    assert!(values.length() == VALUES_LENGTH, memez_errors::invalid_config!());
+    assert!(values[1] != 0);
+    assert!(values[2] != 0);
 }
 
 // === Test Only Functions ===

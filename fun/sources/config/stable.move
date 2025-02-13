@@ -23,7 +23,7 @@ public struct StableConfig has copy, drop, store {
 // === Public Package Functions ===
 
 public(package) fun new<Quote>(values: vector<u64>): StableConfig {
-    assert!(values.length() == VALUES_LENGTH, memez_errors::invalid_config!());
+    assert_values(values);
 
     StableConfig {
         max_target_quote_liquidity: values[0],
@@ -41,6 +41,15 @@ public(package) fun get<Quote>(self: &StableConfig, total_supply: u64): vector<u
     let meme_sale_amount = self.meme_sale_amount.calc(total_supply);
 
     vector[self.max_target_quote_liquidity, liquidity_provision, meme_sale_amount]
+}
+
+// === Private Functions ===
+
+fun assert_values(values: vector<u64>) {
+    assert!(values.length() == VALUES_LENGTH, memez_errors::invalid_config!());
+    assert!(values[0] != 0);
+    assert!(values[1] != 0);
+    assert!(values[2] != 0);
 }
 
 // === Test Only Functions ===

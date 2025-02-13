@@ -28,7 +28,7 @@ public struct AuctionConfig has copy, drop, store {
 // === Public Package Functions ===
 
 public(package) fun new<Quote>(values: vector<u64>): AuctionConfig {
-    assert!(values.length() == VALUES_LENGTH, memez_errors::invalid_config!());
+    assert_values(values);
 
     AuctionConfig {
         auction_duration: values[0],
@@ -45,7 +45,7 @@ public(package) fun get<Quote>(self: &AuctionConfig, total_supply: u64): vector<
     assert!(type_name::get<Quote>() == self.quote_type, memez_errors::invalid_quote_type!());
 
     let liquidity_provision = self.liquidity_provision.calc(total_supply);
-    let seed_liquidity = self.seed_liquidity.calc(total_supply).max(MIN_SEED_LIQUIDITY);
+    let seed_liquidity = self.seed_liquidity.calc(total_supply).max(MIN_SEED_LIQUIDITY); 
 
     vector[
         self.auction_duration,
@@ -55,6 +55,17 @@ public(package) fun get<Quote>(self: &AuctionConfig, total_supply: u64): vector<
         liquidity_provision,
         seed_liquidity,
     ]
+}
+
+// === Private Functions === 
+
+fun assert_values(values: vector<u64>) {
+    assert!(values.length() == VALUES_LENGTH, memez_errors::invalid_config!());
+    assert!(values[0] != 0);
+    assert!(values[2] != 0);
+    assert!(values[3] != 0);
+    assert!(values[4] != 0);
+    assert!(values[5] != 0);
 }
 
 // === Test Only Functions ===

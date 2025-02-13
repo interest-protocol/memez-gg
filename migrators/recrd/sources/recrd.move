@@ -117,8 +117,8 @@ public fun migrate_to_new_pool<Meme>(
         pool: position.pool_id().to_address(),
         tick_spacing: TICK_SPACING,
         meme: type_name::get<Meme>(),
-        sui_balance: sui_balance_value,
-        meme_balance: meme_balance_value,
+        sui_balance: sui_balance_value - excess_sui.value(),
+        meme_balance: meme_balance_value - excess_meme.value(),
     });
 
     transfer::public_transfer(position, DEAD_ADDRESS);
@@ -162,15 +162,15 @@ public fun migrate_to_existing_pool<Meme>(
     let excess_meme = meme_balance.split(meme_balance_value.min(amount_a)).into_coin(ctx);
     let excess_sui = sui_balance.split(sui_balance_value.min(amount_b)).into_coin(ctx);
 
-    pool::repay_add_liquidity(cetus_config, pool, meme_balance, sui_balance, receipt);
-
     emit(NewPool {
         pool: position.pool_id().to_address(),
         tick_spacing: TICK_SPACING,
         meme: type_name::get<Meme>(),
-        sui_balance: sui_balance_value,
-        meme_balance: meme_balance_value,
+        sui_balance: sui_balance_value - excess_sui.value(),
+        meme_balance: meme_balance_value - excess_meme.value(),
     });
+
+    pool::repay_add_liquidity(cetus_config, pool, meme_balance, sui_balance, receipt);
 
     transfer::public_transfer(position, DEAD_ADDRESS);
     transfer_or_burn(excess_meme, DEAD_ADDRESS);

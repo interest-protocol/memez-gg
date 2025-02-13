@@ -116,8 +116,8 @@ public(package) fun dump<Meme, Quote>(
 
     memez_events::dump<Meme, Quote>(
         self.memez_fun,
-        quote_coin_value_out,
         meme_coin_value,
+        quote_coin_value_out,
         swap_fee,
         0,
         self.quote_balance.value(),

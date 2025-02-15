@@ -132,7 +132,7 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
         metadata,
         ipx_meme_coin_treasury,
         0,
-        stable_config[0],
+        target_quote_liquidity.min(stable_config[0]),
         meme_balance_value,
         total_supply,
         dev,

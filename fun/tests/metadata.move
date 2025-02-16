@@ -32,8 +32,6 @@ fun test_end_to_end() {
     metadata.borrow_mut().insert(b"Telegram".to_string(), b"https://t.me/memez_fun".to_string());
 
     assert_eq!(metadata.borrow()[&b"Telegram".to_string()], b"https://t.me/memez_fun".to_string());
-    assert_eq!(metadata.name(), b"GG".to_string());
-    assert_eq!(metadata.symbol(), b"GG".to_ascii_string());
     assert_eq!(metadata.decimals(), 9);
 
     destroy(metadata);

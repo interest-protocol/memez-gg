@@ -130,8 +130,6 @@ public(package) fun new<Curve, Meme, Quote, ConfigKey, MigrationWitness>(
         virtual_liquidity,
         target_quote_liquidity,
         meme_balance,
-        metadata.name(),
-        metadata.symbol(),
         total_supply,
     );
 

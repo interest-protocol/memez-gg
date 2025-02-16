@@ -38,7 +38,6 @@ fun test_new() {
     assert_eq(cp.target_quote_liquidity(), target_quote_liquidity);
     assert_eq(cp.meme_balance().value(), meme_balance_value);
     assert_eq(cp.burner().fee().value(), BURN_TAX);
-    assert_eq(cp.burner().start_liquidity(), virtual_liquidity);
     assert_eq(cp.burner().target_liquidity(), target_quote_liquidity);
 
     destroy(cp);
@@ -288,14 +287,14 @@ fun test_dump() {
         &mut ctx,
     );
 
-    assert_eq(0, amounts[3]);
+    assert_eq(0, amounts[1]);
+    assert_eq(0, amounts[2]);
     assert_eq(ipx_treasury.total_supply<Meme>(), meme_balance_value);
     assert_eq(amount_out, amounts[0]);
 
     assert_eq(cp.quote_balance().value(), sui_amount_in - amounts[0]);
     assert_eq(cp.meme_balance().value(), meme_balance_value);
     assert_eq(amounts[2], 0);
-    assert_eq(amounts[1], amounts[0]);
 
     sui_coin_out.burn_for_testing();
 
@@ -324,8 +323,7 @@ fun test_dump() {
         cp.quote_balance().value() + virtual_liquidity,
     );
 
-    assert_eq(amounts[0], 0);
-    assert_eq(amounts[1], amount_out);
+    assert_eq(amounts[0], amount_out);
     assert_eq(amount_out != 0, true);
 
     cp
@@ -358,7 +356,7 @@ fun test_dump_with_fee() {
         ),
     );
 
-    let burner = memez_burner::new(vector[BURN_TAX, virtual_liquidity, target_sui_liquidity]);
+    let burner = memez_burner::new(BURN_TAX, target_sui_liquidity);
 
     let mut meme_treasury_cap = coin::create_treasury_cap_for_testing<Meme>(&mut ctx);
 
@@ -392,15 +390,7 @@ fun test_dump_with_fee() {
 
     let swap_fee_value = swap_fee.calculate(meme_coin_out_value);
 
-    let pre_tax_amount_out = get_amount_out(
-        meme_coin_out_value - swap_fee_value,
-        cp.meme_balance().value(),
-        cp.quote_balance().value() + virtual_liquidity,
-    );
-
-    let fee_rate = burner.calculate(
-        cp.quote_balance().value() + virtual_liquidity - pre_tax_amount_out,
-    );
+    let fee_rate = burner.calculate(cp.quote_balance().value());
 
     let meme_burn_fee_value = fee_rate.calc_up(meme_coin_out_value - swap_fee_value);
 
@@ -417,14 +407,13 @@ fun test_dump_with_fee() {
         &mut ctx,
     );
 
-    assert_eq(meme_burn_fee_value, amounts[3]);
+    assert_eq(meme_burn_fee_value, amounts[2]);
     assert_eq(ipx_treasury.total_supply<Meme>(), meme_balance_value - meme_burn_fee_value);
     assert_eq(amount_out, amounts[0]);
 
     assert_eq(cp.quote_balance().value(), sui_amount_in - amounts[0] - sui_swap_fee_amount);
     assert_eq(cp.meme_balance().value(), meme_balance_value - swap_fee_value - meme_burn_fee_value);
-    assert_eq(amounts[2], swap_fee_value);
-    assert_eq(amounts[1], amounts[0]);
+    assert_eq(amounts[1], swap_fee_value);
 
     sui_coin_out.burn_for_testing();
 
@@ -492,7 +481,7 @@ fun test_dump_amount() {
         ),
     );
 
-    let burner = memez_burner::new(vector[BURN_TAX, virtual_liquidity, target_sui_liquidity]);
+    let burner = memez_burner::new(BURN_TAX, target_sui_liquidity);
 
     let mut cp = memez_constant_product::new<Meme, Quote>(
         virtual_liquidity,
@@ -506,13 +495,7 @@ fun test_dump_amount() {
 
     let swap_fee_amount = swap_fee.calculate(amount_in);
 
-    let amount_out = get_amount_out(
-        amount_in - swap_fee_amount,
-        meme_balance_value + 1200,
-        virtual_liquidity,
-    );
-
-    let dynamic_burn_tax = burner.calculate(virtual_liquidity - amount_out);
+    let dynamic_burn_tax = burner.calculate(0);
 
     let meme_burn_fee_value = dynamic_burn_tax.calc_up(amount_in - swap_fee_amount);
 
@@ -524,21 +507,16 @@ fun test_dump_amount() {
 
     let amounts = cp.dump_amount(amount_in, 1200);
 
-    assert_eq(amounts[0], 0);
-    assert_eq(amounts[1], amount_out);
-    assert_eq(amounts[1] != 0, true);
-    assert_eq(amounts[2], swap_fee_amount);
-    assert_eq(amounts[3], meme_burn_fee_value);
+    assert_eq(amounts[0], amount_out);
+    assert_eq(amounts[0] != 0, true);
+    assert_eq(amounts[1], swap_fee_amount);
+    assert_eq(amounts[2], meme_burn_fee_value);
 
     cp.quote_balance_mut().join(balance::create_for_testing<Quote>(600));
 
-    let amount_out = get_amount_out(
-        amount_in - swap_fee_amount,
-        meme_balance_value + 1200,
-        virtual_liquidity + 600,
-    );
+    let quote_balance = cp.quote_balance().value();
 
-    let dynamic_burn_tax = burner.calculate(virtual_liquidity + 600 - amount_out);
+    let dynamic_burn_tax = burner.calculate(quote_balance);
 
     let meme_burn_fee_value = dynamic_burn_tax.calc_up(amount_in - swap_fee_amount);
 
@@ -552,16 +530,14 @@ fun test_dump_amount() {
 
     assert_eq(amounts[0], amount_out);
     assert_eq(amounts[0] != 0, true);
-    assert_eq(amounts[1], amount_out);
-    assert_eq(amounts[2], swap_fee_amount);
-    assert_eq(amounts[3], meme_burn_fee_value);
+    assert_eq(amounts[1], swap_fee_amount);
+    assert_eq(amounts[2], meme_burn_fee_value);
 
     let amounts = cp.dump_amount(0, 1200);
 
     assert_eq(amounts[0], 0);
     assert_eq(amounts[1], 0);
     assert_eq(amounts[2], 0);
-    assert_eq(amounts[3], 0);
 
     destroy(cp);
 }
@@ -598,11 +574,10 @@ fun test_dump_amount_no_fees() {
 
     let amounts = cp.dump_amount(amount_in, 1200);
 
-    assert_eq(amounts[0], 0);
-    assert_eq(amounts[1], amount_out);
-    assert_eq(amounts[1] != 0, true);
+    assert_eq(amounts[0], amount_out);
+    assert_eq(amounts[0] != 0, true);
+    assert_eq(amounts[1], 0);
     assert_eq(amounts[2], 0);
-    assert_eq(amounts[3], 0);
 
     cp.quote_balance_mut().join(balance::create_for_testing<Quote>(600));
 
@@ -616,16 +591,14 @@ fun test_dump_amount_no_fees() {
 
     assert_eq(amounts[0], amount_out);
     assert_eq(amounts[0] != 0, true);
-    assert_eq(amounts[1], amount_out);
+    assert_eq(amounts[1], 0);
     assert_eq(amounts[2], 0);
-    assert_eq(amounts[3], 0);
 
     let amounts = cp.dump_amount(0, 1200);
 
     assert_eq(amounts[0], 0);
     assert_eq(amounts[1], 0);
     assert_eq(amounts[2], 0);
-    assert_eq(amounts[3], 0);
 
     destroy(cp);
 }

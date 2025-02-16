@@ -406,7 +406,7 @@ public fun market_cap<Meme, Quote>(
 ): u64 {
     let amounts = dump_amount<Meme, Quote>(self, 10u64.pow(decimals), clock);
 
-    u64::mul_div_up(amounts[1], total_supply, 10u64.pow(decimals))
+    u64::mul_div_up(amounts[0], total_supply, 10u64.pow(decimals))
 }
 
 #[test_only]

@@ -40,7 +40,7 @@ public(package) fun new<Meme, Quote>(
         target_quote_liquidity,
         quote_balance: balance::zero(),
         meme_balance,
-        burner: memez_burner::new(vector[burn_tax, virtual_liquidity, target_quote_liquidity]),
+        burner: memez_burner::new(burn_tax, target_quote_liquidity),
         swap_fee,
     }
 }
@@ -104,15 +104,7 @@ public(package) fun dump<Meme, Quote>(
 
     let quote_balance_value = self.quote_balance.value();
 
-    let quote_virtual_liquidity = self.virtual_liquidity + quote_balance_value;
-
-    let pre_tax_quote_value_out = get_amount_out(
-        meme_coin_value,
-        meme_balance_value,
-        quote_virtual_liquidity,
-    );
-
-    let dynamic_burn_tax = self.burner.calculate(quote_virtual_liquidity - pre_tax_quote_value_out);
+    let dynamic_burn_tax = self.burner.calculate(quote_balance_value);
     let meme_burn_fee_value = dynamic_burn_tax.calc_up(meme_coin_value);
 
     if (dynamic_burn_tax.value() != 0) treasury_cap.burn(meme_coin.split(meme_burn_fee_value, ctx));
@@ -122,7 +114,7 @@ public(package) fun dump<Meme, Quote>(
     let quote_value_out = get_amount_out(
         meme_coin_value,
         meme_balance_value,
-        quote_virtual_liquidity,
+        self.virtual_liquidity + quote_balance_value,
     );
 
     self.meme_balance.join(meme_coin.into_balance());
@@ -170,49 +162,27 @@ public(package) fun dump_amount<Meme, Quote>(
     amount_in: u64,
     extra_meme_amount: u64,
 ): vector<u64> {
-    if (amount_in == 0) return vector[0, 0, 0, 0];
+    if (amount_in == 0) return vector[0, 0, 0];
 
     let meme_balance_value = self.meme_balance.value() + extra_meme_amount;
 
     let quote_balance_value = self.quote_balance.value();
 
-    let quote_virtual_liquidity = self.virtual_liquidity + quote_balance_value;
-
     let swap_fee = self.swap_fee.calculate(amount_in);
 
     let amount_in_minus_swap_fee = amount_in - swap_fee;
 
-    let pre_tax_quote_value_out = get_amount_out(
-        amount_in_minus_swap_fee,
-        meme_balance_value,
-        quote_virtual_liquidity,
-    );
-
-    let dynamic_burn_tax = self.burner.calculate(quote_virtual_liquidity - pre_tax_quote_value_out);
-
-    if (dynamic_burn_tax.value() == 0) {
-        return vector[
-            pre_tax_quote_value_out.min(quote_balance_value),
-            pre_tax_quote_value_out,
-            swap_fee,
-            0,
-        ]
-    };
+    let dynamic_burn_tax = self.burner.calculate(quote_balance_value);
 
     let meme_burn_fee_value = dynamic_burn_tax.calc_up(amount_in_minus_swap_fee);
 
-    let post_tax_quote_value_out = get_amount_out(
+    let quote_value_out = get_amount_out(
         amount_in_minus_swap_fee - meme_burn_fee_value,
         meme_balance_value,
-        quote_virtual_liquidity,
+        self.virtual_liquidity + quote_balance_value,
     );
 
-    vector[
-        post_tax_quote_value_out.min(quote_balance_value),
-        post_tax_quote_value_out,
-        swap_fee,
-        meme_burn_fee_value,
-    ]
+    vector[quote_value_out, swap_fee, meme_burn_fee_value]
 }
 
 public(package) fun virtual_liquidity<Meme, Quote>(self: &MemezConstantProduct<Meme, Quote>): u64 {

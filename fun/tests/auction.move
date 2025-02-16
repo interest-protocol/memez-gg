@@ -306,7 +306,7 @@ fun test_coin_end_to_end() {
         world.scenario.ctx(),
     );
 
-    assert_eq(sui_coin.burn_for_testing(), amounts[1]);
+    assert_eq(sui_coin.burn_for_testing(), amounts[0]);
 
     let cp = memez_auction::constant_product(&mut memez_fun);
 
@@ -480,7 +480,7 @@ fun test_token_end_to_end() {
         world.scenario.ctx(),
     );
 
-    assert_eq(sui_coin.burn_for_testing(), amounts[1]);
+    assert_eq(sui_coin.burn_for_testing(), amounts[0]);
 
     let cp = memez_auction::constant_product(&mut memez_fun);
 
@@ -724,7 +724,7 @@ fun test_coin_end_to_end_with_stake_holders() {
         world.scenario.ctx(),
     );
 
-    assert_eq(sui_coin.burn_for_testing(), amounts[1]);
+    assert_eq(sui_coin.burn_for_testing(), amounts[0]);
 
     let cp = memez_auction::constant_product(&mut memez_fun);
 

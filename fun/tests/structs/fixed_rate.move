@@ -492,3 +492,22 @@ fun test_dump_zero_coin() {
 
     abort
 }
+
+#[test, expected_failure]
+fun test_zero_quote_raise_amount() {
+    let swap_fee = memez_fees::new_percentage_fee(
+        30,
+        memez_distributor::new(
+            vector[@0x0],
+            vector[BPS_MAX],
+        ),
+    );
+
+    let fixed_rate = memez_fixed_rate::new<Meme, SUI>(
+        0,
+        balance::create_for_testing<Meme>(1),
+        swap_fee,
+    );
+
+    destroy(fixed_rate);
+}

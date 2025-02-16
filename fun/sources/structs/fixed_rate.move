@@ -26,6 +26,7 @@ public(package) fun new<Meme, Quote>(
     meme_balance: Balance<Meme>,
     swap_fee: Fee,
 ): FixedRate<Meme, Quote> {
+    assert!(quote_raise_amount != 0);
     let meme_sale_amount = meme_balance.value();
     FixedRate {
         memez_fun: @0x0,

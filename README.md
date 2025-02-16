@@ -38,7 +38,7 @@ This mode supports the following features:
 <img width="300px"height="300px" alt="Pump Mode" src="./assets/auction-model.png" />
 </p>
 
-This mode mimics a dutch auction. The protocol provides liquidity to the pool linearly. By increasing the amount of the Meme coin in the pool, it lowers its price as defined by the constant product invariant - `k = x * y`. In this mechanism, the price starts at a very high price and decreases over time linearly for 30 minutes until it hits a floor price based on the virtual liquidity set by the protocol. In this mode, the traders have the opportunity to decide at which market the coin should bond.
+This mode mimics a dutch auction. The protocol provides liquidity to the pool linearly. By increasing the amount of the Meme coin in the pool, it lowers its price as defined by the fixed_rate formula of Y/X. In this mechanism, the price starts at a very high price and decreases over time linearly for 30 minutes until it hits a floor price based on the target quote amount to raise set by the deployer. In this mode, the traders have the opportunity to decide at which market the coin should bond.
 
 This mode supports the following features:
 

@@ -163,22 +163,22 @@ public fun migrate_to_existing_pool<Meme>(
 
     let (amount_a, amount_b) = receipt.add_liquidity_pay_amount();
 
-    let excess_meme = meme_balance.split(meme_balance_value.min(amount_a)).into_coin(ctx);
-    let excess_sui = sui_balance.split(sui_balance_value.min(amount_b)).into_coin(ctx);
+    let meme_to_add = meme_balance.split(meme_balance_value.min(amount_a));
+    let sui_to_add = sui_balance.split(sui_balance_value.min(amount_b));
 
     emit(NewPool {
         pool: position.pool_id().to_address(),
         tick_spacing: TICK_SPACING,
         meme: type_name::get<Meme>(),
-        sui_balance: sui_balance_value - excess_sui.value(),
-        meme_balance: meme_balance_value - excess_meme.value(),
+        sui_balance: sui_to_add.value(),
+        meme_balance: meme_to_add.value(),
     });
 
-    pool::repay_add_liquidity(cetus_config, pool, meme_balance, sui_balance, receipt);
+    pool::repay_add_liquidity(cetus_config, pool, meme_to_add, sui_to_add, receipt);
 
     transfer::public_transfer(position, DEAD_ADDRESS);
-    transfer_or_burn(excess_meme, DEAD_ADDRESS);
-    transfer_or_burn(excess_sui, config.treasury);
+    transfer_or_burn(meme_balance.into_coin(ctx), DEAD_ADDRESS);
+    transfer_or_burn(sui_balance.into_coin(ctx), config.treasury);
 }
 
 // === Admin Functions ===

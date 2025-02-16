@@ -223,7 +223,7 @@ fun test_coin_end_to_end() {
 
     let cp = memez_pump::constant_product_mut(&mut memez_fun);
 
-    let amounts = cp.dump_amount(sell_meme_value, 0);
+    let amounts = cp.dump_amount(sell_meme_value);
 
     let sui_coin = memez_pump::dump(
         &mut memez_fun,
@@ -387,7 +387,7 @@ fun test_token_end_to_end() {
 
     let cp = memez_pump::constant_product_mut(&mut memez_fun);
 
-    let amounts = cp.dump_amount(sell_meme_value, 0);
+    let amounts = cp.dump_amount(sell_meme_value);
 
     let sui_coin = memez_pump::dump_token(
         &mut memez_fun,

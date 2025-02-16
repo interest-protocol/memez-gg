@@ -3,12 +3,9 @@
 
 module memez_fun::memez_fixed_rate;
 
+use interest_bps::bps;
 use interest_math::u64;
-use memez_fun::{
-    memez_events,
-    memez_fees::Fee,
-    memez_utils::assert_coin_has_value
-};
+use memez_fun::{memez_events, memez_fees::Fee, memez_utils::assert_coin_has_value};
 use sui::{balance::{Self, Balance}, coin::{Self, Coin}};
 
 // === Structs ===
@@ -52,15 +49,17 @@ public(package) fun pump<Meme, Quote>(
     mut quote_coin: Coin<Quote>,
     ctx: &mut TxContext,
 ): (bool, Coin<Quote>, Coin<Meme>) {
-    let swap_fee = self.swap_fee.take(&mut quote_coin, ctx);
-
     let quote_coin_value = assert_coin_has_value!(&quote_coin);
 
     let quote_amount_left = self.quote_raise_amount - self.quote_balance.value();
 
-    let excess_quote_coin = if (quote_coin_value > quote_amount_left) {
-        quote_coin.split(quote_coin_value - quote_amount_left, ctx)
+    let quote_amount_left_before_fee = amount_before_fee(quote_amount_left, self.swap_fee.value());
+
+    let excess_quote_coin = if (quote_coin_value > quote_amount_left_before_fee) {
+        quote_coin.split(quote_coin_value - quote_amount_left_before_fee, ctx)
     } else coin::zero(ctx);
+
+    let swap_fee = self.swap_fee.take(&mut quote_coin, ctx);
 
     let quote_coin_value = quote_coin.value();
 
@@ -125,6 +124,7 @@ public(package) fun dump<Meme, Quote>(
 public(package) fun pump_amount<Meme, Quote>(
     self: &FixedRate<Meme, Quote>,
     quote_amount: u64,
+    extra_meme_sale_amount: u64,
 ): vector<u64> {
     if (quote_amount == 0) return vector[0, 0, 0];
 
@@ -132,23 +132,24 @@ public(package) fun pump_amount<Meme, Quote>(
 
     let quote_amount_left = self.quote_raise_amount - self.quote_balance.value();
 
-    let excess_quote_amount = if (quote_amount > quote_amount_left) quote_amount - quote_amount_left
-    else 0;
+    let quote_amount_left_before_fee = amount_before_fee(quote_amount_left, self.swap_fee.value());
+
+    let excess_quote_amount = if (quote_amount > quote_amount_left_before_fee)
+        quote_amount - quote_amount_left_before_fee else 0;
 
     let quote_coin_value = quote_amount - excess_quote_amount;
 
     let swap_fee = self.swap_fee.calculate(quote_coin_value);
 
-    let meme_coin_value_out = self
-        .meme_balance
-        .value()
-        .min(
-            u64::mul_div_down(
-                quote_coin_value - swap_fee,
-                self.meme_sale_amount,
-                self.quote_raise_amount,
-            ),
-        );
+    let meme_balance_value = self.meme_balance.value() + extra_meme_sale_amount;
+
+    let meme_coin_value_out = meme_balance_value.min(
+        u64::mul_div_down(
+            quote_coin_value - swap_fee,
+            self.meme_sale_amount + extra_meme_sale_amount,
+            self.quote_raise_amount,
+        ),
+    );
 
     vector[excess_quote_amount, meme_coin_value_out, swap_fee]
 }
@@ -156,6 +157,7 @@ public(package) fun pump_amount<Meme, Quote>(
 public(package) fun dump_amount<Meme, Quote>(
     self: &FixedRate<Meme, Quote>,
     meme_amount: u64,
+    extra_meme_sale_amount: u64,
 ): vector<u64> {
     if (meme_amount == 0) return vector[0, 0];
 
@@ -168,7 +170,7 @@ public(package) fun dump_amount<Meme, Quote>(
             u64::mul_div_down(
                 meme_amount - swap_fee,
                 self.quote_raise_amount,
-                self.meme_sale_amount,
+                self.meme_sale_amount + extra_meme_sale_amount,
             ),
         );
 
@@ -181,6 +183,15 @@ public(package) fun quote_balance<Meme, Quote>(self: &FixedRate<Meme, Quote>): &
 
 public(package) fun meme_balance<Meme, Quote>(self: &FixedRate<Meme, Quote>): &Balance<Meme> {
     &self.meme_balance
+}
+
+//@dev Only to be used in the auction curve.
+public(package) fun increase_meme_available<Meme, Quote>(
+    self: &mut FixedRate<Meme, Quote>,
+    extra_balance: Balance<Meme>,
+): u64 {
+    self.meme_sale_amount = self.meme_sale_amount + extra_balance.value();
+    self.meme_balance.join(extra_balance)
 }
 
 public(package) fun quote_balance_mut<Meme, Quote>(
@@ -201,6 +212,13 @@ public(package) fun quote_raise_amount<Meme, Quote>(self: &FixedRate<Meme, Quote
 
 public(package) fun meme_sale_amount<Meme, Quote>(self: &FixedRate<Meme, Quote>): u64 {
     self.meme_sale_amount
+}
+
+// === Private Functions ===
+
+fun amount_before_fee(amount_in: u64, fee: u64): u64 {
+    let max_bps = bps::max_bps();
+    u64::mul_div_up(amount_in, max_bps, max_bps - fee)
 }
 
 // === Test Only Functions ===

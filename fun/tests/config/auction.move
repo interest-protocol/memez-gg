@@ -12,8 +12,6 @@ const LIQUIDITY_PROVISION: u64 = 500;
 
 const THIRTY_MINUTES_MS: u64 = 30 * 60 * 1_000;
 
-const VIRTUAL_LIQUIDITY: u64 = 1_000__000_000_000;
-
 const TARGET_SUI_LIQUIDITY: u64 = 10_000__000_000_000;
 
 const SEED_LIQUIDITY: u64 = 10;
@@ -29,7 +27,6 @@ fun test_end_to_end() {
     let auction = memez_auction_config::new<Quote>(vector[
         THIRTY_MINUTES_MS,
         BURN_TAX,
-        VIRTUAL_LIQUIDITY,
         TARGET_SUI_LIQUIDITY,
         LIQUIDITY_PROVISION,
         SEED_LIQUIDITY,
@@ -39,20 +36,18 @@ fun test_end_to_end() {
 
     assert_eq!(payload[0], THIRTY_MINUTES_MS);
     assert_eq!(payload[1], BURN_TAX);
-    assert_eq!(payload[2], VIRTUAL_LIQUIDITY);
-    assert_eq!(payload[3], TARGET_SUI_LIQUIDITY);
-    assert_eq!(payload[4], 50);
-    assert_eq!(payload[5], MIN_SEED_LIQUIDITY);
+    assert_eq!(payload[2], TARGET_SUI_LIQUIDITY);
+    assert_eq!(payload[3], 50);
+    assert_eq!(payload[4], MIN_SEED_LIQUIDITY);
     assert_eq!(auction.quote_type(), type_name::get<Quote>());
 
     let payload = auction.get<Quote>(1_000_000_000);
 
     assert_eq!(payload[0], THIRTY_MINUTES_MS);
     assert_eq!(payload[1], BURN_TAX);
-    assert_eq!(payload[2], VIRTUAL_LIQUIDITY);
-    assert_eq!(payload[3], TARGET_SUI_LIQUIDITY);
-    assert_eq!(payload[4], 50_000_000);
-    assert_eq!(payload[5], 1_000_000);
+    assert_eq!(payload[2], TARGET_SUI_LIQUIDITY);
+    assert_eq!(payload[3], 50_000_000);
+    assert_eq!(payload[4], 1_000_000);
     assert_eq!(auction.quote_type(), type_name::get<Quote>());
 
     destroy(auction);
@@ -69,7 +64,6 @@ fun test_new_invalid_config() {
     let auction = memez_auction_config::new<Quote>(vector[
         THIRTY_MINUTES_MS,
         BURN_TAX,
-        VIRTUAL_LIQUIDITY,
         TARGET_SUI_LIQUIDITY,
         LIQUIDITY_PROVISION,
     ]);
@@ -88,7 +82,6 @@ fun test_new_invalid_quote() {
     let auction = memez_auction_config::new<Quote>(vector[
         THIRTY_MINUTES_MS,
         BURN_TAX,
-        VIRTUAL_LIQUIDITY,
         TARGET_SUI_LIQUIDITY,
         LIQUIDITY_PROVISION,
         SEED_LIQUIDITY,

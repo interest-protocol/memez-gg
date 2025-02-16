@@ -29,6 +29,7 @@ use memez_fun::{
     memez_events,
     memez_metadata::MemezMetadata,
     memez_migrator_list::MemezMigratorList,
+    memez_utils::destroy_or_burn,
     memez_versioned::Versioned
 };
 use std::{string::String, type_name::{Self, TypeName}};
@@ -296,6 +297,155 @@ public(package) macro fun cp_dump_token<$Curve, $Meme, $Quote, $State>(
         )
 }
 
+public(package) macro fun fr_pump<$Curve, $Meme, $Quote, $State>(
+    $self: &mut MemezFun<$Curve, $Meme, $Quote>,
+    $f: |&mut MemezFun<$Curve, $Meme, $Quote>| -> &mut $State,
+    $quote_coin: Coin<$Quote>,
+    $allowed_versions: AllowedVersions,
+    $ctx: &mut TxContext,
+): (Coin<$Quote>, Coin<$Meme>) {
+    let self = $self;
+    let allowed_versions = $allowed_versions;
+
+    allowed_versions.assert_pkg_version();
+    self.assert_uses_coin();
+    self.assert_is_bonding();
+
+    let state = $f(self);
+
+    let quote_coin = $quote_coin;
+    let ctx = $ctx;
+
+    let (start_migrating, excess_quote_coin, meme_coin) = state
+        .fixed_rate
+        .pump(
+            quote_coin,
+            ctx,
+        );
+
+    if (start_migrating) self.set_progress_to_migrating();
+
+    (excess_quote_coin, meme_coin)
+}
+
+public(package) macro fun fr_pump_token<$Curve, $Meme, $Quote, $State>(
+    $self: &mut MemezFun<$Curve, $Meme, $Quote>,
+    $f: |&mut MemezFun<$Curve, $Meme, $Quote>| -> &mut $State,
+    $quote_coin: Coin<$Quote>,
+    $allowed_versions: AllowedVersions,
+    $ctx: &mut TxContext,
+): (Coin<$Quote>, Token<$Meme>) {
+    let self = $self;
+    let allowed_versions = $allowed_versions;
+
+    allowed_versions.assert_pkg_version();
+    self.assert_uses_token();
+    self.assert_is_bonding();
+
+    let state = $f(self);
+
+    let quote_coin = $quote_coin;
+    let ctx = $ctx;
+
+    let (start_migrating, excess_quote_coin, meme_coin) = state
+        .fixed_rate
+        .pump(
+            quote_coin,
+            ctx,
+        );
+
+    let meme_token = state.token_cap().from_coin(meme_coin, ctx);
+
+    if (start_migrating) self.set_progress_to_migrating();
+
+    (excess_quote_coin, meme_token)
+}
+
+public(package) macro fun fr_dump<$Curve, $Meme, $Quote, $State>(
+    $self: &mut MemezFun<$Curve, $Meme, $Quote>,
+    $f: |&mut MemezFun<$Curve, $Meme, $Quote>| -> &mut $State,
+    $meme_coin: Coin<$Meme>,
+    $allowed_versions: AllowedVersions,
+    $ctx: &mut TxContext,
+): Coin<$Quote> {
+    let self = $self;
+    let allowed_versions = $allowed_versions;
+
+    allowed_versions.assert_pkg_version();
+    self.assert_uses_coin();
+    self.assert_is_bonding();
+
+    let state = $f(self);
+
+    let meme_coin = $meme_coin;
+    let ctx = $ctx;
+
+    state
+        .fixed_rate
+        .dump(
+            meme_coin,
+            ctx,
+        )
+}
+
+public(package) macro fun fr_dump_token<$Curve, $Meme, $Quote, $State>(
+    $self: &mut MemezFun<$Curve, $Meme, $Quote>,
+    $f: |&mut MemezFun<$Curve, $Meme, $Quote>| -> &mut $State,
+    $meme_token: Token<$Meme>,
+    $allowed_versions: AllowedVersions,
+    $ctx: &mut TxContext,
+): Coin<$Quote> {
+    let self = $self;
+    let allowed_versions = $allowed_versions;
+
+    allowed_versions.assert_pkg_version();
+    self.assert_uses_token();
+    self.assert_is_bonding();
+
+    let state = $f(self);
+
+    let meme_token = $meme_token;
+    let ctx = $ctx;
+
+    let meme_coin = state.token_cap().to_coin(meme_token, ctx);
+
+    state
+        .fixed_rate
+        .dump(
+            meme_coin,
+            ctx,
+        )
+}
+
+public(package) macro fun fr_migrate<$Curve, $Meme, $Quote, $State>(
+    $self: &mut MemezFun<$Curve, $Meme, $Quote>,
+    $f: |&mut MemezFun<$Curve, $Meme, $Quote>| -> &mut $State,
+    $allowed_versions: AllowedVersions,
+    $ctx: &mut TxContext,
+): MemezMigrator<$Meme, $Quote> {
+    let self = $self;
+    let allowed_versions = $allowed_versions;
+    let ctx = $ctx;
+
+    allowed_versions.assert_pkg_version();
+    self.assert_is_migrating();
+
+    let state = $f(self);
+
+    let quote_balance = state.fixed_rate.quote_balance_mut().withdraw_all();
+
+    let liquidity_provision = state.liquidity_provision.withdraw_all();
+
+    state.meme_reserve.destroy_or_burn!(ctx);
+    state.fixed_rate.meme_balance_mut().destroy_or_burn!(ctx);
+
+    let mut quote_coin = quote_balance.into_coin(ctx);
+
+    state.migration_fee.take(&mut quote_coin, ctx);
+
+    self.migrate(quote_coin.into_balance(), liquidity_provision)
+}
+
 public(package) macro fun to_coin<$Curve, $Meme, $Quote, $State>(
     $self: &mut MemezFun<$Curve, $Meme, $Quote>,
     $f: |&mut MemezFun<$Curve, $Meme, $Quote>| -> &mut $State,
@@ -333,7 +483,7 @@ public(package) macro fun distribute_stake_holders_allocation<$Curve, $Meme, $Qu
 
 public(package) macro fun cp_pump_amount<$Curve, $Meme, $Quote, $State>(
     $self: &mut MemezFun<$Curve, $Meme, $Quote>,
-    $f: |&mut MemezFun<$Curve, $Meme, $Quote>| -> (&$State, u64),
+    $f: |&mut MemezFun<$Curve, $Meme, $Quote>| -> &$State,
     $amount_in: u64,
 ): vector<u64> {
     let self = $self;
@@ -341,17 +491,35 @@ public(package) macro fun cp_pump_amount<$Curve, $Meme, $Quote, $State>(
 
     self.assert_is_bonding();
 
-    let (state, amount) = $f(self);
+    let state = $f(self);
 
     state
         .constant_product
         .pump_amount(
             amount_in,
-            amount,
         )
 }
 
 public(package) macro fun cp_dump_amount<$Curve, $Meme, $Quote, $State>(
+    $self: &mut MemezFun<$Curve, $Meme, $Quote>,
+    $f: |&mut MemezFun<$Curve, $Meme, $Quote>| -> &$State,
+    $amount_in: u64,
+): vector<u64> {
+    let self = $self;
+    let amount_in = $amount_in;
+
+    self.assert_is_bonding();
+
+    let state = $f(self);
+
+    state
+        .constant_product
+        .dump_amount(
+            amount_in,
+        )
+}
+
+public(package) macro fun fr_pump_amount<$Curve, $Meme, $Quote, $State>(
     $self: &mut MemezFun<$Curve, $Meme, $Quote>,
     $f: |&mut MemezFun<$Curve, $Meme, $Quote>| -> (&$State, u64),
     $amount_in: u64,
@@ -361,13 +529,33 @@ public(package) macro fun cp_dump_amount<$Curve, $Meme, $Quote, $State>(
 
     self.assert_is_bonding();
 
-    let (state, amount) = $f(self);
+    let (state, extra_meme_sale_amount) = $f(self);
 
     state
-        .constant_product
+        .fixed_rate
+        .pump_amount(
+            amount_in,
+            extra_meme_sale_amount,
+        )
+}
+
+public(package) macro fun fr_dump_amount<$Curve, $Meme, $Quote, $State>(
+    $self: &mut MemezFun<$Curve, $Meme, $Quote>,
+    $f: |&mut MemezFun<$Curve, $Meme, $Quote>| -> (&$State, u64),
+    $amount_in: u64,
+): vector<u64> {
+    let self = $self;
+    let amount_in = $amount_in;
+
+    self.assert_is_bonding();
+
+    let (state, extra_meme_sale_amount) = $f(self);
+
+    state
+        .fixed_rate
         .dump_amount(
             amount_in,
-            amount,
+            extra_meme_sale_amount,
         )
 }
 
@@ -452,6 +640,10 @@ public(package) fun migrate<Curve, Meme, Quote>(
 fun metadata<Curve, Meme, Quote>(self: &MemezFun<Curve, Meme, Quote>): VecMap<String, String> {
     *self.metadata.borrow()
 }
+
+// === Aliases ===
+
+use fun destroy_or_burn as Balance.destroy_or_burn;
 
 // === Test Only Functions ===
 

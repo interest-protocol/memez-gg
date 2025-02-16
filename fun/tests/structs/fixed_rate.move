@@ -66,7 +66,7 @@ fun test_pump() {
 
     let amount_in = 200;
 
-    let amounts = fixed_rate.pump_amount(amount_in);
+    let amounts = fixed_rate.pump_amount(amount_in, 0);
 
     let (can_migrate, excess_sui_coin, meme_coin_out) = fixed_rate.pump(
         mint_for_testing<SUI>(amount_in, &mut ctx),
@@ -81,7 +81,7 @@ fun test_pump() {
 
     let amount_in = 400;
 
-    let amounts = fixed_rate.pump_amount(amount_in);
+    let amounts = fixed_rate.pump_amount(amount_in, 0);
 
     let (can_migrate, excess_sui_coin, meme_coin_out) = fixed_rate.pump(
         mint_for_testing<SUI>(amount_in, &mut ctx),
@@ -95,7 +95,7 @@ fun test_pump() {
 
     let amount_in = 500;
 
-    let amounts = fixed_rate.pump_amount(amount_in);
+    let amounts = fixed_rate.pump_amount(amount_in, 0);
 
     let (can_migrate, excess_sui_coin, meme_coin_out) = fixed_rate.pump(
         mint_for_testing<SUI>(amount_in, &mut ctx),
@@ -109,7 +109,7 @@ fun test_pump() {
 
     let amount_in = 500;
 
-    let amounts = fixed_rate.pump_amount(amount_in);
+    let amounts = fixed_rate.pump_amount(amount_in, 0);
 
     let (can_migrate, excess_sui_coin, meme_coin_out) = fixed_rate.pump(
         mint_for_testing<SUI>(amount_in, &mut ctx),
@@ -205,7 +205,7 @@ fun test_dump() {
 
     let amount_out = 2000;
 
-    let amounts = fixed_rate.dump_amount(amount_out);
+    let amounts = fixed_rate.dump_amount(amount_out, 0);
 
     let sui_coin_out = fixed_rate.dump(
         mint_for_testing<Meme>(amount_out, &mut ctx),
@@ -214,7 +214,7 @@ fun test_dump() {
 
     assert_eq(sui_coin_out.burn_for_testing(), amounts[0]);
 
-    let amounts = fixed_rate.dump_amount(amount_out);
+    let amounts = fixed_rate.dump_amount(amount_out, 0);
 
     let sui_coin_out = fixed_rate.dump(
         mint_for_testing<Meme>(amount_out, &mut ctx),
@@ -243,28 +243,28 @@ fun test_pump_and_dump_amounts() {
         swap_fee,
     );
 
-    let amounts = fixed_rate.pump_amount(400);
+    let amounts = fixed_rate.pump_amount(400, 0);
 
     assert_eq(amounts[0], 0);
     assert_eq(amounts[1], 5000 * (400 - swap_fee.calculate(400)) / 1000);
     assert_eq(amounts[2], swap_fee.calculate(400));
 
-    let amounts = fixed_rate.pump_amount(0);
+    let amounts = fixed_rate.pump_amount(0, 0);
 
     assert_eq(amounts, vector[0, 0, 0]);
 
-    let amounts = fixed_rate.dump_amount(0);
+    let amounts = fixed_rate.dump_amount(0, 0);
 
     assert_eq(amounts, vector[0, 0]);
 
-    let amounts = fixed_rate.dump_amount(1000);
+    let amounts = fixed_rate.dump_amount(1000, 0);
 
     assert_eq(amounts[0], 0);
     assert_eq(amounts[1], swap_fee.calculate(1000));
 
     fixed_rate.quote_balance_mut().join(balance::create_for_testing<SUI>(1000));
 
-    let amounts = fixed_rate.dump_amount(1000);
+    let amounts = fixed_rate.dump_amount(1000, 0);
 
     assert_eq(amounts[0], 1000 * (1000 - swap_fee.calculate(1000)) / 5000);
     assert_eq(amounts[1], swap_fee.calculate(1000));
@@ -283,29 +283,137 @@ fun test_pump_and_dump_amounts() {
         ),
     );
 
-    let amounts = fixed_rate.pump_amount(500);
+    let amounts = fixed_rate.pump_amount(500, 0);
 
     assert_eq(amounts[0], 0);
     assert_eq(amounts[1], 5000 * 500 / 1000);
     assert_eq(amounts[2], 0);
 
-    let amounts = fixed_rate.pump_amount(1100);
+    let amounts = fixed_rate.pump_amount(1100, 0);
 
     assert_eq(amounts[0], 100);
     assert_eq(amounts[1], 5000);
     assert_eq(amounts[2], 0);
 
-    let amounts = fixed_rate.dump_amount(1000);
+    let amounts = fixed_rate.dump_amount(1000, 0);
 
     assert_eq(amounts[0], 0);
     assert_eq(amounts[1], 0);
 
     fixed_rate.quote_balance_mut().join(balance::create_for_testing<SUI>(1000));
 
-    let amounts = fixed_rate.dump_amount(1000);
+    let amounts = fixed_rate.dump_amount(1000, 0);
 
     assert_eq(amounts[0], 1000 * 1000 / 5000);
     assert_eq(amounts[1], 0);
+
+    destroy(fixed_rate);
+}
+
+#[test]
+fun test_pump_and_dump_amounts_with_extra_meme_sale_amount() {
+    let swap_fee = memez_fees::new_percentage_fee(
+        30,
+        memez_distributor::new(
+            vector[@0x0],
+            vector[BPS_MAX],
+        ),
+    );
+
+    let mut fixed_rate = memez_fixed_rate::new<Meme, SUI>(
+        1000,
+        balance::create_for_testing<Meme>(5000),
+        swap_fee,
+    );
+
+    let amounts = fixed_rate.pump_amount(400, 1000);
+
+    assert_eq(amounts[0], 0);
+    assert_eq(amounts[1], (5000 + 1000) * (400 - swap_fee.calculate(400)) / 1000);
+    assert_eq(amounts[2], swap_fee.calculate(400));
+
+    let amounts = fixed_rate.pump_amount(0, 1000);
+
+    assert_eq(amounts, vector[0, 0, 0]);
+
+    let amounts = fixed_rate.dump_amount(0, 1000);
+
+    assert_eq(amounts, vector[0, 0]);
+
+    let amounts = fixed_rate.dump_amount(1000, 500);
+
+    assert_eq(amounts[0], 0);
+    assert_eq(amounts[1], swap_fee.calculate(1000));
+
+    fixed_rate.quote_balance_mut().join(balance::create_for_testing<SUI>(1000));
+
+    let amounts = fixed_rate.dump_amount(1000, 1000);
+
+    assert_eq(amounts[0], 1000 * (1000 - swap_fee.calculate(1000)) / (5000 + 1000));
+    assert_eq(amounts[1], swap_fee.calculate(1000));
+
+    destroy(fixed_rate);
+
+    let mut fixed_rate = memez_fixed_rate::new<Meme, SUI>(
+        1000,
+        balance::create_for_testing<Meme>(5000),
+        memez_fees::new_percentage_fee(
+            0,
+            memez_distributor::new(
+                vector[@0x0],
+                vector[BPS_MAX],
+            ),
+        ),
+    );
+
+    let amounts = fixed_rate.pump_amount(500, 500);
+
+    assert_eq(amounts[0], 0);
+    assert_eq(amounts[1], (5000 + 500) * 500 / 1000);
+    assert_eq(amounts[2], 0);
+
+    let amounts = fixed_rate.pump_amount(1100, 500);
+
+    assert_eq(amounts[0], 100);
+    assert_eq(amounts[1], 5500);
+    assert_eq(amounts[2], 0);
+
+    let amounts = fixed_rate.dump_amount(1000, 500);
+
+    assert_eq(amounts[0], 0);
+    assert_eq(amounts[1], 0);
+
+    fixed_rate.quote_balance_mut().join(balance::create_for_testing<SUI>(1000));
+
+    let amounts = fixed_rate.dump_amount(1000, 500);
+
+    assert_eq(amounts[0], 1000 * 1000 / (5000 + 500));
+    assert_eq(amounts[1], 0);
+
+    destroy(fixed_rate);
+}
+
+#[test]
+fun test_increase_meme_available() {
+    let mut fixed_rate = memez_fixed_rate::new<Meme, SUI>(
+        1000,
+        balance::create_for_testing<Meme>(5000),
+        memez_fees::new_percentage_fee(
+            30,
+            memez_distributor::new(
+                vector[@0x0],
+                vector[BPS_MAX],
+            ),
+        ),
+    );
+
+    assert_eq(fixed_rate.meme_sale_amount(), 5000);
+    assert_eq(fixed_rate.meme_balance().value(), 5000);
+
+    fixed_rate.increase_meme_available(balance::create_for_testing(1000));
+
+    assert_eq(fixed_rate.meme_sale_amount(), 6000);
+    assert_eq(fixed_rate.meme_balance().value(), 6000);
 
     destroy(fixed_rate);
 }

@@ -272,7 +272,7 @@ fun test_coin_end_to_end() {
         world.config.fees<DefaultKey>().swap(vector[STAKE_HOLDER]),
     );
 
-    let amounts = fr.pump_amount(1000 * POW_9);
+    let amounts = fr.pump_amount(1000 * POW_9, 0);
 
     let (excess_sui_coin, meme_coin) = memez_stable::pump(
         &mut memez_fun,
@@ -301,7 +301,7 @@ fun test_coin_end_to_end() {
     x.burn_for_testing();
     y.burn_for_testing();
 
-    let dump_amounts = fr.dump_amount(amounts[1]);
+    let dump_amounts = fr.dump_amount(amounts[1], 0);
 
     let sui_coin = memez_stable::dump(
         &mut memez_fun,
@@ -403,7 +403,7 @@ fun test_token_end_to_end() {
         fees.swap(vector[STAKE_HOLDER]),
     );
 
-    let pump_amounts = fr.pump_amount(1000 * POW_9);
+    let pump_amounts = fr.pump_amount(1000 * POW_9, 0);
 
     let (excess_sui_coin, meme_token) = memez_stable::pump_token(
         &mut memez_fun,
@@ -428,7 +428,7 @@ fun test_token_end_to_end() {
     x.burn_for_testing();
     y.burn_for_testing();
 
-    let dump_amounts = fr.dump_amount(pump_amounts[1]);
+    let dump_amounts = fr.dump_amount(pump_amounts[1], 0);
 
     let sui_coin = memez_stable::dump_token(
         &mut memez_fun,
@@ -551,7 +551,7 @@ fun test_distribute_stake_holders_allocation() {
         world.config.fees<DefaultKey>().swap(vector[STAKE_HOLDER]),
     );
 
-    let amounts = fr.pump_amount(1000 * POW_9);
+    let amounts = fr.pump_amount(1000 * POW_9, 0);
 
     let (excess_sui_coin, meme_coin) = memez_stable::pump(
         &mut memez_fun,

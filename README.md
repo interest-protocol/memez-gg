@@ -43,8 +43,7 @@ This mode mimics a dutch auction. The protocol provides liquidity to the pool li
 This mode supports the following features:
 
 -   Initial auction price and floor price are set by the protocol admin
--   The deployer is allocated 1% of the meme coin supply.
--   Dynamic burn tax based on the price impact of meme coin sales
+-   The deployer get's a percentage of meme coin supply after migration
 -   Developer can only claim his coins after the it bonds
 -   Supports the Token standard to prevent pools in DEXs from being created before the coin bonds
 

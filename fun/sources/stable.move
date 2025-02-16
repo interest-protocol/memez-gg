@@ -34,7 +34,7 @@ use memez_fun::{
     memez_metadata::MemezMetadata,
     memez_migrator_list::MemezMigratorList,
     memez_token_cap::{Self, MemezTokenCap},
-    memez_utils::{destroy_or_burn, destroy_or_return, new_treasury},
+    memez_utils::{destroy_or_return, new_treasury},
     memez_versioned::{Self, Versioned}
 };
 use memez_vesting::memez_vesting::{Self, MemezVesting};
@@ -156,22 +156,7 @@ public fun pump<Meme, Quote>(
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ): (Coin<Quote>, Coin<Meme>) {
-    allowed_versions.assert_pkg_version();
-    self.assert_is_bonding();
-    self.assert_uses_coin();
-
-    let state = self.state_mut();
-
-    let (start_migrating, excess_quote_coin, meme_coin) = state
-        .fixed_rate
-        .pump(
-            quote_coin,
-            ctx,
-        );
-
-    if (start_migrating) self.set_progress_to_migrating();
-
-    (excess_quote_coin, meme_coin)
+    self.fr_pump!(|self| self.state_mut<Meme, Quote>(), quote_coin, allowed_versions, ctx)
 }
 
 public fun pump_token<Meme, Quote>(
@@ -180,24 +165,7 @@ public fun pump_token<Meme, Quote>(
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ): (Coin<Quote>, Token<Meme>) {
-    allowed_versions.assert_pkg_version();
-    self.assert_is_bonding();
-    self.assert_uses_token();
-
-    let state = self.state_mut();
-
-    let (start_migrating, excess_quote_coin, meme_coin) = state
-        .fixed_rate
-        .pump(
-            quote_coin,
-            ctx,
-        );
-
-    let meme_token = state.token_cap().from_coin(meme_coin, ctx);
-
-    if (start_migrating) self.set_progress_to_migrating();
-
-    (excess_quote_coin, meme_token)
+    self.fr_pump_token!(|self| self.state_mut<Meme, Quote>(), quote_coin, allowed_versions, ctx)
 }
 
 public fun dump<Meme, Quote>(
@@ -206,18 +174,7 @@ public fun dump<Meme, Quote>(
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ): Coin<Quote> {
-    allowed_versions.assert_pkg_version();
-    self.assert_is_bonding();
-    self.assert_uses_coin();
-
-    let state = self.state_mut();
-
-    state
-        .fixed_rate
-        .dump(
-            meme_coin,
-            ctx,
-        )
+    self.fr_dump!(|self| self.state_mut<Meme, Quote>(), meme_coin, allowed_versions, ctx)
 }
 
 public fun dump_token<Meme, Quote>(
@@ -226,20 +183,7 @@ public fun dump_token<Meme, Quote>(
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ): Coin<Quote> {
-    allowed_versions.assert_pkg_version();
-    self.assert_is_bonding();
-    self.assert_uses_token();
-
-    let state = self.state_mut();
-
-    let meme_coin = state.token_cap().to_coin(meme_token, ctx);
-
-    state
-        .fixed_rate
-        .dump(
-            meme_coin,
-            ctx,
-        )
+    self.fr_dump_token!(|self| self.state_mut<Meme, Quote>(), meme_token, allowed_versions, ctx)
 }
 
 public fun migrate<Meme, Quote>(
@@ -247,23 +191,7 @@ public fun migrate<Meme, Quote>(
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ): MemezMigrator<Meme, Quote> {
-    allowed_versions.assert_pkg_version();
-    self.assert_is_migrating();
-
-    let state = self.state_mut<Meme, Quote>();
-
-    let quote_balance = state.fixed_rate.quote_balance_mut().withdraw_all();
-
-    let liquidity_provision = state.liquidity_provision.withdraw_all();
-
-    state.meme_reserve.destroy_or_burn!(ctx);
-    state.fixed_rate.meme_balance_mut().destroy_or_burn!(ctx);
-
-    let mut quote_coin = quote_balance.into_coin(ctx);
-
-    state.migration_fee.take(&mut quote_coin, ctx);
-
-    self.migrate(quote_coin.into_balance(), liquidity_provision)
+    self.fr_migrate!(|self| self.state_mut<Meme, Quote>(), allowed_versions, ctx)
 }
 
 public fun dev_allocation_claim<Meme, Quote>(
@@ -316,18 +244,14 @@ fun pump_amount<Meme, Quote>(
     self: &mut MemezFun<Stable, Meme, Quote>,
     amount_in: u64,
 ): vector<u64> {
-    let state = self.state<Meme, Quote>();
-
-    state.fixed_rate.pump_amount(amount_in)
+    self.fr_pump_amount!(|self| (self.state_mut<Meme, Quote>(), 0), amount_in)
 }
 
 fun dump_amount<Meme, Quote>(
     self: &mut MemezFun<Stable, Meme, Quote>,
     amount_in: u64,
 ): vector<u64> {
-    let state = self.state<Meme, Quote>();
-
-    state.fixed_rate.dump_amount(amount_in)
+    self.fr_dump_amount!(|self| (self.state_mut<Meme, Quote>(), 0), amount_in)
 }
 
 // === Private Functions ===
@@ -361,7 +285,6 @@ fun maybe_upgrade_state_to_latest(versioned: &mut Versioned) {
 
 use fun state as MemezFun.state;
 use fun state_mut as MemezFun.state_mut;
-use fun destroy_or_burn as Balance.destroy_or_burn;
 use fun destroy_or_return as Coin.destroy_or_return;
 
 // === Public Test Only Functions ===

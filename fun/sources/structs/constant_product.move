@@ -142,7 +142,6 @@ public(package) fun dump<Meme, Quote>(
 public(package) fun pump_amount<Meme, Quote>(
     self: &MemezConstantProduct<Meme, Quote>,
     amount_in: u64,
-    extra_meme_amount: u64,
 ): vector<u64> {
     if (amount_in == 0) return vector[0, 0];
 
@@ -151,7 +150,7 @@ public(package) fun pump_amount<Meme, Quote>(
     let amount_out = get_amount_out(
         amount_in - swap_fee,
         self.virtual_liquidity + self.quote_balance.value(),
-        self.meme_balance.value() + extra_meme_amount,
+        self.meme_balance.value(),
     );
 
     vector[amount_out, swap_fee]
@@ -160,11 +159,10 @@ public(package) fun pump_amount<Meme, Quote>(
 public(package) fun dump_amount<Meme, Quote>(
     self: &MemezConstantProduct<Meme, Quote>,
     amount_in: u64,
-    extra_meme_amount: u64,
 ): vector<u64> {
     if (amount_in == 0) return vector[0, 0, 0];
 
-    let meme_balance_value = self.meme_balance.value() + extra_meme_amount;
+    let meme_balance_value = self.meme_balance.value();
 
     let quote_balance_value = self.quote_balance.value();
 

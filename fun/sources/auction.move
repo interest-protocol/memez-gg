@@ -25,18 +25,18 @@ module memez_fun::memez_auction;
 
 use interest_bps::bps::{Self, max_bps};
 use interest_math::u64;
-use ipx_coin_standard::ipx_coin_standard::{IPXTreasuryStandard, MetadataCap};
+use ipx_coin_standard::ipx_coin_standard::MetadataCap;
 use memez_fun::{
     memez_allowed_versions::AllowedVersions,
     memez_config::MemezConfig,
-    memez_constant_product::{Self, MemezConstantProduct},
     memez_errors,
     memez_fees::{Fee, Allocation},
+    memez_fixed_rate::{Self, FixedRate},
     memez_fun::{Self, MemezFun, MemezMigrator},
     memez_metadata::MemezMetadata,
     memez_migrator_list::MemezMigratorList,
     memez_token_cap::{Self, MemezTokenCap},
-    memez_utils::{destroy_or_burn, destroy_or_return, new_treasury},
+    memez_utils::{destroy_or_return, new_treasury},
     memez_versioned::{Self, Versioned}
 };
 use sui::{balance::Balance, clock::Clock, coin::{Coin, TreasuryCap}, sui::SUI, token::Token};
@@ -59,7 +59,7 @@ public struct AuctionState<phantom Meme, phantom Quote> has key, store {
     allocation: Allocation<Meme>,
     meme_reserve: Balance<Meme>,
     liquidity_provision: Balance<Meme>,
-    constant_product: MemezConstantProduct<Meme, Quote>,
+    fixed_rate: FixedRate<Meme, Quote>,
     meme_token_cap: Option<MemezTokenCap<Meme>>,
 }
 
@@ -102,11 +102,17 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
         stake_holders,
     );
 
-    let liquidity_provision = meme_reserve.split(auction_config[4]);
+    let liquidity_provision = meme_reserve.split(auction_config[3]);
 
-    let meme_balance = meme_reserve.split(auction_config[5]);
+    let meme_balance = meme_reserve.split(auction_config[4]);
 
     let meme_balance_value = meme_balance.value();
+
+    let fixed_rate = memez_fixed_rate::new<Meme, Quote>(
+        auction_config[2],
+        meme_balance,
+        fees.swap(stake_holders),
+    );
 
     let auction_state = AuctionState<Meme, Quote> {
         id: object::new(ctx),
@@ -117,13 +123,7 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
         meme_reserve,
         liquidity_provision,
         allocation,
-        constant_product: memez_constant_product::new<Meme, Quote>(
-            auction_config[2],
-            auction_config[3],
-            meme_balance,
-            fees.swap(stake_holders),
-            auction_config[1],
-        ),
+        fixed_rate,
         meme_token_cap,
         migration_fee: fees.migration(stake_holders),
     };
@@ -137,8 +137,8 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
         inner_state,
         metadata,
         ipx_meme_coin_treasury,
+        0,
         auction_config[2],
-        auction_config[3],
         meme_balance_value,
         total_supply,
         ctx.sender(),
@@ -149,7 +149,7 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
 
     let state = memez_fun.state_mut<Meme, Quote>();
 
-    state.constant_product.set_memez_fun(memez_fun_address);
+    state.fixed_rate.set_memez_fun(memez_fun_address);
 
     memez_fun.share();
 
@@ -160,62 +160,56 @@ public fun pump<Meme, Quote>(
     self: &mut MemezFun<Auction, Meme, Quote>,
     clock: &Clock,
     quote_coin: Coin<Quote>,
-    min_amount_out: u64,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
-): Coin<Meme> {
-    self.cp_pump!<Auction, Meme, Quote, AuctionState<Meme, Quote>>(|self| {
+): (Coin<Quote>, Coin<Meme>) {
+    self.fr_pump!<Auction, Meme, Quote, AuctionState<Meme, Quote>>(|self| {
         let state = self.state_mut();
         state.drip(clock);
         state
-    }, quote_coin, min_amount_out, allowed_versions, ctx)
+    }, quote_coin, allowed_versions, ctx)
 }
 
 public fun pump_token<Meme, Quote>(
     self: &mut MemezFun<Auction, Meme, Quote>,
     clock: &Clock,
     quote_coin: Coin<Quote>,
-    min_amount_out: u64,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
-): Token<Meme> {
-    self.cp_pump_token!(|self| {
+): (Coin<Quote>, Token<Meme>) {
+    self.fr_pump_token!(|self| {
         let state = self.state_mut();
         state.drip(clock);
         state
-    }, quote_coin, min_amount_out, allowed_versions, ctx)
+    }, quote_coin, allowed_versions, ctx)
 }
 
 public fun dump<Meme, Quote>(
     self: &mut MemezFun<Auction, Meme, Quote>,
     clock: &Clock,
-    treasury_cap: &mut IPXTreasuryStandard,
     meme_coin: Coin<Meme>,
-    min_amount_out: u64,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ): Coin<Quote> {
-    self.cp_dump!(|self| {
+    self.fr_dump!(|self| {
         let state = self.state_mut();
         state.drip(clock);
         state
-    }, treasury_cap, meme_coin, min_amount_out, allowed_versions, ctx)
+    }, meme_coin, allowed_versions, ctx)
 }
 
 public fun dump_token<Meme, Quote>(
     self: &mut MemezFun<Auction, Meme, Quote>,
     clock: &Clock,
-    treasury_cap: &mut IPXTreasuryStandard,
     meme_token: Token<Meme>,
-    min_amount_out: u64,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ): Coin<Quote> {
-    self.cp_dump_token!(|self| {
+    self.fr_dump_token!(|self| {
         let state = self.state_mut();
         state.drip(clock);
         state
-    }, treasury_cap, meme_token, min_amount_out, allowed_versions, ctx)
+    }, meme_token, allowed_versions, ctx)
 }
 
 public fun migrate<Meme, Quote>(
@@ -223,23 +217,9 @@ public fun migrate<Meme, Quote>(
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ): MemezMigrator<Meme, Quote> {
-    allowed_versions.assert_pkg_version();
-    self.assert_is_migrating();
-
-    let state = self.state_mut();
-
-    let quote_balance = state.constant_product.quote_balance_mut().withdraw_all();
-
-    let liquidity_provision = state.liquidity_provision.withdraw_all();
-
-    state.constant_product.meme_balance_mut().destroy_or_burn!(ctx);
-    state.meme_reserve.destroy_or_burn!(ctx);
-
-    let mut quote_coin = quote_balance.into_coin(ctx);
-
-    state.migration_fee.take(&mut quote_coin, ctx);
-
-    self.migrate(quote_coin.into_balance(), liquidity_provision)
+    self.fr_migrate!(|self| {
+        self.state_mut<Meme, Quote>()
+    }, allowed_versions, ctx)
 }
 
 public fun distribute_stake_holders_allocation<Meme, Quote>(
@@ -271,7 +251,7 @@ fun pump_amount<Meme, Quote>(
     amount_in: u64,
     clock: &Clock,
 ): vector<u64> {
-    self.cp_pump_amount!(|self| {
+    self.fr_pump_amount!(|self| {
         let state = self.state<Meme, Quote>();
         let amount = state.expected_drip_amount(clock);
         (state, amount)
@@ -283,7 +263,7 @@ fun dump_amount<Meme, Quote>(
     amount_in: u64,
     clock: &Clock,
 ): vector<u64> {
-    self.cp_dump_amount!(|self| {
+    self.fr_dump_amount!(|self| {
         let state = self.state<Meme, Quote>();
         let amount = state.expected_drip_amount(clock);
         (state, amount)
@@ -295,7 +275,7 @@ fun meme_balance<Meme, Quote>(self: &mut MemezFun<Auction, Meme, Quote>, clock: 
 
     let amount = state.expected_drip_amount(clock);
 
-    state.constant_product.meme_balance().value() + amount
+    state.fixed_rate.meme_balance().value() + amount
 }
 
 // === Private Functions ===
@@ -328,7 +308,7 @@ fun drip<Meme, Quote>(state: &mut AuctionState<Meme, Quote>, clock: &Clock) {
     let amount = state.expected_drip_amount(clock);
 
     state.accrued_meme_balance = state.accrued_meme_balance + amount;
-    state.constant_product.meme_balance_mut().join(state.meme_reserve.split(amount));
+    state.fixed_rate.increase_meme_available(state.meme_reserve.split(amount));
 }
 
 fun token_cap<Meme, Quote>(state: &AuctionState<Meme, Quote>): &MemezTokenCap<Meme> {
@@ -360,7 +340,6 @@ fun maybe_upgrade_state_to_latest(versioned: &mut Versioned) {
 
 use fun state as MemezFun.state;
 use fun state_mut as MemezFun.state_mut;
-use fun destroy_or_burn as Balance.destroy_or_burn;
 use fun destroy_or_return as Coin.destroy_or_return;
 
 // === Test Only Functions ===
@@ -386,10 +365,10 @@ public fun meme_reserve<Meme, Quote>(self: &mut MemezFun<Auction, Meme, Quote>):
 }
 
 #[test_only]
-public fun constant_product<Meme, Quote>(
+public fun fixed_rate<Meme, Quote>(
     self: &mut MemezFun<Auction, Meme, Quote>,
-): &MemezConstantProduct<Meme, Quote> {
-    &self.state<Meme, Quote>().constant_product
+): &FixedRate<Meme, Quote> {
+    &self.state<Meme, Quote>().fixed_rate
 }
 
 #[test_only]
@@ -398,13 +377,27 @@ public fun liquidity_provision<Meme, Quote>(self: &mut MemezFun<Auction, Meme, Q
 }
 
 #[test_only]
+use sui::balance;
+
+#[test_only]
 public fun market_cap<Meme, Quote>(
     self: &mut MemezFun<Auction, Meme, Quote>,
     clock: &Clock,
     decimals: u8,
     total_supply: u64,
 ): u64 {
+    self
+        .state_mut<Meme, Quote>()
+        .fixed_rate
+        .quote_balance_mut()
+        .join(balance::create_for_testing(10u64.pow(decimals)));
     let amounts = dump_amount<Meme, Quote>(self, 10u64.pow(decimals), clock);
+    self
+        .state_mut<Meme, Quote>()
+        .fixed_rate
+        .quote_balance_mut()
+        .withdraw_all()
+        .destroy_for_testing();
 
     u64::mul_div_up(amounts[0], total_supply, 10u64.pow(decimals))
 }
@@ -420,4 +413,9 @@ public fun current_meme_balance<Meme, Quote>(
 #[test_only]
 public fun allocation<Meme, Quote>(self: &mut MemezFun<Auction, Meme, Quote>): &Allocation<Meme> {
     &self.state<Meme, Quote>().allocation
+}
+
+#[test_only]
+public fun drip_for_testing<Meme, Quote>(self: &mut MemezFun<Auction, Meme, Quote>, clock: &Clock) {
+    self.state_mut<Meme, Quote>().drip(clock);
 }

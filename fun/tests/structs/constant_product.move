@@ -100,7 +100,7 @@ fun test_pump() {
         meme_balance_value,
     );
 
-    let amounts = cp.pump_amount(amount_in, 0);
+    let amounts = cp.pump_amount(amount_in);
 
     let (can_migrate, coin_meme_out) = cp.pump(
         mint_for_testing<SUI>(amount_in, &mut ctx),
@@ -128,7 +128,7 @@ fun test_pump() {
         meme_balance_value,
     );
 
-    let amounts = cp.pump_amount(amount_in, 0);
+    let amounts = cp.pump_amount(amount_in);
 
     let (can_migrate, coin_meme_out) = cp.pump(
         mint_for_testing<SUI>(amount_in, &mut ctx),
@@ -181,7 +181,7 @@ fun test_pump_with_fee() {
         meme_balance_value,
     );
 
-    let amounts = cp.pump_amount(amount_in, 0);
+    let amounts = cp.pump_amount(amount_in);
 
     let (can_migrate, coin_meme_out) = cp.pump(
         mint_for_testing<SUI>(amount_in, &mut ctx),
@@ -211,7 +211,7 @@ fun test_pump_with_fee() {
         meme_balance_value,
     );
 
-    let amounts = cp.pump_amount(amount_in, 0);
+    let amounts = cp.pump_amount(amount_in);
 
     let (can_migrate, coin_meme_out) = cp.pump(
         mint_for_testing<SUI>(amount_in, &mut ctx),
@@ -272,7 +272,7 @@ fun test_dump() {
 
     let meme_coin_out_value = coin_meme_out.value();
 
-    let amounts = cp.dump_amount(meme_coin_out_value, 0);
+    let amounts = cp.dump_amount(meme_coin_out_value);
 
     let amount_out = get_amount_out(
         meme_coin_out_value,
@@ -315,7 +315,7 @@ fun test_dump() {
 
     assert_eq(amount_out != 0, true);
 
-    let amounts = cp.dump_amount(meme_coin_out_value, 0);
+    let amounts = cp.dump_amount(meme_coin_out_value);
 
     let amount_out = get_amount_out(
         meme_coin_out_value,
@@ -386,7 +386,7 @@ fun test_dump_with_fee() {
 
     let meme_coin_out_value = coin_meme_out.value();
 
-    let amounts = cp.dump_amount(meme_coin_out_value, 0);
+    let amounts = cp.dump_amount(meme_coin_out_value);
 
     let swap_fee_value = swap_fee.calculate(meme_coin_out_value);
 
@@ -451,15 +451,15 @@ fun test_pump_amount() {
     let amount_out = get_amount_out(
         amount_in - swap_fee_amount,
         virtual_liquidity,
-        meme_balance_value + 1200,
+        meme_balance_value,
     );
 
-    let amounts = cp.pump_amount(amount_in, 1200);
+    let amounts = cp.pump_amount(amount_in);
 
     assert_eq(amounts[0], amount_out);
     assert_eq(amounts[1], swap_fee_amount);
 
-    let amounts = cp.pump_amount(0, 1200);
+    let amounts = cp.pump_amount(0);
 
     assert_eq(amounts[0], 0);
     assert_eq(amounts[1], 0);
@@ -501,11 +501,11 @@ fun test_dump_amount() {
 
     let amount_out = get_amount_out(
         amount_in - swap_fee_amount - meme_burn_fee_value,
-        meme_balance_value + 1200,
+        meme_balance_value,
         virtual_liquidity,
     );
 
-    let amounts = cp.dump_amount(amount_in, 1200);
+    let amounts = cp.dump_amount(amount_in);
 
     assert_eq(amounts[0], amount_out);
     assert_eq(amounts[0] != 0, true);
@@ -522,18 +522,18 @@ fun test_dump_amount() {
 
     let amount_out = get_amount_out(
         amount_in - swap_fee_amount - meme_burn_fee_value,
-        meme_balance_value + 1200,
+        meme_balance_value,
         virtual_liquidity + 600,
     );
 
-    let amounts = cp.dump_amount(amount_in, 1200);
+    let amounts = cp.dump_amount(amount_in);
 
     assert_eq(amounts[0], amount_out);
     assert_eq(amounts[0] != 0, true);
     assert_eq(amounts[1], swap_fee_amount);
     assert_eq(amounts[2], meme_burn_fee_value);
 
-    let amounts = cp.dump_amount(0, 1200);
+    let amounts = cp.dump_amount(0);
 
     assert_eq(amounts[0], 0);
     assert_eq(amounts[1], 0);
@@ -568,11 +568,11 @@ fun test_dump_amount_no_fees() {
 
     let amount_out = get_amount_out(
         amount_in,
-        meme_balance_value + 1200,
+        meme_balance_value,
         virtual_liquidity,
     );
 
-    let amounts = cp.dump_amount(amount_in, 1200);
+    let amounts = cp.dump_amount(amount_in);
 
     assert_eq(amounts[0], amount_out);
     assert_eq(amounts[0] != 0, true);
@@ -583,18 +583,18 @@ fun test_dump_amount_no_fees() {
 
     let amount_out = get_amount_out(
         amount_in,
-        meme_balance_value + 1200,
+        meme_balance_value,
         virtual_liquidity + 600,
     );
 
-    let amounts = cp.dump_amount(amount_in, 1200);
+    let amounts = cp.dump_amount(amount_in);
 
     assert_eq(amounts[0], amount_out);
     assert_eq(amounts[0] != 0, true);
     assert_eq(amounts[1], 0);
     assert_eq(amounts[2], 0);
 
-    let amounts = cp.dump_amount(0, 1200);
+    let amounts = cp.dump_amount(0);
 
     assert_eq(amounts[0], 0);
     assert_eq(amounts[1], 0);
@@ -674,7 +674,7 @@ fun test_pump_slippage() {
 
     let amount_in = 250;
 
-    let expected_amount_out = cp.pump_amount(amount_in, 0);
+    let expected_amount_out = cp.pump_amount(amount_in);
 
     let (_can_migrate, _coin_meme_out) = cp.pump(
         mint_for_testing<SUI>(amount_in, &mut ctx),
@@ -779,7 +779,7 @@ fun test_dump_slippage() {
 
     let meme_coin_out_value = coin_meme_out.value();
 
-    let amounts = cp.dump_amount(meme_coin_out_value, 0);
+    let amounts = cp.dump_amount(meme_coin_out_value);
 
     cp
         .dump(

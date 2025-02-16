@@ -79,8 +79,8 @@ public struct MemezFun<phantom Curve, phantom Meme, phantom Quote> has key {
 public fun destroy<Meme, Quote, Witness: drop>(
     migrator: MemezMigrator<Meme, Quote>,
     _: Witness,
-): (Balance<Quote>, Balance<Meme>) {
-    let MemezMigrator { witness, memez_fun, quote_balance, meme_balance } = migrator;
+): (Balance<Meme>, Balance<Quote>) {
+    let MemezMigrator { witness, memez_fun, meme_balance, quote_balance } = migrator;
 
     assert!(type_name::get<Witness>() == witness, memez_errors::invalid_witness!());
 
@@ -91,7 +91,7 @@ public fun destroy<Meme, Quote, Witness: drop>(
         meme_balance.value(),
     );
 
-    (quote_balance, meme_balance)
+    (meme_balance, quote_balance)
 }
 
 // === Public Package Functions ===

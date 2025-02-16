@@ -280,7 +280,7 @@ fun test_coin_end_to_end() {
 
     memez_fun.assert_migrated();
 
-    let (sui_balance, meme_balance) = migrator.destroy(MigrationWitness());
+    let (meme_balance, sui_balance) = migrator.destroy(MigrationWitness());
 
     world.scenario.next_tx(DEAD_ADDRESS);
 
@@ -442,7 +442,7 @@ fun test_token_end_to_end() {
 
     memez_fun.assert_migrated();
 
-    let (sui_balance, meme_balance) = migrator.destroy(MigrationWitness());
+    let (meme_balance, sui_balance) = migrator.destroy(MigrationWitness());
 
     world.scenario.next_tx(DEAD_ADDRESS);
 
@@ -875,7 +875,7 @@ fun dev_purchase_claim_invalid_version() {
         world.scenario.ctx(),
     );
 
-    let (sui_balance, meme_balance) = migrator.destroy(MigrationWitness());
+    let (meme_balance, sui_balance) = migrator.destroy(MigrationWitness());
 
     memez_pump::dev_purchase_claim(
         &mut memez_fun,
@@ -952,7 +952,7 @@ fun dev_purchase_claim_is_not_dev() {
         world.scenario.ctx(),
     );
 
-    let (sui_balance, meme_balance) = migrator.destroy(MigrationWitness());
+    let (meme_balance, sui_balance) = migrator.destroy(MigrationWitness());
 
     world.scenario.next_tx(DEAD_ADDRESS);
 
@@ -1265,7 +1265,7 @@ fun test_distribute_stake_holders_allocation() {
         world.scenario.ctx(),
     );
 
-    let (sui_balance, meme_balance) = migrator.destroy(MigrationWitness());
+    let (meme_balance, sui_balance) = migrator.destroy(MigrationWitness());
 
     destroy(sui_balance);
     destroy(meme_balance);
@@ -1365,7 +1365,7 @@ fun test_migrate_full_liquidity() {
 
     let expected_meme_balance = cp.meme_balance().value();
 
-    let (sui_balance, meme_balance) = migrator.destroy(MigrationWitness());
+    let (meme_balance, sui_balance) = migrator.destroy(MigrationWitness());
 
     assert_eq(cp.meme_balance().value(), expected_meme_balance);
 

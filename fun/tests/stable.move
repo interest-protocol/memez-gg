@@ -330,7 +330,7 @@ fun test_coin_end_to_end() {
         world.scenario.ctx(),
     );
 
-    let (sui_balance_after, meme_balance_after) = migrator.destroy(MigrationWitness());
+    let (meme_balance_after, sui_balance_after) = migrator.destroy(MigrationWitness());
 
     let migration_fee_value = 1_000 * POW_9;
 
@@ -458,7 +458,7 @@ fun test_token_end_to_end() {
         world.scenario.ctx(),
     );
 
-    let (sui_balance_after, meme_balance_after) = migrator.destroy(MigrationWitness());
+    let (meme_balance_after, sui_balance_after) = migrator.destroy(MigrationWitness());
 
     let migration_fee_value = 1_000 * POW_9;
 
@@ -606,7 +606,7 @@ fun test_distribute_stake_holders_allocation() {
         world.scenario.ctx(),
     );
 
-    let (sui_balance_after, meme_balance_after) = migrator.destroy(MigrationWitness());
+    let (meme_balance_after, sui_balance_after) = migrator.destroy(MigrationWitness());
 
     sui_balance_after.destroy_for_testing();
     meme_balance_after.destroy_for_testing();

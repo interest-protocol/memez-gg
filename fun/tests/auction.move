@@ -328,7 +328,7 @@ fun test_coin_end_to_end() {
 
     let migration_fee_value = 1_000 * POW_9;
 
-    let (sui_balance, meme_balance) = migrator.destroy(MigrationWitness());
+    let (meme_balance, sui_balance) = migrator.destroy(MigrationWitness());
 
     let auction_config = world.config.get_auction<SUI, DefaultKey>(total_supply);
 
@@ -489,7 +489,7 @@ fun test_token_end_to_end() {
         world.scenario.ctx(),
     );
 
-    let (sui_balance, meme_balance) = migrator.destroy(MigrationWitness());
+    let (meme_balance, sui_balance) = migrator.destroy(MigrationWitness());
 
     let auction_config = world.config.get_auction<SUI, DefaultKey>(total_supply);
 
@@ -735,7 +735,7 @@ fun test_coin_end_to_end_with_stake_holders() {
         world.scenario.ctx(),
     );
 
-    let (sui_balance, meme_balance) = migrator.destroy(MigrationWitness());
+    let (meme_balance, sui_balance) = migrator.destroy(MigrationWitness());
 
     let auction_config = world.config.get_auction<SUI, DefaultKey>(total_supply);
 

@@ -454,7 +454,7 @@ fun test_migrate() {
         balance::create_for_testing(2000),
     );
 
-    let (sui_balance, meme_balance) = migrator.destroy(MigrationWitness());
+    let (meme_balance, sui_balance) = migrator.destroy(MigrationWitness());
 
     assert_eq(meme_balance.value(), 2000);
     assert_eq(sui_balance.value(), 1000);
@@ -494,7 +494,7 @@ fun test_migrate_invalid_witness() {
         balance::create_for_testing(2000),
     );
 
-    let (sui_balance, meme_balance) = migrator.destroy(Meme());
+    let (meme_balance, sui_balance) = migrator.destroy(Meme());
 
     memez_fun.share();
 

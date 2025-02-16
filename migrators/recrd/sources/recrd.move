@@ -95,7 +95,7 @@ public fun migrate_to_new_pool<Meme>(
     assert!(meme_metadata.get_decimals() == MEME_DECIMALS, EInvalidDecimals);
     assert!(ipx_treasury.total_supply<Meme>() == MEME_TOTAL_SUPPLY, EInvalidTotalSupply);
 
-    let (sui_balance, meme_balance) = migrator.destroy(Witness());
+    let ( meme_balance, sui_balance) = migrator.destroy(Witness());
 
     let sui_balance_value = sui_balance.value();
     let meme_balance_value = meme_balance.value();
@@ -145,7 +145,7 @@ public fun migrate_to_existing_pool<Meme>(
 
     assert!(pool.tick_spacing() == TICK_SPACING, EInvalidTickSpacing);
 
-    let (mut sui_balance, mut meme_balance) = migrator.destroy(Witness());
+    let (mut meme_balance, mut sui_balance) = migrator.destroy(Witness());
 
     let mut position = pool::open_position(cetus_config, pool, MIN_TICK, MAX_TICK, ctx);
 

@@ -38,7 +38,7 @@ public(package) fun calculate(self: MemezBurner, liquidity: u64): BPS {
 
     let max_bps = max_bps();
 
-    let progress_percentage = u64::mul_div_down(liquidity, max_bps, self.target_liquidity);
+    let progress_percentage = u64::mul_div_up(liquidity, max_bps, self.target_liquidity);
 
     bps::new(u64::mul_div_up(self.fee.value(), progress_percentage, max_bps))
 }

@@ -441,7 +441,7 @@ public(package) macro fun fr_migrate<$Curve, $Meme, $Quote, $State>(
 
     state.migration_fee.take(&mut quote_coin, ctx);
 
-    self.migrate(quote_coin.into_balance(), liquidity_provision)
+    self.migrate(liquidity_provision, quote_coin.into_balance())
 }
 
 public(package) macro fun to_coin<$Curve, $Meme, $Quote, $State>(
@@ -620,8 +620,8 @@ public(package) fun assert_uses_coin<Curve, Meme, Quote>(self: &MemezFun<Curve, 
 
 public(package) fun migrate<Curve, Meme, Quote>(
     self: &mut MemezFun<Curve, Meme, Quote>,
-    quote_balance: Balance<Quote>,
     meme_balance: Balance<Meme>,
+    quote_balance: Balance<Quote>,
 ): MemezMigrator<Meme, Quote> {
     self.progress = Progress::Migrated;
 

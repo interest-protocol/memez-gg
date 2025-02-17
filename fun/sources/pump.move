@@ -252,7 +252,7 @@ public fun migrate<Meme, Quote>(
 
     state.migration_fee.take(&mut quote_coin, ctx);
 
-    self.migrate(quote_coin.into_balance(), liquidity_provision)
+    self.migrate(liquidity_provision, quote_coin.into_balance())
 }
 
 public fun dev_purchase_claim<Meme, Quote>(

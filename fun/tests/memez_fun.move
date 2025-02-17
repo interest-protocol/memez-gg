@@ -450,8 +450,8 @@ fun test_migrate() {
     );
 
     let migrator = memez_fun.migrate(
-        balance::create_for_testing(1000),
         balance::create_for_testing(2000),
+        balance::create_for_testing(1000),
     );
 
     let (meme_balance, sui_balance) = migrator.destroy(MigrationWitness());

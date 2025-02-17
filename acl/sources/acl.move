@@ -169,6 +169,9 @@ public fun start(super_admin: &MemezSuperAdmin): u64 {
 }
 
 #[test_only]
-public fun addy(admin: &MemezAdmin): address {
+public fun addr(admin: &MemezAdmin): address {
     admin.id.to_address()
 }
+
+#[test_only]
+public use fun addr as MemezAdmin.address;

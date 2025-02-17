@@ -69,7 +69,7 @@ fun test_new() {
         world.scenario.ctx(),
     );
 
-    let memez_fun_address = memez_fun.addy();
+    let memez_fun_address = memez_fun.address();
 
     assert_eq(memez_fun_address, object::id_address(&memez_fun));
     assert_eq(memez_fun.migration_witness(), type_name::get<MigrationWitness>());

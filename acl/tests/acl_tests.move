@@ -36,7 +36,7 @@ fun test_new() {
     let admin = world.acl.new(super_admin, world.scenario.ctx());
 
     assert_eq(world.acl.admins().size(), 1);
-    assert_eq(world.acl.is_admin(admin.addy()), true);
+    assert_eq(world.acl.is_admin(admin.address()), true);
 
     world.acl.destroy_admin(admin);
 
@@ -54,12 +54,12 @@ fun test_revoke() {
     let admin = world.acl.new(super_admin, world.scenario.ctx());
 
     assert_eq(world.acl.admins().size(), 1);
-    assert_eq(world.acl.is_admin(admin.addy()), true);
+    assert_eq(world.acl.is_admin(admin.address()), true);
 
-    world.acl.revoke(super_admin, admin.addy());
+    world.acl.revoke(super_admin, admin.address());
 
     assert_eq(world.acl.admins().size(), 0);
-    assert_eq(world.acl.is_admin(admin.addy()), false);
+    assert_eq(world.acl.is_admin(admin.address()), false);
 
     world.acl.destroy_admin(admin);
 
@@ -77,7 +77,7 @@ fun test_sign_in() {
     let admin = world.acl.new(super_admin, world.scenario.ctx());
 
     assert_eq(world.acl.admins().size(), 1);
-    assert_eq(world.acl.is_admin(admin.addy()), true);
+    assert_eq(world.acl.is_admin(admin.address()), true);
 
     let _witness = world.acl.sign_in(&admin);
 
@@ -186,7 +186,7 @@ fun test_sign_in_error_invalid_admin() {
 
     let admin = world.acl.new(super_admin, world.scenario.ctx());
 
-    world.acl.revoke(super_admin, admin.addy());
+    world.acl.revoke(super_admin, admin.address());
 
     let _witness = world.acl.sign_in(&admin);
 

@@ -139,7 +139,7 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
         ctx,
     );
 
-    let memez_fun_address = memez_fun.addy();
+    let memez_fun_address = memez_fun.address();
 
     let state = memez_fun.state_mut<Meme, Quote>();
 

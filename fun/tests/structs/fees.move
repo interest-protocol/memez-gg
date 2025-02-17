@@ -64,10 +64,10 @@ fun test_calculate() {
         vector[STAKE_HOLDER_1, STAKE_HOLDER_2],
     );
 
-    let creation_fee_recipients = creation_fee.distributor().recipient_addys();
-    let swap_fee_recipients = swap_fee.distributor().recipient_addys();
-    let migration_fee_recipients = migration_fee.distributor().recipient_addys();
-    let allocation_fee_recipients = allocation_fee.distributor().recipient_addys();
+    let creation_fee_recipients = creation_fee.distributor().recipient_addresses();
+    let swap_fee_recipients = swap_fee.distributor().recipient_addresses();
+    let migration_fee_recipients = migration_fee.distributor().recipient_addresses();
+    let allocation_fee_recipients = allocation_fee.distributor().recipient_addresses();
 
     assert_eq(creation_fee_recipients.length(), 2);
     assert_eq(swap_fee_recipients.length(), 3);
@@ -92,10 +92,10 @@ fun test_calculate() {
     let migration_fee_values = migration_fee.distributor().recipient_percentages();
     let allocation_fee_values = allocation_fee.distributor().recipient_percentages();
 
-    creation_fee_recipients.do!(|recipient_addy, i| {
+    creation_fee_recipients.do!(|recipient_address, i| {
         let recipient_bps = creation_fee_values[i];
 
-        assert_eq(recipient_addy, expected_creation_recipients[i]);
+        assert_eq(recipient_address, expected_creation_recipients[i]);
         assert_eq(recipient_bps.value(), expected_creation_percentages[i]);
         assert_eq(recipient_bps.calc(2 * POW_9), expected_creation_values[i]);
     });
@@ -108,10 +108,10 @@ fun test_calculate() {
         100 * 2_500 / 10_000,
     ];
 
-    swap_fee_recipients.do!(|recipient_addy, i| {
+    swap_fee_recipients.do!(|recipient_address, i| {
         let recipient_bps = swap_fee_values[i];
 
-        assert_eq(recipient_addy, expected_swap_recipients[i]);
+        assert_eq(recipient_address, expected_swap_recipients[i]);
         assert_eq(recipient_bps.value(), expected_swap_percentages[i]);
         assert_eq(recipient_bps.calc(100), expected_swap_values[i]);
     });
@@ -130,10 +130,10 @@ fun test_calculate() {
         TEN_PERCENT * 2_500 / 10_000,
     ];
 
-    migration_fee_recipients.do!(|recipient_addy, i| {
+    migration_fee_recipients.do!(|recipient_address, i| {
         let recipient_bps = migration_fee_values[i];
 
-        assert_eq(recipient_addy, expected_migration_recipients[i]);
+        assert_eq(recipient_address, expected_migration_recipients[i]);
         assert_eq(recipient_bps.value(), expected_migration_percentages[i]);
         assert_eq(recipient_bps.calc(TEN_PERCENT), expected_migration_values[i]);
     });
@@ -146,10 +146,10 @@ fun test_calculate() {
         100 * 3_500 / 10_000,
     ];
 
-    allocation_fee_recipients.do!(|recipient_addy, i| {
+    allocation_fee_recipients.do!(|recipient_address, i| {
         let recipient_bps = allocation_fee_values[i];
 
-        assert_eq(recipient_addy, expected_allocation_recipients[i]);
+        assert_eq(recipient_address, expected_allocation_recipients[i]);
         assert_eq(recipient_bps.value(), expected_allocation_percentages[i]);
         assert_eq(recipient_bps.calc(100), expected_allocation_values[i]);
     });

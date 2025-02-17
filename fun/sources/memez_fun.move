@@ -561,7 +561,7 @@ public(package) fun share<Curve, Meme, Quote>(self: MemezFun<Curve, Meme, Quote>
     transfer::share_object(self);
 }
 
-public(package) fun addy<Curve, Meme, Quote>(self: &MemezFun<Curve, Meme, Quote>): address {
+public(package) fun addr<Curve, Meme, Quote>(self: &MemezFun<Curve, Meme, Quote>): address {
     self.id.to_address()
 }
 
@@ -641,6 +641,7 @@ fun metadata<Curve, Meme, Quote>(self: &MemezFun<Curve, Meme, Quote>): VecMap<St
 
 // === Aliases ===
 
+public use fun addr as MemezFun.address;
 use fun destroy_or_burn as Balance.destroy_or_burn;
 
 // === Test Only Functions ===

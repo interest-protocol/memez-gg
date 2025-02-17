@@ -12,7 +12,7 @@ use sui::{clock::Clock, coin::Coin};
 // === Structs ===
 
 public struct Recipient has copy, drop, store {
-    addy: address,
+    address: address,
     bps: BPS,
 }
 
@@ -26,7 +26,7 @@ public(package) fun new(recipients: vector<address>, percentages: vector<u64>): 
     Distributor {
         recipients: recipients.zip_map!(
             percentages,
-            |addy, bps| Recipient { addy, bps: bps::new(bps) },
+            |address, bps| Recipient { address, bps: bps::new(bps) },
         ),
     }
 }
@@ -82,7 +82,7 @@ macro fun distribute_internal<$T>(
 
         if (value_to_transfer == 0) return;
 
-        $f(coin_to_send.split(value_to_transfer, ctx), beneficiary.addy, ctx);
+        $f(coin_to_send.split(value_to_transfer, ctx), beneficiary.address, ctx);
     });
 
     coin_to_send.destroy_or_return!(ctx);
@@ -94,8 +94,8 @@ use fun memez_utils::destroy_or_return as Coin.destroy_or_return;
 // === Test Functions ===
 
 #[test_only]
-public fun recipient_addys(self: &Distributor): vector<address> {
-    self.recipients.map!(|recipient| recipient.addy)
+public fun recipient_addresses(self: &Distributor): vector<address> {
+    self.recipients.map!(|recipient| recipient.address)
 }
 
 #[test_only]

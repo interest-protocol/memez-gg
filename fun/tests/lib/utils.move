@@ -169,7 +169,7 @@ fun set_up_treasury_pre_mint() {
 
     treasury_cap.mint(100, scenario.ctx()).burn_for_testing();
 
-    let (_addy, _metadata_cap, _meme_balance) = memez_utils::new_treasury!(
+    let (_address, _metadata_cap, _meme_balance) = memez_utils::new_treasury!(
         treasury_cap,
         TOTAL_MEME_SUPPLY,
         scenario.ctx(),

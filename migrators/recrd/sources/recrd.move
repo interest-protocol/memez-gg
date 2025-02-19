@@ -9,7 +9,6 @@ use cetus_clmm::{
 use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
 use memez_acl::acl::AuthWitness;
 use memez_fun::memez_fun::MemezMigrator;
-use recrd::recrd_version::CurrentVersion;
 use std::type_name::{Self, TypeName};
 use sui::{clock::Clock, coin::{Coin, CoinMetadata}, event::emit, sui::SUI};
 
@@ -87,11 +86,8 @@ public fun migrate_to_new_pool<Meme>(
     sui_metadata: &CoinMetadata<SUI>,
     meme_metadata: &CoinMetadata<Meme>,
     migrator: MemezMigrator<Meme, SUI>,
-    version: &CurrentVersion,
     ctx: &mut TxContext,
 ) {
-    version.assert_is_valid();
-
     assert!(meme_metadata.get_decimals() == MEME_DECIMALS, EInvalidDecimals);
     assert!(ipx_treasury.total_supply<Meme>() == MEME_TOTAL_SUPPLY, EInvalidTotalSupply);
 
@@ -138,11 +134,8 @@ public fun migrate_to_existing_pool<Meme>(
     cetus_config: &GlobalConfig,
     pool: &mut Pool<Meme, SUI>,
     migrator: MemezMigrator<Meme, SUI>,
-    version: &CurrentVersion,
     ctx: &mut TxContext,
 ) {
-    version.assert_is_valid();
-
     assert!(pool.tick_spacing() == TICK_SPACING, EInvalidTickSpacing);
 
     let (mut meme_balance, mut sui_balance) = migrator.destroy(Witness());

@@ -14,5 +14,5 @@ MemezVesting = { local = "../vesting" }
 MemezACL = { local = "../acl" }
 
 [addresses]
-memez_otc = "0x0"
+memez_otc = "0x99"
 treasury = "0x5"

@@ -9,7 +9,7 @@ use sui::{
 public struct MEME has drop()
 
 const DECIMALS: u8 = 9;
-const METADATA: vector<vector<u8>> = vector[b"TMPL", b"Template Coin", b"Template Coin Description", b"url"];
+const METADATA: vector<vector<u8>> = vector[b"MEME", b"Meme Coin", b"Just a meme coin", b"https://memez.gg"];
 
 fun init(witness: MEME, ctx: &mut TxContext) {
     let (treasury, metadata) = coin::create_currency(

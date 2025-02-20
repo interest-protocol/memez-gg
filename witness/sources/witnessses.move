@@ -4,8 +4,10 @@ module memez_witness::memez_witness;
 
 public struct Recrd() has drop;
 
-public struct FanTV() has drop;
-
 public struct Memez() has drop;
 
 public struct WinX() has drop;
+
+public struct InsiDeX() has drop; 
+
+public struct Dexter() has drop;

@@ -5,12 +5,12 @@ license = "Apache-2.0"
 authors = ["Jose Cerqueira (jose@interestprotocol.com)"]   
 
 [dependencies]
-Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet" }
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet", override = true }
 
-InterestBPS = { git = "https://github.com/interest-protocol/bps.git", rev = "main" }
-InterestMath = { git = "https://github.com/interest-protocol/interest-math.git", rev = "main" }
-IPXCoinStandard = { git = "https://github.com/interest-protocol/ipx-coin-standard.git", rev = "main" }
-ConstantProduct = { git  = "https://github.com/interest-protocol/constant-product.git", rev = "main" }
+InterestBPS = { local = "../dependencies/bps" }
+InterestMath = { local = "../dependencies/interest-math" }
+IPXCoinStandard = { local = "../dependencies/ipx-coin-standard" }
+ConstantProduct = { local = "../dependencies/constant-product" }
 
 MemezACL = { local = "../acl" }
 MemezVesting = { local = "../vesting" }

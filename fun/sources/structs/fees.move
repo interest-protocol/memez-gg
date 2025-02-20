@@ -96,6 +96,13 @@ public(package) fun new(
     }
 }
 
+public(package) fun value(fee: Fee): u64 {
+    match (fee) {
+        Fee::Percentage(bps, _) => bps.value(),
+        Fee::Value(value, _) => value,
+    }
+}
+
 public(package) fun calculate(fee: Fee, amount_in: u64): u64 {
     match (fee) {
         Fee::Value(value, _) => value,
@@ -223,14 +230,6 @@ public fun distributor(fee: Fee): Distributor {
     match (fee) {
         Fee::Percentage(_, distributor) => distributor,
         Fee::Value(_, distributor) => distributor,
-    }
-}
-
-#[test_only]
-public fun value(fee: Fee): u64 {
-    match (fee) {
-        Fee::Percentage(bps, _) => bps.value(),
-        Fee::Value(value, _) => value,
     }
 }
 

@@ -1,0 +1,43 @@
+# IDE
+**/.history/
+**/.vscode/
+
+# OSX
+.DS_Store
+
+# Rust build directory
+**/target
+.pre-commit*
+
+# Move build directory
+build
+storage/
+!narwhal/storage 
+
+# Environment Variables 
+.env 
+.env*
+
+# Thumbnails
+._*
+
+# Emacs
+\#*\#
+.\#*
+
+# Python
+.pyc
+
+# Node.js
+node_modules
+.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# logs
+wallet.log.*
+sui.log.*
+.vercel
+
+# Sui
+build
+Move.lock

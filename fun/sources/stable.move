@@ -244,14 +244,14 @@ fun pump_amount<Meme, Quote>(
     self: &mut MemezFun<Stable, Meme, Quote>,
     amount_in: u64,
 ): vector<u64> {
-    self.fr_pump_amount!(|self| (self.state_mut<Meme, Quote>(), 0), amount_in)
+    self.fr_pump_amount!(|self| (self.state<Meme, Quote>(), 0), amount_in)
 }
 
 fun dump_amount<Meme, Quote>(
     self: &mut MemezFun<Stable, Meme, Quote>,
     amount_in: u64,
 ): vector<u64> {
-    self.fr_dump_amount!(|self| (self.state_mut<Meme, Quote>(), 0), amount_in)
+    self.fr_dump_amount!(|self| (self.state<Meme, Quote>(), 0), amount_in)
 }
 
 // === Private Functions ===

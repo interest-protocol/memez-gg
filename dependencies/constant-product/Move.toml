@@ -1,0 +1,13 @@
+[package]
+name = "ConstantProduct"
+edition = "2024.beta" # edition = "legacy" to use legacy (pre-2024) Move
+license = "MIT"
+authors = ["Jose Cerqueira (jose@interestprotocol.com)"]
+version = "1.0.0"
+published-at = "0x91fdbb215d7a66738eca2980bd88f549c064ede20d632956cbd0f8c9e8bf909c"
+
+[dependencies]
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet"}
+
+[addresses]
+constant_product = "0x91fdbb215d7a66738eca2980bd88f549c064ede20d632956cbd0f8c9e8bf909c"

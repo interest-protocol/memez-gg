@@ -5,8 +5,6 @@ use memez_fun::{memez_auction_config, memez_errors};
 use std::{type_name, unit_test::assert_eq};
 use sui::test_utils::destroy;
 
-const BURN_TAX: u64 = 200_000_000;
-
 // @dev 50,000,000 = 5%
 const LIQUIDITY_PROVISION: u64 = 500;
 
@@ -26,7 +24,6 @@ public struct InvalidQuote()
 fun test_end_to_end() {
     let auction = memez_auction_config::new<Quote>(vector[
         THIRTY_MINUTES_MS,
-        BURN_TAX,
         TARGET_SUI_LIQUIDITY,
         LIQUIDITY_PROVISION,
         SEED_LIQUIDITY,
@@ -35,19 +32,17 @@ fun test_end_to_end() {
     let payload = auction.get<Quote>(1000);
 
     assert_eq!(payload[0], THIRTY_MINUTES_MS);
-    assert_eq!(payload[1], BURN_TAX);
-    assert_eq!(payload[2], TARGET_SUI_LIQUIDITY);
-    assert_eq!(payload[3], 50);
-    assert_eq!(payload[4], MIN_SEED_LIQUIDITY);
+    assert_eq!(payload[1], TARGET_SUI_LIQUIDITY);
+    assert_eq!(payload[2], 50);
+    assert_eq!(payload[3], MIN_SEED_LIQUIDITY);
     assert_eq!(auction.quote_type(), type_name::get<Quote>());
 
     let payload = auction.get<Quote>(1_000_000_000);
 
     assert_eq!(payload[0], THIRTY_MINUTES_MS);
-    assert_eq!(payload[1], BURN_TAX);
-    assert_eq!(payload[2], TARGET_SUI_LIQUIDITY);
-    assert_eq!(payload[3], 50_000_000);
-    assert_eq!(payload[4], 1_000_000);
+    assert_eq!(payload[1], TARGET_SUI_LIQUIDITY);
+    assert_eq!(payload[2], 50_000_000);
+    assert_eq!(payload[3], 1_000_000);
     assert_eq!(auction.quote_type(), type_name::get<Quote>());
 
     destroy(auction);
@@ -63,7 +58,6 @@ fun test_end_to_end() {
 fun test_new_invalid_config() {
     let auction = memez_auction_config::new<Quote>(vector[
         THIRTY_MINUTES_MS,
-        BURN_TAX,
         TARGET_SUI_LIQUIDITY,
         LIQUIDITY_PROVISION,
     ]);
@@ -81,7 +75,6 @@ fun test_new_invalid_config() {
 fun test_new_invalid_quote() {
     let auction = memez_auction_config::new<Quote>(vector[
         THIRTY_MINUTES_MS,
-        BURN_TAX,
         TARGET_SUI_LIQUIDITY,
         LIQUIDITY_PROVISION,
         SEED_LIQUIDITY,

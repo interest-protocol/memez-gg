@@ -11,13 +11,12 @@ use std::type_name::{Self, TypeName};
 
 const MIN_SEED_LIQUIDITY: u64 = 100;
 
-const VALUES_LENGTH: u64 = 5;
+const VALUES_LENGTH: u64 = 4;
 
 // === Structs ===
 
 public struct AuctionConfig has copy, drop, store {
     auction_duration: u64,
-    burn_tax: u64,
     target_quote_liquidity: u64,
     liquidity_provision: BPS,
     seed_liquidity: BPS,
@@ -31,10 +30,9 @@ public(package) fun new<Quote>(values: vector<u64>): AuctionConfig {
 
     AuctionConfig {
         auction_duration: values[0],
-        burn_tax: values[1],
-        target_quote_liquidity: values[2],
-        liquidity_provision: bps::new(values[3]),
-        seed_liquidity: bps::new(values[4]),
+        target_quote_liquidity: values[1],
+        liquidity_provision: bps::new(values[2]),
+        seed_liquidity: bps::new(values[3]),
         quote_type: type_name::get<Quote>(),
     }
 }
@@ -47,7 +45,6 @@ public(package) fun get<Quote>(self: &AuctionConfig, total_supply: u64): vector<
 
     vector[
         self.auction_duration,
-        self.burn_tax,
         self.target_quote_liquidity,
         liquidity_provision,
         seed_liquidity,
@@ -59,9 +56,9 @@ public(package) fun get<Quote>(self: &AuctionConfig, total_supply: u64): vector<
 fun assert_values(values: vector<u64>) {
     assert!(values.length() == VALUES_LENGTH, memez_errors::invalid_config!());
     assert!(values[0] != 0);
+    assert!(values[1] != 0);
     assert!(values[2] != 0);
     assert!(values[3] != 0);
-    assert!(values[4] != 0);
 }
 
 // === Test Only Functions ===

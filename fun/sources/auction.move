@@ -88,12 +88,6 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
 
     let auction_config = config.get_auction<Quote, ConfigKey>(total_supply);
 
-        // auction_duration: values[0],
-        // target_quote_liquidity: values[1],
-        // liquidity_provision: bps::new(values[2]),
-        // seed_liquidity: bps::new(values[3]),
-        // quote_type: type_name::get<Quote>(),
-
     let meme_token_cap = if (is_token) option::some(memez_token_cap::new(&meme_treasury_cap, ctx))
     else option::none();
 

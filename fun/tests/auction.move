@@ -38,7 +38,6 @@ const MAX_BPS: u64 = 10_000;
 const THIRTY_MINUTES_MS: u64 = 30 * 60 * 1_000;
 
 const DEV_ALLOCATION: u64 = 100;
-const BURN_TAX: u64 = 2000;
 const TARGET_LIQUIDITY: u64 = 10_000 * POW_9;
 const PROVISION_LIQUIDITY: u64 = 500;
 const SEED_LIQUIDITY: u64 = 1;
@@ -85,23 +84,23 @@ fun test_new() {
     assert_eq(memez_auction::auction_duration<Meme, SUI>(&mut memez_fun), THIRTY_MINUTES_MS);
     assert_eq(
         memez_auction::initial_reserve<Meme, SUI>(&mut memez_fun),
-        total_supply - expected_allocation_value - auction_config[3] - auction_config[4],
+        total_supply - expected_allocation_value - auction_config[2] - auction_config[3],
     );
     assert_eq(
         memez_auction::meme_reserve<Meme, SUI>(&mut memez_fun),
-        total_supply - expected_allocation_value - auction_config[3] - auction_config[4],
+        total_supply - expected_allocation_value - auction_config[2] - auction_config[3],
     );
     assert_eq(
         memez_auction::allocation<Meme, SUI>(&mut memez_fun).value(),
         expected_allocation_value,
     );
-    assert_eq(memez_auction::liquidity_provision<Meme, SUI>(&mut memez_fun), auction_config[3]);
+    assert_eq(memez_auction::liquidity_provision<Meme, SUI>(&mut memez_fun), auction_config[2]);
 
     let fr = memez_auction::fixed_rate<Meme, SUI>(&mut memez_fun);
 
-    assert_eq(fr.quote_raise_amount(), auction_config[2]);
-    assert_eq(fr.meme_sale_amount(), auction_config[4]);
-    assert_eq(fr.meme_balance().value(), auction_config[4]);
+    assert_eq(fr.quote_raise_amount(), auction_config[1]);
+    assert_eq(fr.meme_sale_amount(), auction_config[3]);
+    assert_eq(fr.meme_balance().value(), auction_config[3]);
     assert_eq(fr.quote_balance().value(), 0);
 
     memez_fun.assert_is_bonding();
@@ -135,20 +134,20 @@ fun test_new_token() {
     assert_eq(memez_auction::auction_duration(&mut memez_fun), THIRTY_MINUTES_MS);
     assert_eq(
         memez_auction::initial_reserve(&mut memez_fun),
-        total_supply - expected_allocation_value - auction_config[3] - auction_config[4],
+        total_supply - expected_allocation_value - auction_config[2] - auction_config[3],
     );
     assert_eq(
         memez_auction::meme_reserve(&mut memez_fun),
-        total_supply - expected_allocation_value - auction_config[3] - auction_config[4],
+        total_supply - expected_allocation_value - auction_config[2] - auction_config[3],
     );
     assert_eq(memez_auction::allocation(&mut memez_fun).value(), expected_allocation_value);
-    assert_eq(memez_auction::liquidity_provision(&mut memez_fun), auction_config[3]);
+    assert_eq(memez_auction::liquidity_provision(&mut memez_fun), auction_config[2]);
 
     let fr = memez_auction::fixed_rate(&mut memez_fun);
 
-    assert_eq(fr.quote_raise_amount(), auction_config[2]);
-    assert_eq(fr.meme_sale_amount(), auction_config[4]);
-    assert_eq(fr.meme_balance().value(), auction_config[4]);
+    assert_eq(fr.quote_raise_amount(), auction_config[1]);
+    assert_eq(fr.meme_sale_amount(), auction_config[3]);
+    assert_eq(fr.meme_balance().value(), auction_config[3]);
     assert_eq(fr.quote_balance().value(), 0);
 
     memez_fun.assert_is_bonding();
@@ -333,7 +332,7 @@ fun test_coin_end_to_end() {
     let auction_config = world.config.get_auction<SUI, DefaultKey>(total_supply);
 
     assert_eq(sui_balance.value(), 10_000 * POW_9 - migration_fee_value);
-    assert_eq(meme_balance.value(), auction_config[3]);
+    assert_eq(meme_balance.value(), auction_config[2]);
 
     sui_balance.destroy_for_testing();
     meme_balance.destroy_for_testing();
@@ -496,7 +495,7 @@ fun test_token_end_to_end() {
     let migration_fee_value = 1_000 * POW_9;
 
     assert_eq(sui_balance.value(), 10_000 * POW_9 - migration_fee_value);
-    assert_eq(meme_balance.value(), auction_config[3]);
+    assert_eq(meme_balance.value(), auction_config[2]);
 
     sui_balance.destroy_for_testing();
     meme_balance.destroy_for_testing();
@@ -567,7 +566,6 @@ fun test_coin_end_to_end_with_stake_holders() {
             &witness,
             vector[
                 THIRTY_MINUTES_MS,
-                BURN_TAX,
                 TARGET_LIQUIDITY,
                 PROVISION_LIQUIDITY,
                 SEED_LIQUIDITY,
@@ -742,7 +740,7 @@ fun test_coin_end_to_end_with_stake_holders() {
     let migration_fee_value = 1_000 * POW_9;
 
     assert_eq(sui_balance.value(), 10_000 * POW_9 - migration_fee_value);
-    assert_eq(meme_balance.value(), auction_config[3]);
+    assert_eq(meme_balance.value(), auction_config[2]);
 
     sui_balance.destroy_for_testing();
     meme_balance.destroy_for_testing();
@@ -1304,7 +1302,7 @@ fun start(): World {
 
     config.set_auction<SUI, DefaultKey>(
         &witness,
-        vector[THIRTY_MINUTES_MS, BURN_TAX, TARGET_LIQUIDITY, PROVISION_LIQUIDITY, SEED_LIQUIDITY],
+        vector[THIRTY_MINUTES_MS, TARGET_LIQUIDITY, PROVISION_LIQUIDITY, SEED_LIQUIDITY],
         scenario.ctx(),
     );
 

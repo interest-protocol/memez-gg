@@ -81,7 +81,6 @@ fun test_auction() {
     let witness = acl::sign_in_for_testing();
 
     let third_minutes_ms = 3 * 60 * 1_000_000;
-    let burn_take = 2000;
     let target_liquidity = 10_000;
     let provision_liquidity = 500;
     let seed_liquidity = 100;
@@ -92,7 +91,6 @@ fun test_auction() {
             &witness,
             vector[
                 third_minutes_ms,
-                burn_take,
                 target_liquidity,
                 provision_liquidity,
                 seed_liquidity,
@@ -103,10 +101,9 @@ fun test_auction() {
     let amounts = world.config.get_auction<Quote, DefaultKey>(1_000);
 
     assert_eq!(amounts[0], third_minutes_ms);
-    assert_eq!(amounts[1], burn_take);
-    assert_eq!(amounts[2], target_liquidity);
-    assert_eq!(amounts[3], 50);
-    assert_eq!(amounts[4], seed_liquidity);
+    assert_eq!(amounts[1], target_liquidity);
+    assert_eq!(amounts[2], 50);
+    assert_eq!(amounts[3], seed_liquidity);
 
     assert_eq!(memez_config::exists_for_testing<AuctionKey<DefaultKey>>(&world.config), true);
 
@@ -198,7 +195,6 @@ fun test_auction_invalid_quote_type() {
     let witness = acl::sign_in_for_testing();
 
     let third_minutes_ms = 3 * 60 * 1_000_000;
-    let burn_take = 2000;
     let target_liquidity = 10_000;
     let provision_liquidity = 500;
     let seed_liquidity = 100;
@@ -209,7 +205,6 @@ fun test_auction_invalid_quote_type() {
             &witness,
             vector[
                 third_minutes_ms,
-                burn_take,
                 target_liquidity,
                 provision_liquidity,
                 seed_liquidity,

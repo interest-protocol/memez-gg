@@ -91,11 +91,11 @@ macro fun distribute_internal<$T>(
         idx = idx + 1;
     });
 
-    coin_to_send.destroy_or_return!(ctx);
+    coin_to_send.destroy_or_burn!();
 }
 // === Method Aliases ===
 
-use fun memez_utils::destroy_or_return as Coin.destroy_or_return;
+use fun memez_utils::coin_destroy_or_burn as Coin.destroy_or_burn;
 
 // === Test Functions ===
 

@@ -35,6 +35,12 @@ public(package) macro fun destroy_or_burn<$Meme>(
     else transfer::public_transfer(bal.into_coin(ctx), @0x0);
 }
 
+public(package) macro fun coin_destroy_or_burn<$Meme>($coin: Coin<$Meme>) {
+    let coin = $coin;
+    if (coin.value() == 0) coin.destroy_zero()
+    else transfer::public_transfer(coin, @0x0);
+}
+
 public(package) macro fun destroy_or_return<$Meme>($coin: Coin<$Meme>, $ctx: &TxContext) {
     let coin = $coin;
     let ctx = $ctx;

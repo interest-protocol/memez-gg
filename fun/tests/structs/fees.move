@@ -22,7 +22,7 @@ const STAKE_HOLDER_1: address = @0x7;
 
 const STAKE_HOLDER_2: address = @0x8;
 
-const VESTING_PERIOD: u64 = 101;
+const VESTING_PERIODS: vector<u64> = vector[100, 101, 102];
 
 const TEN_PERCENT: u64 = 1_000;
 
@@ -46,6 +46,9 @@ fun test_new() {
     assert_eq(payloads[1].payload_recipients(), vector[INTEGRATOR]);
     assert_eq(payloads[2].payload_recipients(), vector[INTEGRATOR, INTEREST]);
     assert_eq(payloads[3].payload_recipients(), vector[INTEGRATOR]);
+
+    assert_eq(default_fees().dynamic_stake_holders(), 2);
+    assert_eq(default_fees().vesting_periods(), VESTING_PERIODS);
 }
 
 #[test]
@@ -154,7 +157,7 @@ fun test_calculate() {
         assert_eq(recipient_bps.calc(100), expected_allocation_values[i]);
     });
 
-    assert_eq(allocation_fee.vesting_period(), VESTING_PERIOD);
+    assert_eq(allocation_fee.vesting_periods(), VESTING_PERIODS);
 
     destroy(allocation_fee);
     destroy(allocation_balance);
@@ -243,9 +246,11 @@ fun test_take() {
         STAKE_HOLDER_2,
     );
 
-    assert_eq(integrator_allocation_vesting.duration(), 101);
-    assert_eq(stake_holder_1_allocation_vesting.duration(), 101);
-    assert_eq(stake_holder_2_allocation_vesting.duration(), 101);
+    let vesting_period = VESTING_PERIODS;
+
+    assert_eq(integrator_allocation_vesting.duration(), vesting_period[0]);
+    assert_eq(stake_holder_1_allocation_vesting.duration(), vesting_period[1]);
+    assert_eq(stake_holder_2_allocation_vesting.duration(), vesting_period[2]);
 
     assert_eq(integrator_allocation_vesting.balance(), 40 * POW_9 * 3_000 / 10_000);
     assert_eq(stake_holder_1_allocation_vesting.balance(), 40 * POW_9 * 3_500 / 10_000);
@@ -260,7 +265,8 @@ fun test_take() {
             vector[7_000, 3_000, 0],
             vector[5_000, 2_000, 3_000, 0],
             vector[2_500, 2_500, 2_500, 2_500, 0],
-            vector[5_000, 5_000, 0, 0],
+            vector[5_000, 5_000, 0],
+            vector[100, 101],
         ],
         vector[
             vector[INTEGRATOR, INTEREST],
@@ -293,6 +299,17 @@ fun test_take() {
     scenario.end();
 }
 
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EInvalidDynamicStakeHolders,
+        location = memez_fees,
+    ),
+]
+fun test_assert_dynamic_stake_holders() {
+    default_fees().assert_dynamic_stake_holders(vector[@0x0, @0x1, @0x2]);
+}
+
 #[test, expected_failure(abort_code = memez_errors::EInvalidConfig, location = memez_fees)]
 fun test_new_invalid_config() {
     memez_fees::new(
@@ -301,6 +318,7 @@ fun test_new_invalid_config() {
             vector[5_000, 5_000, 30],
             vector[10_000, 0, 6],
             vector[10_000, 0, 6],
+            VESTING_PERIODS,
         ],
         vector[vector[@0x0, @0x1], vector[@0x1], vector[@0x2]],
     );
@@ -314,6 +332,7 @@ fun test_new_invalid_creation_percentages() {
             vector[5_000, 5_000, 30],
             vector[10_000, 0, 6],
             vector[10_000, 0, 6],
+            VESTING_PERIODS,
         ],
         vector[vector[@0x0, @0x1], vector[@0x1], vector[@0x2], vector[@0x3]],
     );
@@ -327,6 +346,7 @@ fun test_new_invalid_swap_percentages() {
             vector[5_000 - 1, 5_000, 30],
             vector[10_000, 0, 6],
             vector[10_000, 0, 6],
+            VESTING_PERIODS,
         ],
         vector[vector[@0x0, @0x1], vector[@0x1], vector[@0x2], vector[@0x3]],
     );
@@ -340,6 +360,7 @@ fun test_new_invalid_migration_percentages() {
             vector[5_000, 5_000, 30],
             vector[10_000, 1, 6],
             vector[10_000, 0, 6],
+            VESTING_PERIODS,
         ],
         vector[vector[@0x0, @0x1], vector[@0x1], vector[@0x2], vector[@0x3]],
     );
@@ -353,6 +374,7 @@ fun test_new_invalid_allocation_percentages() {
             vector[5_000, 5_000, 30],
             vector[10_000, 0, 6],
             vector[10_000, 1, 1, 6],
+            VESTING_PERIODS,
         ],
         vector[vector[@0x0, @0x1], vector[@0x1], vector[@0x2], vector[@0x3]],
     );
@@ -372,6 +394,7 @@ fun test_new_wrong_creation_recipients() {
             vector[5_000, 5_000, 0, 30],
             vector[10_000, 0, 6],
             vector[10_000, 0, 6],
+            VESTING_PERIODS,
         ],
         vector[vector[@0x0], vector[@0x1], vector[@0x2], vector[@0x3]],
     );
@@ -383,7 +406,8 @@ fun default_fees(): MemezFees {
             vector[7_000, 3_000, 2 * POW_9],
             vector[5_000, 2_500, 2_500, 100],
             vector[4_000, 1_000, 2_500, 2_500, TEN_PERCENT],
-            vector[3_000, 3_500, 3_500, VESTING_PERIOD, 2000],
+            vector[3_000, 3_500, 3_500, 2000],
+            VESTING_PERIODS,
         ],
         vector[
             vector[INTEGRATOR, INTEREST],

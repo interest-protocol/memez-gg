@@ -175,6 +175,40 @@ fun test_new_max_target_sui_liquidity() {
 #[
     test,
     expected_failure(
+        abort_code = memez_errors::EInvalidDynamicStakeHolders,
+        location = memez_fees,
+    ),
+]
+fun test_new_invalid_dynamic_stake_holders() {
+    let mut world = start();
+
+    let total_supply = POW_9 * POW_9;
+
+    let dev_allocation = POW_9 / 10;
+
+    let metadata_cap = memez_stable::new<Meme, SUI, DefaultKey, MigrationWitness>(
+        &world.config,
+        &world.migrator_list,
+        create_treasury_cap_for_testing(world.scenario.ctx()),
+        mint_for_testing(2_000_000_000, world.scenario.ctx()),
+        10_000 * POW_9,
+        total_supply,
+        false,
+        memez_metadata::new_for_test(world.scenario.ctx()),
+        vector[dev_allocation, DAY],
+        vector[STAKE_HOLDER, STAKE_HOLDER],
+        DEV,
+        memez_allowed_versions::get_allowed_versions_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    destroy(metadata_cap);
+    world.end();
+}
+
+#[
+    test,
+    expected_failure(
         abort_code = memez_errors::EOutdatedPackageVersion,
         location = memez_allowed_versions,
     ),
@@ -196,7 +230,7 @@ fun test_new_invalid_version() {
         false,
         memez_metadata::new_for_test(world.scenario.ctx()),
         vector[dev_allocation, DAY],
-        vector[STAKE_HOLDER, STAKE_HOLDER],
+        vector[STAKE_HOLDER],
         DEV,
         memez_allowed_versions::get_allowed_versions_for_testing(2),
         world.scenario.ctx(),
@@ -230,7 +264,7 @@ fun test_new_invalid_quote_type() {
         false,
         memez_metadata::new_for_test(world.scenario.ctx()),
         vector[dev_allocation, DAY],
-        vector[STAKE_HOLDER, STAKE_HOLDER],
+        vector[STAKE_HOLDER],
         DEV,
         memez_allowed_versions::get_allowed_versions_for_testing(1),
         world.scenario.ctx(),
@@ -373,7 +407,8 @@ fun test_token_end_to_end() {
                 vector[MAX_BPS, 2 * POW_9],
                 vector[MAX_BPS, 0, 0],
                 vector[MAX_BPS, 0, TEN_PERCENT],
-                vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 0],
+                vector[MAX_BPS / 2, MAX_BPS / 2, 0],
+                vector[VESTING_PERIOD],
             ],
             vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
             world.scenario.ctx(),
@@ -529,7 +564,8 @@ fun test_distribute_stake_holders_allocation() {
                 vector[MAX_BPS, 2 * POW_9],
                 vector[MAX_BPS, 0, 30],
                 vector[MAX_BPS, 0, TEN_PERCENT],
-                vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 500],
+                vector[MAX_BPS / 2, MAX_BPS / 2, 500],
+                vector[VESTING_PERIOD, VESTING_PERIOD + 1],
             ],
             vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
             world.scenario.ctx(),
@@ -832,7 +868,8 @@ fun pump_is_not_bonding() {
                 vector[MAX_BPS, 2 * POW_9],
                 vector[MAX_BPS, 0, 0],
                 vector[MAX_BPS, 0, TEN_PERCENT],
-                vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 500],
+                vector[MAX_BPS / 2, MAX_BPS / 2, 500],
+                vector[VESTING_PERIOD],
             ],
             vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
             world.scenario.ctx(),
@@ -962,7 +999,8 @@ fun dump_is_not_bonding() {
                 vector[MAX_BPS, 2 * POW_9],
                 vector[MAX_BPS, 0, 0],
                 vector[MAX_BPS, 0, TEN_PERCENT],
-                vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 500],
+                vector[MAX_BPS / 2, MAX_BPS / 2, 500],
+                vector[VESTING_PERIOD],
             ],
             vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
             world.scenario.ctx(),
@@ -1049,7 +1087,8 @@ fun migrate_is_not_migrating() {
                 vector[MAX_BPS, 2 * POW_9],
                 vector[MAX_BPS, 0, 0],
                 vector[MAX_BPS, 0, TEN_PERCENT],
-                vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 500],
+                vector[MAX_BPS / 2, MAX_BPS / 2, 500],
+                vector[VESTING_PERIOD],
             ],
             vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
             world.scenario.ctx(),
@@ -1099,7 +1138,8 @@ fun dev_claim_invalid_version() {
                 vector[MAX_BPS, 2 * POW_9],
                 vector[MAX_BPS, 0, 0],
                 vector[MAX_BPS, 0, TEN_PERCENT],
-                vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 500],
+                vector[MAX_BPS / 2, MAX_BPS / 2, 500],
+                vector[VESTING_PERIOD],
             ],
             vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
             world.scenario.ctx(),
@@ -1205,7 +1245,8 @@ fun dev_claim_is_not_dev() {
                 vector[MAX_BPS, 2 * POW_9],
                 vector[MAX_BPS, 0, 0],
                 vector[MAX_BPS, 0, TEN_PERCENT],
-                vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 500],
+                vector[MAX_BPS / 2, MAX_BPS / 2, 500],
+                vector[VESTING_PERIOD],
             ],
             vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
             world.scenario.ctx(),
@@ -1338,7 +1379,8 @@ fun pump_token_is_not_bonding() {
                 vector[MAX_BPS, 2 * POW_9],
                 vector[MAX_BPS, 0, 0],
                 vector[MAX_BPS, 0, TEN_PERCENT],
-                vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 500],
+                vector[MAX_BPS / 2, MAX_BPS / 2, 500],
+                vector[VESTING_PERIOD],
             ],
             vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
             world.scenario.ctx(),
@@ -1478,7 +1520,8 @@ fun dump_token_is_not_bonding() {
                 vector[MAX_BPS, 2 * POW_9],
                 vector[MAX_BPS, 0, 0],
                 vector[MAX_BPS, 0, TEN_PERCENT],
-                vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 500],
+                vector[MAX_BPS / 2, MAX_BPS / 2, 500],
+                vector[VESTING_PERIOD],
             ],
             vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
             world.scenario.ctx(),
@@ -1572,7 +1615,8 @@ fun start(): World {
             vector[MAX_BPS, 2 * POW_9],
             vector[MAX_BPS, 0, 30],
             vector[MAX_BPS, 0, TEN_PERCENT],
-            vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 0],
+            vector[MAX_BPS / 2, MAX_BPS / 2, 0],
+            vector[VESTING_PERIOD, VESTING_PERIOD + 1],
         ],
         vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
         scenario.ctx(),

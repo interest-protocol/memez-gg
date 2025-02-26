@@ -33,7 +33,7 @@ public(package) fun new(recipients: vector<address>, percentages: vector<u64>): 
 
 public(package) fun send<T>(self: &Distributor, coin_to_send: Coin<T>, ctx: &mut TxContext) {
     self.distribute_internal!(
-        |coin, recipient, _| transfer::public_transfer(coin, recipient),
+        |coin, recipient, _, _| transfer::public_transfer(coin, recipient),
         coin_to_send,
         ctx,
     )
@@ -43,16 +43,16 @@ public(package) fun send_vested<T>(
     self: &Distributor,
     coin_to_send: Coin<T>,
     clock: &Clock,
-    vesting_period: u64,
+    vesting_periods: vector<u64>,
     ctx: &mut TxContext,
 ) {
     self.distribute_internal!(
-        |coin, recipient, ctx| transfer::public_transfer(
+        |coin, recipient, idx, ctx| transfer::public_transfer(
             memez_vesting::new(
                 clock,
                 coin,
                 clock.timestamp_ms(),
-                vesting_period,
+                vesting_periods[idx],
                 ctx,
             ),
             recipient,
@@ -66,7 +66,7 @@ public(package) fun send_vested<T>(
 
 macro fun distribute_internal<$T>(
     $self: &Distributor,
-    $f: |Coin<$T>, address, &mut TxContext|,
+    $f: |Coin<$T>, address, u64, &mut TxContext|,
     $coin_to_send: Coin<$T>,
     $ctx: &mut TxContext,
 ) {
@@ -76,13 +76,19 @@ macro fun distribute_internal<$T>(
 
     let payment_value = coin_to_send.value();
 
+    let mut idx = 0;
+
     self.recipients.do_ref!(|beneficiary| {
         let current_value = coin_to_send.value();
         let value_to_transfer = beneficiary.bps.calc_up(payment_value).min(current_value);
 
-        if (value_to_transfer == 0) return;
+        if (value_to_transfer == 0) {
+            idx = idx + 1;
+            return
+        };
 
-        $f(coin_to_send.split(value_to_transfer, ctx), beneficiary.address, ctx);
+        $f(coin_to_send.split(value_to_transfer, ctx), beneficiary.address, idx, ctx);
+        idx = idx + 1;
     });
 
     coin_to_send.destroy_or_return!(ctx);

@@ -40,7 +40,8 @@ fun test_set_fees() {
                 vector[7_000, 3_000, 2],
                 vector[5_000, 5_000, 30],
                 vector[10_000, 0, 6],
-                vector[0, 10_000, 0, 8],
+                vector[0, 10_000, 8],
+                vector[100, 101],
             ],
             vector[vector[@0x0, @0x1], vector[@0x1], vector[@0x2], vector[@0x3]],
             world.scenario.ctx(),
@@ -89,12 +90,7 @@ fun test_auction() {
         .config
         .set_auction<Quote, DefaultKey>(
             &witness,
-            vector[
-                third_minutes_ms,
-                target_liquidity,
-                provision_liquidity,
-                seed_liquidity,
-            ],
+            vector[third_minutes_ms, target_liquidity, provision_liquidity, seed_liquidity],
             world.scenario.ctx(),
         );
 
@@ -203,12 +199,7 @@ fun test_auction_invalid_quote_type() {
         .config
         .set_auction<Quote, DefaultKey>(
             &witness,
-            vector[
-                third_minutes_ms,
-                target_liquidity,
-                provision_liquidity,
-                seed_liquidity,
-            ],
+            vector[third_minutes_ms, target_liquidity, provision_liquidity, seed_liquidity],
             world.scenario.ctx(),
         );
 

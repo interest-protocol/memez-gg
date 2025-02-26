@@ -1234,7 +1234,8 @@ fun test_distribute_stake_holders_allocation() {
                 vector[MAX_BPS, 2 * POW_9],
                 vector[MAX_BPS, 0, 30],
                 vector[MAX_BPS, 0, TEN_PERCENT],
-                vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 500],
+                vector[MAX_BPS / 2, MAX_BPS / 2, 500],
+                vector[VESTING_PERIOD, VESTING_PERIOD + 1],
             ],
             vector[vector[@0x0], vector[@0x0], vector[@0x0], vector[ADMIN]],
             world.scenario.ctx(),
@@ -1318,7 +1319,8 @@ fun test_migrate_full_liquidity() {
                 vector[MAX_BPS, 2 * POW_9],
                 vector[MAX_BPS, 0, 30],
                 vector[MAX_BPS, 0, TEN_PERCENT],
-                vector[MAX_BPS / 2, MAX_BPS / 2, VESTING_PERIOD, 0],
+                vector[MAX_BPS / 2, MAX_BPS / 2, 0],
+                vector[VESTING_PERIOD],
             ],
             vector[vector[@0x0], vector[@0x0], vector[@0x0], vector[ADMIN]],
             world.scenario.ctx(),
@@ -1394,7 +1396,8 @@ fun test_bonding_curve_math() {
                 vector[MAX_BPS, 0],
                 vector[MAX_BPS, 0, 0],
                 vector[MAX_BPS, 0, 0],
-                vector[MAX_BPS, 0, 0, 0],
+                vector[MAX_BPS, 0, 0],
+                vector[0],
             ],
             vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
             world.scenario.ctx(),
@@ -1524,6 +1527,42 @@ fun test_distribute_stake_holders_allocation_not_migrated() {
 #[
     test,
     expected_failure(
+        abort_code = memez_errors::EInvalidDynamicStakeHolders,
+        location = memez_fees,
+    ),
+]
+fun new_invalid_dynamic_stake_holders() {
+    let mut world = start();
+
+    let config = &world.config;
+    let migrator_list = &world.migrator_list;
+
+    let ctx = world.scenario.ctx();
+
+    let version = memez_allowed_versions::get_allowed_versions_for_testing(1);
+
+    let metadata_cap = memez_pump::new<Meme, SUI, DefaultKey, MigrationWitness>(
+        config,
+        migrator_list,
+        create_treasury_cap_for_testing(ctx),
+        mint_for_testing(2_000_000_000, ctx),
+        1_000_000_000_000_000_000,
+        false,
+        mint_for_testing(0, ctx),
+        memez_metadata::new_for_test(ctx),
+        vector[STAKE_HOLDER, STAKE_HOLDER],
+        DEV,
+        version,
+        ctx,
+    );
+
+    destroy(metadata_cap);
+    world.end();
+}
+
+#[
+    test,
+    expected_failure(
         abort_code = memez_errors::EInvalidQuoteType,
         location = memez_pump_config,
     ),
@@ -1610,7 +1649,8 @@ fun start(): World {
             vector[MAX_BPS, 2 * POW_9],
             vector[MAX_BPS, 0, 30],
             vector[MAX_BPS, 0, TEN_PERCENT],
-            vector[MAX_BPS, 0, 0, 0],
+            vector[MAX_BPS, 0, 0],
+            vector[VESTING_PERIOD],
         ],
         vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
         scenario.ctx(),

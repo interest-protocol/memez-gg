@@ -85,6 +85,8 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
 
     fees.creation().take(&mut creation_fee, ctx);
 
+    fees.assert_dynamic_stake_holders(stake_holders);
+
     creation_fee.destroy_or_return!(ctx);
 
     let pump_config = config.get_pump<Quote, ConfigKey>(total_supply);

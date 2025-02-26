@@ -62,6 +62,9 @@ const EInvalidQuoteType: u64 = 22;
 #[test_only]
 const EInvalidMemeDecimals: u64 = 23;
 
+#[test_only]
+const EInvalidDynamicStakeHolders: u64 = 24;
+
 // === Public Package Functions ===
 
 public(package) macro fun insufficient_value(): u64 {
@@ -158,4 +161,8 @@ public(package) macro fun invalid_quote_type(): u64 {
 
 public(package) macro fun invalid_meme_decimals(): u64 {
     23
+}
+
+public(package) macro fun invalid_dynamic_stake_holders(): u64 {
+    24
 }

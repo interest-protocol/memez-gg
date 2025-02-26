@@ -82,6 +82,8 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
 
     let fees = config.fees<ConfigKey>();
 
+    fees.assert_dynamic_stake_holders(stake_holders);
+
     fees.creation().take(&mut creation_fee, ctx);
 
     creation_fee.destroy_or_return!(ctx);

@@ -9,7 +9,7 @@ use sui::{balance::{Self, Balance}, clock::Clock, coin::Coin};
 
 // === Constants ===
 
-const VALUES_LENGTH: u64 = 4;
+const VALUES_LENGTH: u64 = 5;
 
 // === Structs ===
 
@@ -26,7 +26,7 @@ public struct FeePayload has copy, drop, store {
 
 public struct Allocation<phantom T> has store {
     balance: Balance<T>,
-    vesting_period: u64,
+    vesting_periods: vector<u64>,
     distributor: Distributor,
 }
 
@@ -35,7 +35,8 @@ public struct MemezFees has copy, drop, store {
     swap: FeePayload,
     migration: FeePayload,
     allocation: FeePayload,
-    vesting_period: u64,
+    vesting_periods: vector<u64>,
+    dynamic_stake_holders: u64
 }
 
 // === Public Package Functions ===
@@ -45,7 +46,7 @@ public(package) fun new(
     recipients: vector<vector<address>>,
 ): MemezFees {
     assert!(
-        values.length() == VALUES_LENGTH && recipients.length() == VALUES_LENGTH,
+        values.length() == VALUES_LENGTH && recipients.length() == VALUES_LENGTH - 1,
         memez_errors::invalid_config!(),
     );
 
@@ -58,7 +59,7 @@ public(package) fun new(
     let swap_value = swap_percentages.pop_back();
     let migration_value = migration_percentages.pop_back();
     let allocation_value = allocation_percentages.pop_back();
-    let vesting_period = allocation_percentages.pop_back();
+    let vesting_periods = values[4];
 
     creation_percentages.validate!();
     swap_percentages.validate!();
@@ -92,7 +93,8 @@ public(package) fun new(
             percentages: allocation_percentages,
             recipients: recipients[3],
         },
-        vesting_period,
+        vesting_periods,
+        dynamic_stake_holders: allocation_percentages.length() - recipients[3].length(),
     }
 }
 
@@ -152,9 +154,9 @@ public(package) fun allocation_take<T>(
 
     let coin_to_send = allocation.balance.withdraw_all().into_coin(ctx);
 
-    let vesting_period = allocation.vesting_period;
+    let vesting_periods = allocation.vesting_periods;
 
-    allocation.distributor.send_vested(coin_to_send, clock, vesting_period, ctx);
+    allocation.distributor.send_vested(coin_to_send, clock, vesting_periods, ctx);
 }
 
 public(package) fun creation(self: MemezFees): Fee {
@@ -200,9 +202,16 @@ public(package) fun allocation<T>(
     Allocation {
         balance: if (self.allocation.value == 0) balance::zero()
         else balance.split(bps::new(self.allocation.value).calc(balance_value)),
-        vesting_period: self.vesting_period,
+        vesting_periods: self.vesting_periods,
         distributor: memez_distributor::new(recipients, self.allocation.percentages),
     }
+}
+
+public(package) fun assert_dynamic_stake_holders(self: MemezFees, stake_holders: vector<address>) {
+    assert!(
+        stake_holders.length() == self.dynamic_stake_holders,
+        memez_errors::invalid_dynamic_stake_holders!(),
+    );
 }
 
 // === Internal Method Aliases ===
@@ -234,6 +243,11 @@ public fun distributor(fee: Fee): Distributor {
 }
 
 #[test_only]
+public fun vesting_periods(fees: MemezFees): vector<u64> {
+    fees.vesting_periods
+}
+
+#[test_only]
 public fun payloads(fees: MemezFees): vector<FeePayload> {
     vector[fees.creation, fees.swap, fees.migration, fees.allocation]
 }
@@ -261,10 +275,15 @@ public fun allocation_value<T>(allocation: &Allocation<T>): u64 {
 }
 
 #[test_only]
-public use fun allocation_vesting_period as Allocation.vesting_period;
+public fun dynamic_stake_holders(fees: MemezFees): u64 {
+    fees.dynamic_stake_holders
+}
+
 #[test_only]
-public fun allocation_vesting_period<T>(allocation: &Allocation<T>): u64 {
-    allocation.vesting_period
+public use fun allocation_vesting_periods as Allocation.vesting_periods;
+#[test_only]
+public fun allocation_vesting_periods<T>(allocation: &Allocation<T>): vector<u64> {
+    allocation.vesting_periods
 }
 
 #[test_only]

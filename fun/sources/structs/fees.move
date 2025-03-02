@@ -36,7 +36,7 @@ public struct MemezFees has copy, drop, store {
     migration: FeePayload,
     allocation: FeePayload,
     vesting_periods: vector<u64>,
-    dynamic_stake_holders: u64
+    dynamic_stake_holders: u64,
 }
 
 // === Public Package Functions ===
@@ -156,7 +156,7 @@ public(package) fun allocation_take<T>(
 
     let vesting_periods = allocation.vesting_periods;
 
-    allocation.distributor.send_vested(coin_to_send, clock, vesting_periods, ctx);
+    allocation.distributor.maybe_send_vested(coin_to_send, clock, vesting_periods, ctx);
 }
 
 public(package) fun creation(self: MemezFees): Fee {

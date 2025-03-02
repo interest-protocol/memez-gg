@@ -39,15 +39,17 @@ public(package) fun send<T>(self: &Distributor, coin_to_send: Coin<T>, ctx: &mut
     )
 }
 
-public(package) fun send_vested<T>(
+public(package) fun maybe_send_vested<T>(
     self: &Distributor,
     coin_to_send: Coin<T>,
     clock: &Clock,
     vesting_periods: vector<u64>,
     ctx: &mut TxContext,
 ) {
-    self.distribute_internal!(
-        |coin, recipient, idx, ctx| transfer::public_transfer(
+    self.distribute_internal!(|coin, recipient, idx, ctx| if (vesting_periods[idx] == 0) {
+        transfer::public_transfer(coin, recipient)
+    } else {
+        transfer::public_transfer(
             memez_vesting::new(
                 clock,
                 coin,
@@ -56,10 +58,8 @@ public(package) fun send_vested<T>(
                 ctx,
             ),
             recipient,
-        ),
-        coin_to_send,
-        ctx,
-    )
+        )
+    }, coin_to_send, ctx)
 }
 
 // === Private Functions ===

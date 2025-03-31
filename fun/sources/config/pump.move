@@ -21,9 +21,9 @@ public struct PumpConfig has copy, drop, store {
     quote_type: TypeName,
 }
 
-// === Public Package Functions ===
+// === Public Functions ===
 
-public(package) fun new<Quote>(values: vector<u64>): PumpConfig {
+public fun new<Quote>(values: vector<u64>): PumpConfig {
     assert_values(values);
 
     PumpConfig {
@@ -34,6 +34,8 @@ public(package) fun new<Quote>(values: vector<u64>): PumpConfig {
         quote_type: type_name::get<Quote>(),
     }
 }
+
+// === Public Package Functions ===
 
 public(package) fun get<Quote>(self: &PumpConfig, total_supply: u64): vector<u64> {
     assert!(type_name::get<Quote>() == self.quote_type, memez_errors::invalid_quote_type!());

@@ -28,6 +28,7 @@ use interest_math::u64;
 use ipx_coin_standard::ipx_coin_standard::MetadataCap;
 use memez_fun::{
     memez_allowed_versions::AllowedVersions,
+    memez_auction_config::AuctionConfig,
     memez_config::MemezConfig,
     memez_errors,
     memez_fees::{Fee, Allocation},
@@ -70,7 +71,7 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
     migrator_list: &MemezMigratorList,
     clock: &Clock,
     meme_treasury_cap: TreasuryCap<Meme>,
-    mut creation_fee: Coin<SUI>,
+    creation_fee: Coin<SUI>,
     total_supply: u64,
     is_token: bool,
     metadata: MemezMetadata,
@@ -78,84 +79,56 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ): MetadataCap {
-    allowed_versions.assert_pkg_version();
-
-    let fees = config.fees<ConfigKey>();
-
-    fees.assert_dynamic_stake_holders(stake_holders);
-
-    fees.creation().take(&mut creation_fee, ctx);
-
-    creation_fee.destroy_or_return!(ctx);
-
     let auction_config = config.get_auction<Quote, ConfigKey>(total_supply);
 
-    let meme_token_cap = if (is_token) option::some(memez_token_cap::new(&meme_treasury_cap, ctx))
-    else option::none();
-
-    let (ipx_meme_coin_treasury, metadata_cap, mut meme_reserve) = new_treasury!(
-        meme_treasury_cap,
-        total_supply,
-        ctx,
-    );
-
-    let allocation = fees.allocation(
-        &mut meme_reserve,
-        stake_holders,
-    );
-
-    let liquidity_provision = meme_reserve.split(auction_config[2]);
-
-    let meme_balance = meme_reserve.split(auction_config[3]);
-
-    let meme_balance_value = meme_balance.value();
-
-    let fixed_rate = memez_fixed_rate::new<Meme, Quote>(
-        auction_config[1],
-        meme_balance,
-        fees.swap(stake_holders),
-    );
-
-    let auction_state = AuctionState<Meme, Quote> {
-        id: object::new(ctx),
-        start_time: clock.timestamp_ms(),
-        auction_duration: auction_config[0],
-        initial_reserve: meme_reserve.value(),
-        accrued_meme_balance: 0,
-        meme_reserve,
-        liquidity_provision,
-        allocation,
-        fixed_rate,
-        meme_token_cap,
-        migration_fee: fees.migration(stake_holders),
-    };
-
-    let inner_state = object::id_address(&auction_state);
-
-    let mut memez_fun = memez_fun::new<Auction, Meme, Quote, ConfigKey, MigrationWitness>(
+    new_impl<Meme, Quote, ConfigKey, MigrationWitness>(
+        config,
         migrator_list,
-        memez_versioned::create(AUCTION_STATE_VERSION_V1, auction_state, ctx),
-        is_token,
-        inner_state,
-        metadata,
-        ipx_meme_coin_treasury,
-        0,
-        auction_config[1],
-        meme_balance_value,
+        clock,
+        meme_treasury_cap,
+        creation_fee,
+        auction_config,
         total_supply,
-        ctx.sender(),
+        is_token,
+        metadata,
+        stake_holders,
+        allowed_versions,
         ctx,
-    );
+    )
+}
 
-    let memez_fun_address = memez_fun.address();
+public fun new_with_config<Meme, Quote, ConfigKey, MigrationWitness>(
+    config: &MemezConfig,
+    migrator_list: &MemezMigratorList,
+    clock: &Clock,
+    meme_treasury_cap: TreasuryCap<Meme>,
+    creation_fee: Coin<SUI>,
+    auction_config: AuctionConfig,
+    total_supply: u64,
+    is_token: bool,
+    metadata: MemezMetadata,
+    stake_holders: vector<address>,
+    allowed_versions: AllowedVersions,
+    ctx: &mut TxContext,
+): MetadataCap {
+    config.assert_allows_custom_config<ConfigKey>();
 
-    let state = memez_fun.state_mut<Meme, Quote>();
+    let auction_config = auction_config.get<Quote>(total_supply);
 
-    state.fixed_rate.set_memez_fun(memez_fun_address);
-
-    memez_fun.share();
-
-    metadata_cap
+    new_impl<Meme, Quote, ConfigKey, MigrationWitness>(
+        config,
+        migrator_list,
+        clock,
+        meme_treasury_cap,
+        creation_fee,
+        auction_config,
+        total_supply,
+        is_token,
+        metadata,
+        stake_holders,
+        allowed_versions,
+        ctx,
+    )
 }
 
 public fun pump<Meme, Quote>(
@@ -281,6 +254,98 @@ fun meme_balance<Meme, Quote>(self: &mut MemezFun<Auction, Meme, Quote>, clock: 
 }
 
 // === Private Functions ===
+
+fun new_impl<Meme, Quote, ConfigKey, MigrationWitness>(
+    config: &MemezConfig,
+    migrator_list: &MemezMigratorList,
+    clock: &Clock,
+    meme_treasury_cap: TreasuryCap<Meme>,
+    mut creation_fee: Coin<SUI>,
+    auction_config: vector<u64>,
+    total_supply: u64,
+    is_token: bool,
+    metadata: MemezMetadata,
+    stake_holders: vector<address>,
+    allowed_versions: AllowedVersions,
+    ctx: &mut TxContext,
+): MetadataCap {
+    allowed_versions.assert_pkg_version();
+
+    let fees = config.fees<ConfigKey>();
+
+    fees.assert_dynamic_stake_holders(stake_holders);
+
+    fees.creation().take(&mut creation_fee, ctx);
+
+    creation_fee.destroy_or_return!(ctx);
+
+    let meme_token_cap = if (is_token) option::some(memez_token_cap::new(&meme_treasury_cap, ctx))
+    else option::none();
+
+    let (ipx_meme_coin_treasury, metadata_cap, mut meme_reserve) = new_treasury!(
+        meme_treasury_cap,
+        total_supply,
+        ctx,
+    );
+
+    let allocation = fees.allocation(
+        &mut meme_reserve,
+        stake_holders,
+    );
+
+    let liquidity_provision = meme_reserve.split(auction_config[2]);
+
+    let meme_balance = meme_reserve.split(auction_config[3]);
+
+    let meme_balance_value = meme_balance.value();
+
+    let fixed_rate = memez_fixed_rate::new<Meme, Quote>(
+        auction_config[1],
+        meme_balance,
+        fees.swap(stake_holders),
+    );
+
+    let auction_state = AuctionState<Meme, Quote> {
+        id: object::new(ctx),
+        start_time: clock.timestamp_ms(),
+        auction_duration: auction_config[0],
+        initial_reserve: meme_reserve.value(),
+        accrued_meme_balance: 0,
+        meme_reserve,
+        liquidity_provision,
+        allocation,
+        fixed_rate,
+        meme_token_cap,
+        migration_fee: fees.migration(stake_holders),
+    };
+
+    let inner_state = object::id_address(&auction_state);
+
+    let mut memez_fun = memez_fun::new<Auction, Meme, Quote, ConfigKey, MigrationWitness>(
+        migrator_list,
+        memez_versioned::create(AUCTION_STATE_VERSION_V1, auction_state, ctx),
+        is_token,
+        inner_state,
+        metadata,
+        ipx_meme_coin_treasury,
+        0,
+        auction_config[1],
+        meme_balance_value,
+        total_supply,
+        ctx.sender(),
+        ctx,
+    );
+
+    let memez_fun_address = memez_fun.address();
+
+    let state = memez_fun.state_mut<Meme, Quote>();
+
+    state.fixed_rate.set_memez_fun(memez_fun_address);
+
+    memez_fun.share();
+
+    metadata_cap
+}
 
 fun expected_drip_amount<Meme, Quote>(self: &AuctionState<Meme, Quote>, clock: &Clock): u64 {
     let current_time = clock.timestamp_ms();

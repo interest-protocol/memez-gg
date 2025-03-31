@@ -26,6 +26,8 @@ public struct PumpKey<phantom T>() has copy, drop, store;
 
 public struct StableKey<phantom T>() has copy, drop, store;
 
+public struct CustomConfigKey<phantom T>() has copy, drop, store;
+
 public struct MemezConfig has key {
     id: UID,
 }
@@ -87,6 +89,10 @@ public fun remove<T, Model: drop + store>(
     df::remove_if_exists<_, Model>(&mut self.id, type_name::get<T>());
 }
 
+public fun allow_custom_config<T>(self: &mut MemezConfig, _: &AuthWitness, _ctx: &mut TxContext) {
+    add<CustomConfigKey<T>, _>(self, true);
+}
+
 // === Public Package Functions ===
 
 public(package) fun fees<T>(self: &MemezConfig): MemezFees {
@@ -107,6 +113,12 @@ public(package) fun get_pump<Quote, T>(self: &MemezConfig, total_supply: u64): v
 
 public(package) fun get_stable<Quote, T>(self: &MemezConfig, total_supply: u64): vector<u64> {
     self.get!<StableKey<T>, StableConfig, Quote>(total_supply)
+}
+
+public(package) fun assert_allows_custom_config<T>(self: &MemezConfig) {
+    let key = type_name::get<CustomConfigKey<T>>();
+
+    assert!(df::exists_(&self.id, key), memez_errors::model_key_not_supported!());
 }
 
 // === Private Functions ===

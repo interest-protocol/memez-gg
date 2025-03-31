@@ -33,6 +33,7 @@ use memez_fun::{
     memez_fun::{Self, MemezFun, MemezMigrator},
     memez_metadata::MemezMetadata,
     memez_migrator_list::MemezMigratorList,
+    memez_stable_config::StableConfig,
     memez_token_cap::{Self, MemezTokenCap},
     memez_utils::{destroy_or_return, new_treasury},
     memez_versioned::{Self, Versioned}
@@ -66,7 +67,7 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
     config: &MemezConfig,
     migrator_list: &MemezMigratorList,
     meme_treasury_cap: TreasuryCap<Meme>,
-    mut creation_fee: Coin<SUI>,
+    creation_fee: Coin<SUI>,
     target_quote_liquidity: u64,
     total_supply: u64,
     is_token: bool,
@@ -77,79 +78,62 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ): MetadataCap {
-    allowed_versions.assert_pkg_version();
-
-    let fees = config.fees<ConfigKey>();
-
-    fees.creation().take(&mut creation_fee, ctx);
-
-    fees.assert_dynamic_stake_holders(stake_holders);
-
-    creation_fee.destroy_or_return!(ctx);
-
     let stable_config = config.get_stable<Quote, ConfigKey>(total_supply);
 
-    let meme_token_cap = if (is_token) option::some(memez_token_cap::new(&meme_treasury_cap, ctx))
-    else option::none();
-
-    let (ipx_meme_coin_treasury, metadata_cap, mut meme_reserve) = new_treasury!(
-        meme_treasury_cap,
-        total_supply,
-        ctx,
-    );
-
-    let allocation = fees.allocation(&mut meme_reserve, stake_holders);
-
-    let dev_allocation = meme_reserve.split(dev_payload[0]);
-
-    let liquidity_provision = meme_reserve.split(stable_config[1]);
-
-    let fixed_rate = memez_fixed_rate::new<Meme, Quote>(
-        target_quote_liquidity.min(stable_config[0]),
-        meme_reserve.split(stable_config[2]),
-        fees.swap(stake_holders),
-    );
-
-    let stable_state = StableState<Meme, Quote> {
-        id: object::new(ctx),
-        meme_reserve,
-        dev_allocation,
-        dev_vesting_period: dev_payload[1],
-        liquidity_provision,
-        fixed_rate,
-        meme_token_cap,
-        migration_fee: fees.migration(stake_holders),
-        allocation,
-    };
-
-    let meme_balance_value = stable_state.fixed_rate.meme_balance().value();
-
-    let inner_state = object::id_address(&stable_state);
-
-    let mut memez_fun = memez_fun::new<Stable, Meme, Quote, ConfigKey, MigrationWitness>(
+    new_impl<Meme, Quote, ConfigKey, MigrationWitness>(
+        config,
         migrator_list,
-        memez_versioned::create(STABLE_STATE_VERSION_V1, stable_state, ctx),
-        is_token,
-        inner_state,
-        metadata,
-        ipx_meme_coin_treasury,
-        0,
-        target_quote_liquidity.min(stable_config[0]),
-        meme_balance_value,
+        meme_treasury_cap,
+        creation_fee,
+        stable_config,
+        target_quote_liquidity,
         total_supply,
+        is_token,
+        metadata,
+        dev_payload,
+        stake_holders,
         dev,
+        allowed_versions,
         ctx,
-    );
+    )
+}
 
-    let memez_fun_address = memez_fun.address();
+public fun new_with_config<Meme, Quote, ConfigKey, MigrationWitness>(
+    config: &MemezConfig,
+    migrator_list: &MemezMigratorList,
+    meme_treasury_cap: TreasuryCap<Meme>,
+    creation_fee: Coin<SUI>,
+    stable_config: StableConfig,
+    target_quote_liquidity: u64,
+    total_supply: u64,
+    is_token: bool,
+    metadata: MemezMetadata,
+    dev_payload: vector<u64>,
+    stake_holders: vector<address>,
+    dev: address,
+    allowed_versions: AllowedVersions,
+    ctx: &mut TxContext,
+): MetadataCap {
+    config.assert_allows_custom_config<ConfigKey>();
 
-    let state = memez_fun.state_mut<Meme, Quote>();
+    let stable_config = stable_config.get<Quote>(total_supply);
 
-    state.fixed_rate.set_memez_fun(memez_fun_address);
-
-    memez_fun.share();
-
-    metadata_cap
+    new_impl<Meme, Quote, ConfigKey, MigrationWitness>(
+        config,
+        migrator_list,
+        meme_treasury_cap,
+        creation_fee,
+        stable_config,
+        target_quote_liquidity,
+        total_supply,
+        is_token,
+        metadata,
+        dev_payload,
+        stake_holders,
+        dev,
+        allowed_versions,
+        ctx,
+    )
 }
 
 public fun pump<Meme, Quote>(
@@ -257,6 +241,95 @@ fun dump_amount<Meme, Quote>(
 }
 
 // === Private Functions ===
+
+fun new_impl<Meme, Quote, ConfigKey, MigrationWitness>(
+    config: &MemezConfig,
+    migrator_list: &MemezMigratorList,
+    meme_treasury_cap: TreasuryCap<Meme>,
+    mut creation_fee: Coin<SUI>,
+    stable_config: vector<u64>,
+    target_quote_liquidity: u64,
+    total_supply: u64,
+    is_token: bool,
+    metadata: MemezMetadata,
+    dev_payload: vector<u64>,
+    stake_holders: vector<address>,
+    dev: address,
+    allowed_versions: AllowedVersions,
+    ctx: &mut TxContext,
+): MetadataCap {
+    allowed_versions.assert_pkg_version();
+
+    let fees = config.fees<ConfigKey>();
+
+    fees.creation().take(&mut creation_fee, ctx);
+
+    fees.assert_dynamic_stake_holders(stake_holders);
+
+    creation_fee.destroy_or_return!(ctx);
+
+    let meme_token_cap = if (is_token) option::some(memez_token_cap::new(&meme_treasury_cap, ctx))
+    else option::none();
+
+    let (ipx_meme_coin_treasury, metadata_cap, mut meme_reserve) = new_treasury!(
+        meme_treasury_cap,
+        total_supply,
+        ctx,
+    );
+
+    let allocation = fees.allocation(&mut meme_reserve, stake_holders);
+
+    let dev_allocation = meme_reserve.split(dev_payload[0]);
+
+    let liquidity_provision = meme_reserve.split(stable_config[1]);
+
+    let fixed_rate = memez_fixed_rate::new<Meme, Quote>(
+        target_quote_liquidity.min(stable_config[0]),
+        meme_reserve.split(stable_config[2]),
+        fees.swap(stake_holders),
+    );
+
+    let stable_state = StableState<Meme, Quote> {
+        id: object::new(ctx),
+        meme_reserve,
+        dev_allocation,
+        dev_vesting_period: dev_payload[1],
+        liquidity_provision,
+        fixed_rate,
+        meme_token_cap,
+        migration_fee: fees.migration(stake_holders),
+        allocation,
+    };
+
+    let meme_balance_value = stable_state.fixed_rate.meme_balance().value();
+
+    let inner_state = object::id_address(&stable_state);
+
+    let mut memez_fun = memez_fun::new<Stable, Meme, Quote, ConfigKey, MigrationWitness>(
+        migrator_list,
+        memez_versioned::create(STABLE_STATE_VERSION_V1, stable_state, ctx),
+        is_token,
+        inner_state,
+        metadata,
+        ipx_meme_coin_treasury,
+        0,
+        target_quote_liquidity.min(stable_config[0]),
+        meme_balance_value,
+        total_supply,
+        dev,
+        ctx,
+    );
+
+    let memez_fun_address = memez_fun.address();
+
+    let state = memez_fun.state_mut<Meme, Quote>();
+
+    state.fixed_rate.set_memez_fun(memez_fun_address);
+
+    memez_fun.share();
+
+    metadata_cap
+}
 
 fun token_cap<Meme, Quote>(state: &StableState<Meme, Quote>): &MemezTokenCap<Meme> {
     state.meme_token_cap.borrow()

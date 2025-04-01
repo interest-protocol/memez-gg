@@ -60,11 +60,11 @@ public struct World {
 
 public struct Meme has drop ()
 
-public struct MigrationWitness has drop ()
+public struct MigrationWitness() has drop;
 
 public struct InvalidQuote()
 
-public struct ConfigurableWitness has drop ()
+public struct ConfigurableWitness() has drop;
 
 #[test]
 fun test_new_coin() {

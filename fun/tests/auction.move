@@ -61,8 +61,10 @@ public struct World {
 
 public struct InvalidQuote()
 
+public struct ConfigurableWitness()
+
 #[test]
-fun test_new() {
+fun test_new_coin() {
     let mut world = start();
 
     let total_supply = 2_500_000_000 * POW_9;
@@ -76,6 +78,112 @@ fun test_new() {
     let auction_config = world.config.get_auction<SUI, DefaultKey>(total_supply);
 
     let mut memez_fun = set_up_pool(&mut world, false, total_supply);
+
+    assert_eq(memez_auction::start_time<Meme, SUI>(&mut memez_fun), start_time);
+
+    let expected_allocation_value = bps::new(fees.payloads()[3].payload_value()).calc(total_supply);
+
+    assert_eq(memez_auction::auction_duration<Meme, SUI>(&mut memez_fun), THIRTY_MINUTES_MS);
+    assert_eq(
+        memez_auction::initial_reserve<Meme, SUI>(&mut memez_fun),
+        total_supply - expected_allocation_value - auction_config[2] - auction_config[3],
+    );
+    assert_eq(
+        memez_auction::meme_reserve<Meme, SUI>(&mut memez_fun),
+        total_supply - expected_allocation_value - auction_config[2] - auction_config[3],
+    );
+    assert_eq(
+        memez_auction::allocation<Meme, SUI>(&mut memez_fun).value(),
+        expected_allocation_value,
+    );
+    assert_eq(memez_auction::liquidity_provision<Meme, SUI>(&mut memez_fun), auction_config[2]);
+
+    let fr = memez_auction::fixed_rate<Meme, SUI>(&mut memez_fun);
+
+    assert_eq(fr.quote_raise_amount(), auction_config[1]);
+    assert_eq(fr.meme_sale_amount(), auction_config[3]);
+    assert_eq(fr.meme_balance().value(), auction_config[3]);
+    assert_eq(fr.quote_balance().value(), 0);
+
+    memez_fun.assert_is_bonding();
+    memez_fun.assert_uses_coin();
+
+    destroy(memez_fun);
+
+    world.end();
+}
+
+#[test]
+fun test_new_coin_with_config() {
+    let mut world = start();
+
+    let total_supply = 2_500_000_000 * POW_9;
+
+    let start_time = 100;
+
+    world.clock.increment_for_testing(start_time);
+
+    let witness = acl::sign_in_for_testing();
+
+    world
+        .config
+        .set_fees<ConfigurableWitness>(
+            &witness,
+            vector[
+                vector[MAX_BPS, 2 * POW_9],
+                vector[MAX_BPS, 30],
+                vector[MAX_BPS, TEN_PERCENT],
+                vector[MAX_BPS, DEV_ALLOCATION],
+                vector[VESTING_PERIOD],
+            ],
+            vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[DEV]],
+            world.scenario.ctx(),
+        );
+
+    world.config.allow_custom_config<ConfigurableWitness>(&witness, world.scenario.ctx());
+
+    let auction_config = memez_auction_config::new<SUI>(vector[
+        THIRTY_MINUTES_MS,
+        TARGET_LIQUIDITY,
+        PROVISION_LIQUIDITY,
+        SEED_LIQUIDITY,
+    ]);
+
+    let fees = world.config.fees<ConfigurableWitness>();
+
+    let config = &world.config;
+    let migrator_list = &world.migrator_list;
+    let clock = &world.clock;
+
+    let ctx = world.scenario.ctx();
+
+    let metadata_cap = memez_auction::new_with_config<
+        Meme,
+        SUI,
+        ConfigurableWitness,
+        MigrationWitness,
+    >(
+        config,
+        migrator_list,
+        clock,
+        create_treasury_cap_for_testing(ctx),
+        mint_for_testing(2_000_000_000, ctx),
+        auction_config,
+        total_supply,
+        false,
+        memez_metadata::new_for_test(ctx),
+        vector[],
+        memez_allowed_versions::get_allowed_versions_for_testing(1),
+        ctx,
+    );
+
+    destroy(metadata_cap);
+
+    world.scenario.next_tx(ADMIN);
+
+    let mut memez_fun = world.scenario.take_shared<MemezFun<Auction, Meme, SUI>>();
+
+    let auction_config = auction_config.get<SUI>(total_supply);
 
     assert_eq(memez_auction::start_time<Meme, SUI>(&mut memez_fun), start_time);
 

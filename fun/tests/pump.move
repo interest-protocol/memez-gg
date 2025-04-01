@@ -64,6 +64,8 @@ public struct MigrationWitness has drop ()
 
 public struct InvalidQuote()
 
+public struct ConfigurableWitness has drop ()
+
 #[test]
 fun test_new_coin() {
     let mut world = start();
@@ -105,6 +107,113 @@ fun test_new_coin() {
     assert_eq(cp.target_quote_liquidity(), config[2]);
     assert_eq(cp.quote_balance().value(), first_purchase_value - swap_fee);
     assert_eq(cp.meme_balance().value(), total_supply - config[3] - dev_purchase);
+    assert_eq(dev_purchase, expected_dev_purchase);
+
+    destroy(memez_fun);
+    end(world);
+}
+
+#[test]
+fun test_new_coin_with_config() {
+    let mut world = start();
+
+    let first_purchase_value = 50_000_000_000;
+
+    let total_supply = 1_000_000_000_000_000_000;
+
+    let first_purchase = mint_for_testing(first_purchase_value, world.scenario.ctx());
+
+    let witness = acl::sign_in_for_testing();
+
+    world.config.allow_custom_config<ConfigurableWitness>(&witness, world.scenario.ctx());
+
+    world
+        .config
+        .set_fees<ConfigurableWitness>(
+            &witness,
+            vector[
+                vector[MAX_BPS, 2 * POW_9],
+                vector[MAX_BPS, 0, 30],
+                vector[MAX_BPS, 0, TEN_PERCENT],
+                vector[MAX_BPS, 0, 0],
+                vector[VESTING_PERIOD],
+            ],
+            vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
+            world.scenario.ctx(),
+        );
+
+    world
+        .config
+        .set_pump<SUI, ConfigurableWitness>(
+            &witness,
+            vector[BURN_TAX, VIRTUAL_LIQUIDITY, TARGET_LIQUIDITY, PROVISION_LIQUIDITY],
+            world.scenario.ctx(),
+        );
+
+    let pump_config = memez_pump_config::new<SUI>(vector[
+        BURN_TAX * 3,
+        VIRTUAL_LIQUIDITY * 3,
+        TARGET_LIQUIDITY * 3,
+        PROVISION_LIQUIDITY * 2,
+    ]);
+
+    let config = &world.config;
+
+    let migrator_list = &world.migrator_list;
+
+    let ctx = world.scenario.ctx();
+
+    let metadata_cap = memez_pump::new_with_config<
+        Meme,
+        SUI,
+        ConfigurableWitness,
+        MigrationWitness,
+    >(
+        config,
+        migrator_list,
+        create_treasury_cap_for_testing(ctx),
+        mint_for_testing(2_000_000_000, ctx),
+        pump_config,
+        total_supply,
+        false,
+        first_purchase,
+        memez_metadata::new_for_test(ctx),
+        vector[STAKE_HOLDER],
+        DEV,
+        memez_allowed_versions::get_allowed_versions_for_testing(1),
+        ctx,
+    );
+
+    destroy(metadata_cap);
+
+    world.scenario.next_tx(ADMIN);
+
+    let mut memez_fun = world.scenario.take_shared<MemezFun<Pump, Meme, SUI>>();
+
+    memez_fun.assert_uses_coin();
+
+    let pump_config = pump_config.get<SUI>(total_supply);
+
+    assert_eq(memez_pump::liquidity_provision(&mut memez_fun), pump_config[3]);
+
+    let dev_purchase = memez_pump::dev_purchase(&mut memez_fun);
+
+    let cp = memez_pump::constant_product_mut(&mut memez_fun);
+
+    let swap_fee = cp.swap_fee().calculate(first_purchase_value);
+
+    let expected_dev_purchase = get_amount_out(
+        first_purchase_value - swap_fee,
+        pump_config[1],
+        total_supply - pump_config[3],
+    );
+
+    let cp = memez_pump::constant_product_mut(&mut memez_fun);
+
+    assert_eq(cp.virtual_liquidity(), pump_config[1]);
+    assert_eq(cp.target_quote_liquidity(), pump_config[2]);
+    assert_eq(cp.quote_balance().value(), first_purchase_value - swap_fee);
+    assert_eq(cp.meme_balance().value(), total_supply - pump_config[3] - dev_purchase);
     assert_eq(dev_purchase, expected_dev_purchase);
 
     destroy(memez_fun);

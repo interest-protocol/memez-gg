@@ -2,6 +2,7 @@
 module memez_fun::memez_stable_tests;
 
 use interest_bps::bps;
+use interest_math::u64;
 use memez_acl::acl;
 use memez_fun::{
     memez_allowed_versions,
@@ -60,6 +61,8 @@ public struct MigrationWitness has drop ()
 
 public struct InvalidQuote()
 
+public struct ConfigurableWitness has drop ()
+
 #[test]
 fun test_new_coin() {
     let mut world = start();
@@ -97,6 +100,98 @@ fun test_new_coin() {
     assert_eq(
         memez_stable::meme_reserve(&mut memez_fun).value(),
         total_supply - dev_allocation - stable_config[2] - stable_config[1],
+    );
+
+    destroy(memez_fun);
+    world.end();
+}
+
+#[test]
+fun test_new_coin_with_config() {
+    let mut world = start();
+
+    let total_supply = POW_9 * POW_9;
+
+    let dev_allocation = POW_9 / 10;
+
+    let target_sui_liquidity = 10_000 * POW_9;
+
+    let witness = acl::sign_in_for_testing();
+
+    world
+        .config
+        .set_fees<ConfigurableWitness>(
+            &witness,
+            vector[
+                vector[MAX_BPS, 2 * POW_9],
+                vector[MAX_BPS, 0, 30],
+                vector[MAX_BPS, 0, TEN_PERCENT],
+                vector[MAX_BPS / 2, MAX_BPS / 2, 0],
+                vector[VESTING_PERIOD, VESTING_PERIOD + 1],
+            ],
+            vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
+            world.scenario.ctx(),
+        );
+
+    world.config.allow_custom_config<ConfigurableWitness>(&witness, world.scenario.ctx());
+
+    let config = &world.config;
+
+    let migrator_list = &world.migrator_list;
+
+    let ctx = world.scenario.ctx();
+
+    let stable_config = memez_stable_config::new<SUI>(vector[
+        MAX_TARGET_SUI_LIQUIDITY * 2,
+        LIQUIDITY_PROVISION * 2,
+        MEME_SALE_AMOUNT * 2,
+    ]);
+
+    let metadata_cap = memez_stable::new_with_config<
+        Meme,
+        SUI,
+        ConfigurableWitness,
+        MigrationWitness,
+    >(
+        config,
+        migrator_list,
+        create_treasury_cap_for_testing(ctx),
+        mint_for_testing(2_000_000_000, ctx),
+        stable_config,
+        target_sui_liquidity,
+        total_supply,
+        false,
+        memez_metadata::new_for_test(ctx),
+        vector[dev_allocation, DAY],
+        vector[STAKE_HOLDER],
+        DEV,
+        memez_allowed_versions::get_allowed_versions_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    destroy(metadata_cap);
+
+    world.scenario.next_tx(ADMIN);
+
+    let mut memez_fun = world.scenario.take_shared<MemezFun<Stable, Meme, SUI>>();
+
+    assert_eq(memez_stable::dev_allocation(&mut memez_fun), dev_allocation);
+    assert_eq(memez_stable::liquidity_provision(&mut memez_fun), total_supply / 10);
+    assert_eq(memez_stable::dev_vesting_period(&mut memez_fun), DAY);
+
+    memez_fun.assert_uses_coin();
+
+    let fr = memez_stable::fixed_rate(&mut memez_fun);
+
+    assert_eq(fr.memez_fun(), object::id_address(&memez_fun));
+    assert_eq(fr.quote_raise_amount(), target_sui_liquidity);
+    assert_eq(fr.meme_sale_amount(), u64::mul_div_up(total_supply, 40, 100));
+    assert_eq(fr.quote_balance().value(), 0);
+    assert_eq(fr.meme_balance().value(), u64::mul_div_up(total_supply, 40, 100));
+
+    assert_eq(
+        memez_stable::meme_reserve(&mut memez_fun).value(),
+        total_supply - dev_allocation - u64::mul_div_up(total_supply, 40, 100) - total_supply / 10,
     );
 
     destroy(memez_fun);

@@ -6,7 +6,6 @@ authors = ["Jose Cerqueira (jose@interestprotocol.com)"]
 published-at = "0x4f0897757092adc03641457a8a9becd3e069893b3e71583169039363e90827b4"
 
 [dependencies]
-Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet" }
 
 [addresses]
 interest_math = "0x4f0897757092adc03641457a8a9becd3e069893b3e71583169039363e90827b4"

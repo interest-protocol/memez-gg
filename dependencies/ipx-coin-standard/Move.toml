@@ -6,7 +6,6 @@ authors = ["Jose Cerqueira (jose@interestprotocol.com)"]
 published-at = "0x03979c0d3fac9c7cd89bc3b0b8de0aff4f23369be980b789b06c1b104f90eff3"
 
 [dependencies]
-Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet" }
 
 [addresses]
 ipx_coin_standard = "0x03979c0d3fac9c7cd89bc3b0b8de0aff4f23369be980b789b06c1b104f90eff3"

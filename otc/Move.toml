@@ -5,7 +5,6 @@ license = "MIT"
 authors = ["Jose Cerqueira (jose@interestprotocol.com)"]     
 
 [dependencies]
-Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet" }
 
 InterestBPS = { git = "https://github.com/interest-protocol/bps.git", rev = "main" }
 InterestMath = { git = "https://github.com/interest-protocol/interest-math.git", rev = "main" }

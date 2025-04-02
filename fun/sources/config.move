@@ -93,6 +93,10 @@ public fun allow_custom_config<T>(self: &mut MemezConfig, _: &AuthWitness, _ctx:
     add<CustomConfigKey<T>, _>(self, true);
 }
 
+public fun disallow_custom_config<T>(self: &mut MemezConfig, _: &AuthWitness, _ctx: &mut TxContext) {
+    df::remove_if_exists<_, bool>(&mut self.id, type_name::get<CustomConfigKey<T>>());
+}
+
 // === Public Package Functions ===
 
 public(package) fun fees<T>(self: &MemezConfig): MemezFees {

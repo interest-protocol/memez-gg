@@ -5,7 +5,6 @@ license = "MIT"
 authors = ["Jose Cerqueira (jose@interestprotocol.com)"]   
 
 [dependencies]
-Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet"}
 
 [addresses]
-memez_witness = "0x06267071d0eecfb7d16418cb71da4c7b7941b28208a71086ff3e47731c2d263a"
+memez_witness = "0x0"

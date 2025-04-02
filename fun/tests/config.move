@@ -4,7 +4,7 @@ module memez_fun::memez_config_tests;
 use memez_acl::acl;
 use memez_fun::{
     memez_auction_config::AuctionConfig,
-    memez_config::{Self, MemezConfig, DefaultKey, FeesKey, AuctionKey, PumpKey, StableKey},
+    memez_config::{Self, MemezConfig, DefaultKey, FeesKey, AuctionKey, PumpKey, StableKey, CustomConfigKey},
     memez_errors,
     memez_fees::MemezFees,
     memez_pump_config::PumpConfig,
@@ -17,6 +17,8 @@ public struct World {
     scenario: Scenario,
     config: MemezConfig,
 }
+
+public struct Memez()
 
 public struct Quote()
 
@@ -141,6 +143,25 @@ fun test_pump() {
     world.config.remove<PumpKey<DefaultKey>, PumpConfig>(&witness, world.scenario.ctx());
 
     assert_eq!(memez_config::exists_for_testing<PumpKey<DefaultKey>>(&world.config), false);
+
+    world.end();
+}
+
+#[test]
+fun test_custom_config() {
+    let mut world = start();
+
+    assert_eq!(memez_config::exists_for_testing<CustomConfigKey<Memez>>(&world.config), false);
+
+    let witness = acl::sign_in_for_testing();
+
+    world.config.allow_custom_config<Memez>(&witness, world.scenario.ctx());
+
+    assert_eq!(memez_config::exists_for_testing<CustomConfigKey<Memez>>(&world.config), true);
+
+    world.config.disallow_custom_config<Memez>(&witness, world.scenario.ctx());
+
+    assert_eq!(memez_config::exists_for_testing<CustomConfigKey<Memez>>(&world.config), false);
 
     world.end();
 }

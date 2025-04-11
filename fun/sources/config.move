@@ -40,6 +40,14 @@ public fun set_fees<T>(
     add<FeesKey<T>, _>(self, memez_fees::new(values, recipients));
 }
 
+public fun remove<T, Model: drop + store>(
+    self: &mut MemezConfig,
+    _: &AuthWitness,
+    _ctx: &mut TxContext,
+) {
+    df::remove_if_exists<_, Model>(&mut self.id, type_name::get<T>());
+}
+
 public fun add_quote_coin<T, Quote>(self: &mut MemezConfig, _: &AuthWitness, _: &mut TxContext) {
     let quote_coin_name = type_name::get<Quote>();
 

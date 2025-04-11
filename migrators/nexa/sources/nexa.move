@@ -65,6 +65,14 @@ public struct NewPool has copy, drop {
     meme_balance: u64,
 }
 
+public struct AddToExistingPool has copy, drop {
+    pool: address,
+    tick_spacing: u32,
+    meme: TypeName,
+    sui_balance: u64,
+    meme_balance: u64,
+}
+
 public struct SetTreasury(address, address) has copy, drop;
 
 public struct SetInitializePrice(u128, u128) has copy, drop;
@@ -194,7 +202,7 @@ public fun migrate_to_existing_pool<Meme>(
         true,
     );
 
-    emit(NewPool {
+    emit(AddToExistingPool {
         pool: object::id(pool).to_address(),
         tick_spacing: TICK_SPACING,
         meme: type_name::get<Meme>(),

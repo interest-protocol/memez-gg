@@ -4,7 +4,6 @@
 module memez_fun::memez_stable_config;
 
 use interest_bps::bps::{Self, BPS};
-use memez_fun::memez_errors;
 
 // === Constants ===
 
@@ -47,7 +46,7 @@ public(package) fun meme_sale_amount(self: &StableConfig, total_supply: u64): u6
 // === Private Functions ===
 
 fun assert_values(values: vector<u64>) {
-    assert!(values.length() == VALUES_LENGTH, memez_errors::invalid_config!());
+    assert!(values.length() == VALUES_LENGTH, memez_fun::memez_errors::invalid_config!());
     assert!(values[0] != 0);
     assert!(values[1] != 0);
     assert!(values[2] != 0);

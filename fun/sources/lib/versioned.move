@@ -6,7 +6,6 @@
 
 module memez_fun::memez_versioned;
 
-use memez_fun::memez_errors;
 use sui::dynamic_object_field as dof;
 
 public struct Versioned has key, store {
@@ -60,7 +59,7 @@ public(package) fun upgrade<T: key + store>(
     new_value: T,
     cap: VersionChangeCap,
 ) {
-    let error = memez_errors::invalid_upgrade!();
+    let error = memez_fun::memez_errors::invalid_upgrade!();
 
     let VersionChangeCap { versioned_id, old_version } = cap;
     assert!(versioned_id == object::id(self), error);

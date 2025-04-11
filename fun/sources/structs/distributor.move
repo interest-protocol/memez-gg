@@ -5,7 +5,6 @@
 module memez_fun::memez_distributor;
 
 use interest_bps::bps::{Self, BPS};
-use memez_fun::memez_utils;
 use memez_vesting::memez_vesting;
 use sui::{clock::Clock, coin::Coin};
 
@@ -95,7 +94,7 @@ macro fun distribute_internal<$T>(
 }
 // === Method Aliases ===
 
-use fun memez_utils::coin_destroy_or_burn as Coin.destroy_or_burn;
+use fun memez_fun::memez_utils::coin_destroy_or_burn as Coin.destroy_or_burn;
 
 // === Test Functions ===
 

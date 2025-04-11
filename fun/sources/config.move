@@ -40,7 +40,7 @@ public fun set_fees<T>(
     add<FeesKey<T>, _>(self, memez_fees::new(values, recipients));
 }
 
-public fun add_quote_coin<T, Quote>(self: &mut MemezConfig) {
+public fun add_quote_coin<T, Quote>(self: &mut MemezConfig, _: &AuthWitness, _: &mut TxContext) {
     let quote_coin_name = type_name::get<Quote>();
 
     let key = QuoteListKey<T>();
@@ -53,7 +53,7 @@ public fun add_quote_coin<T, Quote>(self: &mut MemezConfig) {
     }
 }
 
-public fun remove_quote_coin<T, Quote>(self: &mut MemezConfig) {
+public fun remove_quote_coin<T, Quote>(self: &mut MemezConfig, _: &AuthWitness, _: &mut TxContext) {
     let quote_coin_name = type_name::get<Quote>();
 
     let key = QuoteListKey<T>();
@@ -62,7 +62,9 @@ public fun remove_quote_coin<T, Quote>(self: &mut MemezConfig) {
 
     let quote_list = df::borrow_mut<_, VecSet<TypeName>>(&mut self.id, key);
 
-    quote_list.remove(&quote_coin_name);
+    if (quote_list.contains(&quote_coin_name)) {
+        quote_list.remove(&quote_coin_name);
+    }
 }
 
 // === Public Package Functions ===

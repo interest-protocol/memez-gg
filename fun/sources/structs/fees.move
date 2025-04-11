@@ -4,7 +4,7 @@
 module memez_fun::memez_fees;
 
 use interest_bps::bps::{Self, BPS};
-use memez_fun::{memez_distributor::{Self, Distributor}, memez_errors, memez_utils};
+use memez_fun::memez_distributor::{Self, Distributor};
 use sui::{balance::{Self, Balance}, clock::Clock, coin::Coin};
 
 // === Constants ===
@@ -47,7 +47,7 @@ public(package) fun new(
 ): MemezFees {
     assert!(
         values.length() == VALUES_LENGTH && recipients.length() == VALUES_LENGTH - 1,
-        memez_errors::invalid_config!(),
+        memez_fun::memez_errors::invalid_config!(),
     );
 
     let mut creation_percentages = values[0];
@@ -69,7 +69,7 @@ public(package) fun new(
     // @dev The other fees include dynamic recipients
     assert!(
         recipients[0].length() == creation_percentages.length(),
-        memez_errors::invalid_creation_fee_config!(),
+        memez_fun::memez_errors::invalid_creation_fee_config!(),
     );
 
     MemezFees {
@@ -117,7 +117,7 @@ public(package) fun take<T>(fee: Fee, asset: &mut Coin<T>, ctx: &mut TxContext):
         Fee::Value(value, distributor) => {
             if (value == 0) return 0;
 
-            assert!(asset.value() >= value, memez_errors::insufficient_value!());
+            assert!(asset.value() >= value, memez_fun::memez_errors::insufficient_value!());
 
             let payment = asset.split(value, ctx);
             let payment_value = payment.value();
@@ -132,7 +132,7 @@ public(package) fun take<T>(fee: Fee, asset: &mut Coin<T>, ctx: &mut TxContext):
             let asset_value = asset.value();
             let payment_value = bps.calc_up(asset_value);
 
-            assert!(asset_value >= payment_value, memez_errors::insufficient_value!());
+            assert!(asset_value >= payment_value, memez_fun::memez_errors::insufficient_value!());
 
             let payment = asset.split(payment_value, ctx);
 
@@ -210,13 +210,13 @@ public(package) fun allocation<T>(
 public(package) fun assert_dynamic_stake_holders(self: MemezFees, stake_holders: vector<address>) {
     assert!(
         stake_holders.length() == self.dynamic_stake_holders,
-        memez_errors::invalid_dynamic_stake_holders!(),
+        memez_fun::memez_errors::invalid_dynamic_stake_holders!(),
     );
 }
 
 // === Internal Method Aliases ===
 
-use fun memez_utils::validate_bps as vector.validate;
+use fun memez_fun::memez_utils::validate_bps as vector.validate;
 
 // === Public Method Aliases ===
 

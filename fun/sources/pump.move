@@ -28,14 +28,12 @@ use memez_fun::{
     memez_allowed_versions::AllowedVersions,
     memez_config::MemezConfig,
     memez_constant_product::{Self, MemezConstantProduct},
-    memez_errors,
     memez_fees::{Allocation, Fee},
-    memez_fun::{Self, MemezFun, MemezMigrator},
+    memez_fun::{new as new_memez_fun_pool, MemezFun, MemezMigrator},
     memez_metadata::MemezMetadata,
     memez_migrator_list::MemezMigratorList,
     memez_pump_config::PumpConfig,
     memez_token_cap::{Self, MemezTokenCap},
-    memez_utils::{destroy_or_burn, destroy_or_return, new_treasury},
     memez_versioned::{Self, Versioned}
 };
 use sui::{
@@ -96,11 +94,11 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
     let meme_token_cap = if (is_token) option::some(memez_token_cap::new(&meme_treasury_cap, ctx))
     else option::none();
 
-    let (ipx_meme_coin_treasury, metadata_cap, mut meme_balance) = new_treasury!(
-        meme_treasury_cap,
-        total_supply,
-        ctx,
-    );
+    let (
+        ipx_meme_coin_treasury,
+        metadata_cap,
+        mut meme_balance,
+    ) = meme_treasury_cap.new_ipx_treasury!(total_supply, ctx);
 
     let allocation = fees.allocation(&mut meme_balance, stake_holders);
 
@@ -126,7 +124,7 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
 
     let inner_state = object::id_address(&pump_state);
 
-    let mut memez_fun = memez_fun::new<Pump, Meme, Quote, ConfigKey, MigrationWitness>(
+    let mut memez_fun = new_memez_fun_pool<Pump, Meme, Quote, ConfigKey, MigrationWitness>(
         migrator_list,
         memez_versioned::create(PUMP_STATE_VERSION_V1, pump_state, ctx),
         is_token,
@@ -327,7 +325,7 @@ fun state_mut<Meme, Quote>(
 fun maybe_upgrade_state_to_latest(versioned: &mut Versioned) {
     assert!(
         versioned.version() == PUMP_STATE_VERSION_V1,
-        memez_errors::outdated_pump_state_version!(),
+        memez_fun::memez_errors::outdated_pump_state_version!(),
     );
 }
 
@@ -335,8 +333,9 @@ fun maybe_upgrade_state_to_latest(versioned: &mut Versioned) {
 
 use fun state as MemezFun.state;
 use fun state_mut as MemezFun.state_mut;
-use fun destroy_or_burn as Balance.destroy_or_burn;
-use fun destroy_or_return as Coin.destroy_or_return;
+use fun memez_fun::memez_utils::destroy_or_burn as Balance.destroy_or_burn;
+use fun memez_fun::memez_utils::destroy_or_return as Coin.destroy_or_return;
+use fun memez_fun::memez_utils::new_treasury as TreasuryCap.new_ipx_treasury;
 
 // === Public Test Only Functions ===
 

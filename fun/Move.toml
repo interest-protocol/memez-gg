@@ -5,7 +5,6 @@ license = "Apache-2.0"
 authors = ["Jose Cerqueira (jose@interestprotocol.com)"]   
 
 [dependencies]
-
 InterestBPS = { local = "../dependencies/bps" }
 InterestMath = { local = "../dependencies/interest-math" }
 IPXCoinStandard = { local = "../dependencies/ipx-coin-standard" }

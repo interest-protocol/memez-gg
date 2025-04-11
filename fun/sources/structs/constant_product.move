@@ -5,12 +5,7 @@ module memez_fun::memez_constant_product;
 
 use constant_product::constant_product::get_amount_out;
 use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
-use memez_fun::{
-    memez_burner::{Self, MemezBurner},
-    memez_events,
-    memez_fees::Fee,
-    memez_utils::{assert_slippage, assert_coin_has_value}
-};
+use memez_fun::{memez_burner::{Self, MemezBurner}, memez_events, memez_fees::Fee};
 use sui::{balance::{Self, Balance}, coin::Coin};
 
 // === Structs ===
@@ -60,7 +55,7 @@ public(package) fun pump<Meme, Quote>(
 ): (bool, Coin<Meme>) {
     let swap_fee = self.swap_fee.take(&mut quote_coin, ctx);
 
-    let quote_coin_value = assert_coin_has_value!(&quote_coin);
+    let quote_coin_value = quote_coin.assert_has_value!();
 
     let meme_balance_value = self.meme_balance.value();
 
@@ -70,7 +65,7 @@ public(package) fun pump<Meme, Quote>(
         meme_balance_value,
     );
 
-    assert_slippage!(meme_coin_value_out, min_amount_out);
+    meme_coin_value_out.assert_slippage!(min_amount_out);
 
     let meme_coin = self.meme_balance.split(meme_coin_value_out).into_coin(ctx);
 
@@ -98,7 +93,7 @@ public(package) fun dump<Meme, Quote>(
 ): Coin<Quote> {
     let swap_fee = self.swap_fee.take(&mut meme_coin, ctx);
 
-    let meme_coin_value = assert_coin_has_value!(&meme_coin);
+    let meme_coin_value = meme_coin.assert_has_value!();
 
     let meme_balance_value = self.meme_balance.value();
 
@@ -109,7 +104,7 @@ public(package) fun dump<Meme, Quote>(
 
     if (dynamic_burn_tax.value() != 0) treasury_cap.burn(meme_coin.split(meme_burn_fee_value, ctx));
 
-    let meme_coin_value = assert_coin_has_value!(&meme_coin);
+    let meme_coin_value = meme_coin.assert_has_value!();
 
     let quote_value_out = get_amount_out(
         meme_coin_value,
@@ -121,7 +116,7 @@ public(package) fun dump<Meme, Quote>(
 
     let quote_coin_amount_out = quote_value_out.min(quote_balance_value);
 
-    assert_slippage!(quote_coin_amount_out, min_amount_out);
+    quote_coin_amount_out.assert_slippage!(min_amount_out);
 
     let quote_coin = self.quote_balance.split(quote_coin_amount_out).into_coin(ctx);
 
@@ -220,6 +215,11 @@ public(package) fun meme_balance_mut<Meme, Quote>(
 ): &mut Balance<Meme> {
     &mut self.meme_balance
 }
+
+// === Aliases ===
+
+use fun memez_fun::memez_utils::assert_slippage as u64.assert_slippage;
+use fun memez_fun::memez_utils::assert_coin_has_value as Coin.assert_has_value;
 
 // === Test Only Functions ===
 

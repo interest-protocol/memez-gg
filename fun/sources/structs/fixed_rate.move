@@ -5,7 +5,7 @@ module memez_fun::memez_fixed_rate;
 
 use interest_bps::bps;
 use interest_math::u64;
-use memez_fun::{memez_events, memez_fees::Fee, memez_utils::assert_coin_has_value};
+use memez_fun::{memez_events, memez_fees::Fee};
 use sui::{balance::{Self, Balance}, coin::{Self, Coin}};
 
 // === Structs ===
@@ -50,7 +50,7 @@ public(package) fun pump<Meme, Quote>(
     mut quote_coin: Coin<Quote>,
     ctx: &mut TxContext,
 ): (bool, Coin<Quote>, Coin<Meme>) {
-    let quote_coin_value = assert_coin_has_value!(&quote_coin);
+    let quote_coin_value = quote_coin.assert_has_value!();
 
     let quote_amount_left = self.quote_raise_amount - self.quote_balance.value();
 
@@ -95,7 +95,7 @@ public(package) fun dump<Meme, Quote>(
 ): Coin<Quote> {
     let swap_fee = self.swap_fee.take(&mut meme_coin, ctx);
 
-    let meme_coin_value = assert_coin_has_value!(&meme_coin);
+    let meme_coin_value = meme_coin.assert_has_value!();
 
     let quote_coin_value_out = self
         .quote_balance
@@ -221,6 +221,10 @@ fun amount_before_fee(amount_in: u64, fee: u64): u64 {
     let max_bps = bps::max_bps();
     u64::mul_div_up(amount_in, max_bps, max_bps - fee)
 }
+
+// === Aliases ===
+
+use fun memez_fun::memez_utils::assert_coin_has_value as Coin.assert_has_value;
 
 // === Test Only Functions ===
 

@@ -3,7 +3,6 @@
 
 module memez_fun::memez_metadata;
 
-use memez_fun::memez_errors;
 use std::string::String;
 use sui::{coin::CoinMetadata, dynamic_field as df, vec_map::{Self, VecMap}};
 
@@ -24,7 +23,7 @@ public fun new<T>(
     metadata_values: vector<String>,
     ctx: &mut TxContext,
 ): MemezMetadata {
-    assert!(coin_metadata.get_decimals() == 9, memez_errors::invalid_meme_decimals!());
+    assert!(coin_metadata.get_decimals() == 9, memez_fun::memez_errors::invalid_meme_decimals!());
 
     let metadata = vec_map::from_keys_values(metadata_names, metadata_values);
 

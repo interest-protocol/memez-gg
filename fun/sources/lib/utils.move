@@ -5,7 +5,6 @@ module memez_fun::memez_utils;
 
 use interest_bps::bps;
 use ipx_coin_standard::ipx_coin_standard::{Self, MetadataCap};
-use memez_fun::memez_errors;
 use sui::{balance::Balance, coin::{Coin, TreasuryCap}};
 
 // === Public Package Functions ===
@@ -13,14 +12,14 @@ use sui::{balance::Balance, coin::{Coin, TreasuryCap}};
 public(package) macro fun assert_coin_has_value<$T>($coin: &Coin<$T>): u64 {
     let coin = $coin;
     let value = coin.value();
-    assert!(value > 0, memez_errors::zero_coin!());
+    assert!(value > 0, memez_fun::memez_errors::zero_coin!());
     value
 }
 
 public(package) macro fun assert_slippage($amount: u64, $minimum_expected: u64) {
     let amount = $amount;
     let minimum_expected = $minimum_expected;
-    assert!(amount >= minimum_expected, memez_errors::slippage!());
+    assert!(amount >= minimum_expected, memez_fun::memez_errors::slippage!());
 }
 
 public(package) macro fun destroy_or_burn<$Meme>(
@@ -37,22 +36,20 @@ public(package) macro fun destroy_or_burn<$Meme>(
 
 public(package) macro fun coin_destroy_or_burn<$Meme>($coin: Coin<$Meme>) {
     let coin = $coin;
-    if (coin.value() == 0) coin.destroy_zero()
-    else transfer::public_transfer(coin, @0x0);
+    if (coin.value() == 0) coin.destroy_zero() else transfer::public_transfer(coin, @0x0);
 }
 
 public(package) macro fun destroy_or_return<$Meme>($coin: Coin<$Meme>, $ctx: &TxContext) {
     let coin = $coin;
     let ctx = $ctx;
-    if (coin.value() == 0) coin.destroy_zero()
-    else transfer::public_transfer(coin, ctx.sender());
+    if (coin.value() == 0) coin.destroy_zero() else transfer::public_transfer(coin, ctx.sender());
 }
 
 public(package) macro fun validate_bps($percentages: vector<u64>) {
     let percentages = $percentages;
     assert!(
         percentages.fold!(0, |acc, bps| acc + bps) == bps::max_bps(),
-        memez_errors::invalid_percentages!(),
+        memez_fun::memez_errors::invalid_percentages!(),
     );
 }
 
@@ -64,8 +61,11 @@ public(package) macro fun new_treasury<$Meme>(
     let mut meme_treasury_cap = $mut_meme_treasury_cap;
     let total_supply = $total_supply;
     let ctx = $ctx;
-    assert!(meme_treasury_cap.total_supply() == 0, memez_errors::pre_mint_not_allowed!());
-    assert!(total_supply != 0, memez_errors::zero_total_supply!());
+    assert!(
+        meme_treasury_cap.total_supply() == 0,
+        memez_fun::memez_errors::pre_mint_not_allowed!(),
+    );
+    assert!(total_supply != 0, memez_fun::memez_errors::zero_total_supply!());
 
     let meme_balance = meme_treasury_cap.mint_balance(
         total_supply,

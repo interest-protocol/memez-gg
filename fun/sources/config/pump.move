@@ -4,7 +4,6 @@
 module memez_fun::memez_pump_config;
 
 use interest_bps::bps::{Self, BPS};
-use memez_fun::memez_errors;
 
 // === Constants ===
 
@@ -55,11 +54,11 @@ public(package) fun liquidity_provision(self: &PumpConfig, total_supply: u64): u
 // === Private Functions ===
 
 fun assert_values(values: vector<u64>) {
-    assert!(values.length() == VALUES_LENGTH, memez_errors::invalid_config!());
+    assert!(values.length() == VALUES_LENGTH, memez_fun::memez_errors::invalid_config!());
     assert!(values[1] != 0);
     assert!(values[2] != 0);
 
-    assert!(values[0] <= MAX_BURN_TAX, memez_errors::invalid_burn_tax!());
+    assert!(values[0] <= MAX_BURN_TAX, memez_fun::memez_errors::invalid_burn_tax!());
 }
 
 // === Test Only Functions ===

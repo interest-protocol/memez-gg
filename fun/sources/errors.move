@@ -57,19 +57,16 @@ const EZeroTotalSupply: u64 = 19;
 const ERemoveCurrentVersionNotAllowed: u64 = 21;
 
 #[test_only]
-const EInvalidQuoteType: u64 = 22;
+const EInvalidMemeDecimals: u64 = 22;
 
 #[test_only]
-const EInvalidMemeDecimals: u64 = 23;
+const EInvalidDynamicStakeHolders: u64 = 23;
 
 #[test_only]
-const EInvalidDynamicStakeHolders: u64 = 24;
+const EInvalidBurnTax: u64 = 24;
 
 #[test_only]
-const EInvalidBurnTax: u64 = 25;
-
-#[test_only]
-const EQuoteCoinNotSupported: u64 = 26;
+const EQuoteCoinNotSupported: u64 = 25;
 
 // === Public Package Functions ===
 
@@ -161,22 +158,18 @@ public(package) macro fun remove_current_version_not_allowed(): u64 {
     21
 }
 
-public(package) macro fun invalid_quote_type(): u64 {
+public(package) macro fun invalid_meme_decimals(): u64 {
     22
 }
 
-public(package) macro fun invalid_meme_decimals(): u64 {
+public(package) macro fun invalid_dynamic_stake_holders(): u64 {
     23
 }
 
-public(package) macro fun invalid_dynamic_stake_holders(): u64 {
+public(package) macro fun invalid_burn_tax(): u64 {
     24
 }
 
-public(package) macro fun invalid_burn_tax(): u64 {
-    25
-}
-
 public(package) macro fun quote_coin_not_supported(): u64 {
-    26
+    25
 }

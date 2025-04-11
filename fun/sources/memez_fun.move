@@ -25,11 +25,9 @@ module memez_fun::memez_fun;
 use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
 use memez_fun::{
     memez_allowed_versions::AllowedVersions,
-    memez_errors,
     memez_events,
     memez_metadata::MemezMetadata,
     memez_migrator_list::MemezMigratorList,
-    memez_utils::destroy_or_burn,
     memez_versioned::Versioned
 };
 use std::{string::String, type_name::{Self, TypeName}};
@@ -82,7 +80,7 @@ public fun destroy<Meme, Quote, Witness: drop>(
 ): (Balance<Meme>, Balance<Quote>) {
     let MemezMigrator { witness, memez_fun, meme_balance, quote_balance } = migrator;
 
-    assert!(type_name::get<Witness>() == witness, memez_errors::invalid_witness!());
+    assert!(type_name::get<Witness>() == witness, memez_fun::memez_errors::invalid_witness!());
 
     memez_events::migrated<Meme, Quote>(
         memez_fun,
@@ -586,30 +584,30 @@ public(package) fun set_progress_to_migrating<Curve, Meme, Quote>(
 }
 
 public(package) fun assert_is_bonding<Curve, Meme, Quote>(self: &MemezFun<Curve, Meme, Quote>) {
-    assert!(self.progress == Progress::Bonding, memez_errors::not_bonding!());
+    assert!(self.progress == Progress::Bonding, memez_fun::memez_errors::not_bonding!());
 }
 
 public(package) fun assert_is_migrating<Curve, Meme, Quote>(self: &MemezFun<Curve, Meme, Quote>) {
-    assert!(self.progress == Progress::Migrating, memez_errors::not_migrating!());
+    assert!(self.progress == Progress::Migrating, memez_fun::memez_errors::not_migrating!());
 }
 
 public(package) fun assert_migrated<Curve, Meme, Quote>(self: &MemezFun<Curve, Meme, Quote>) {
-    assert!(self.progress == Progress::Migrated, memez_errors::not_migrated!());
+    assert!(self.progress == Progress::Migrated, memez_fun::memez_errors::not_migrated!());
 }
 
 public(package) fun assert_is_dev<Curve, Meme, Quote>(
     self: &MemezFun<Curve, Meme, Quote>,
     ctx: &TxContext,
 ) {
-    assert!(self.dev == ctx.sender(), memez_errors::invalid_dev!());
+    assert!(self.dev == ctx.sender(), memez_fun::memez_errors::invalid_dev!());
 }
 
 public(package) fun assert_uses_token<Curve, Meme, Quote>(self: &MemezFun<Curve, Meme, Quote>) {
-    assert!(self.is_token, memez_errors::token_not_supported!());
+    assert!(self.is_token, memez_fun::memez_errors::token_not_supported!());
 }
 
 public(package) fun assert_uses_coin<Curve, Meme, Quote>(self: &MemezFun<Curve, Meme, Quote>) {
-    assert!(!self.is_token, memez_errors::token_supported!());
+    assert!(!self.is_token, memez_fun::memez_errors::token_supported!());
 }
 
 // === Public Package Migration Functions ===
@@ -637,8 +635,9 @@ fun metadata<Curve, Meme, Quote>(self: &MemezFun<Curve, Meme, Quote>): VecMap<St
 
 // === Aliases ===
 
+use fun memez_fun::memez_utils::destroy_or_burn as Balance.destroy_or_burn;
+
 public use fun addr as MemezFun.address;
-use fun destroy_or_burn as Balance.destroy_or_burn;
 
 // === Test Only Functions ===
 

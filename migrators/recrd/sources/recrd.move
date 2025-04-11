@@ -59,6 +59,14 @@ public struct NewPool has copy, drop {
     meme_balance: u64,
 }
 
+public struct AddToExistingPool has copy, drop {
+    pool: address,
+    tick_spacing: u32,
+    meme: TypeName,
+    sui_balance: u64,
+    meme_balance: u64,
+}
+
 public struct SetTreasury(address, address) has copy, drop;
 
 public struct SetInitializePrice(u128, u128) has copy, drop;
@@ -91,7 +99,7 @@ public fun migrate_to_new_pool<Meme>(
     assert!(meme_metadata.get_decimals() == MEME_DECIMALS, EInvalidDecimals);
     assert!(ipx_treasury.total_supply<Meme>() == MEME_TOTAL_SUPPLY, EInvalidTotalSupply);
 
-    let ( meme_balance, sui_balance) = migrator.destroy(Witness());
+    let (meme_balance, sui_balance) = migrator.destroy(Witness());
 
     let sui_balance_value = sui_balance.value();
     let meme_balance_value = meme_balance.value();
@@ -159,7 +167,7 @@ public fun migrate_to_existing_pool<Meme>(
     let meme_to_add = meme_balance.split(meme_balance_value.min(amount_a));
     let sui_to_add = sui_balance.split(sui_balance_value.min(amount_b));
 
-    emit(NewPool {
+    emit(AddToExistingPool {
         pool: position.pool_id().to_address(),
         tick_spacing: TICK_SPACING,
         meme: type_name::get<Meme>(),

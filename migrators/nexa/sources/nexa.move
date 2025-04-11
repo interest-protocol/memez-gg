@@ -1,11 +1,15 @@
 module nexa::nexa_migrator;
 
-use bluefin_spot::{config::GlobalConfig, pool::{Self, Pool, create_pool_with_liquidity}};
+use bluefin_spot::config::GlobalConfig;
+use bluefin_spot::pool::{Self, Pool, create_pool_with_liquidity};
 use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
 use memez_acl::acl::AuthWitness;
 use memez_fun::memez_fun::MemezMigrator;
 use std::type_name::{Self, TypeName};
-use sui::{clock::Clock, coin::{Coin, CoinMetadata}, event::emit, sui::SUI};
+use sui::clock::Clock;
+use sui::coin::{Coin, CoinMetadata};
+use sui::event::emit;
+use sui::sui::SUI;
 
 // === Constants ===
 
@@ -102,10 +106,10 @@ public fun migrate_to_new_pool<Meme, CoinTypeFee>(
     let (
         pool_id,
         position,
-        amount_a_provided,
-        amount_b_provided,
-        extra_a,
-        extra_b,
+        amount_meme_provided,
+        amount_sui_provided,
+        extra_meme,
+        extra_sui,
     ) = create_pool_with_liquidity<Meme, SUI, CoinTypeFee>(
         clock,
         protocol_config,
@@ -134,15 +138,15 @@ public fun migrate_to_new_pool<Meme, CoinTypeFee>(
         pool: pool_id.to_address(),
         tick_spacing: TICK_SPACING,
         meme: type_name::get<Meme>(),
-        sui_balance: amount_a_provided,
-        meme_balance: amount_b_provided,
+        meme_balance: amount_meme_provided,
+        sui_balance: amount_sui_provided,
     });
 
     // !Important for test we send to treasury - REPLACE TO DEAD AFTER
     transfer::public_transfer(position, nexa_config.treasury);
 
-    transfer_or_burn(extra_a.into_coin(ctx), DEAD_ADDRESS);
-    transfer_or_burn(extra_b.into_coin(ctx), nexa_config.treasury);
+    transfer_or_burn(extra_meme.into_coin(ctx), DEAD_ADDRESS);
+    transfer_or_burn(extra_sui.into_coin(ctx), nexa_config.treasury);
 }
 
 // @dev We do not need to check decimals nor total supply here because we do not set the initial price.
@@ -163,10 +167,10 @@ public fun migrate_to_existing_pool<Meme>(
     let meme_balance_value = meme_balance.value();
 
     let (
-        amount_a_provided,
-        amount_b_provided,
-        extra_a,
-        extra_b,
+        amount_meme_provided,
+        amount_sui_provided,
+        extra_meme,
+        extra_sui,
     ) = pool::add_liquidity_with_fixed_amount(
         clock,
         protocol_config,
@@ -182,14 +186,14 @@ public fun migrate_to_existing_pool<Meme>(
         pool: object::id(pool).to_address(),
         tick_spacing: TICK_SPACING,
         meme: type_name::get<Meme>(),
-        meme_balance: amount_b_provided,
-        sui_balance: amount_a_provided,
+        meme_balance: amount_meme_provided,
+        sui_balance: amount_sui_provided,
     });
 
     // !Important for test we send to treasury - REPLACE TO DEAD AFTER
     transfer::public_transfer(position, nexa_config.treasury);
-    transfer_or_burn(extra_a.into_coin(ctx), DEAD_ADDRESS);
-    transfer_or_burn(extra_b.into_coin(ctx), nexa_config.treasury);
+    transfer_or_burn(extra_meme.into_coin(ctx), DEAD_ADDRESS);
+    transfer_or_burn(extra_sui.into_coin(ctx), nexa_config.treasury);
 }
 
 // === Admin Functions ===

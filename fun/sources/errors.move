@@ -65,6 +65,12 @@ const EInvalidMemeDecimals: u64 = 23;
 #[test_only]
 const EInvalidDynamicStakeHolders: u64 = 24;
 
+#[test_only]
+const EInvalidBurnTax: u64 = 25;
+
+#[test_only]
+const EQuoteCoinNotSupported: u64 = 26;
+
 // === Public Package Functions ===
 
 public(package) macro fun insufficient_value(): u64 {
@@ -165,4 +171,12 @@ public(package) macro fun invalid_meme_decimals(): u64 {
 
 public(package) macro fun invalid_dynamic_stake_holders(): u64 {
     24
+}
+
+public(package) macro fun invalid_burn_tax(): u64 {
+    25
+}
+
+public(package) macro fun quote_coin_not_supported(): u64 {
+    26
 }

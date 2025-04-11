@@ -5,11 +5,12 @@ module memez_fun::memez_pump_config;
 
 use interest_bps::bps::{Self, BPS};
 use memez_fun::memez_errors;
-use std::type_name::{Self, TypeName};
 
 // === Constants ===
 
 const VALUES_LENGTH: u64 = 4;
+
+const MAX_BURN_TAX: u64 = 6_000;
 
 // === Structs ===
 
@@ -18,12 +19,11 @@ public struct PumpConfig has copy, drop, store {
     virtual_liquidity: u64,
     target_quote_liquidity: u64,
     liquidity_provision: BPS,
-    quote_type: TypeName,
 }
 
 // === Public Functions ===
 
-public fun new<Quote>(values: vector<u64>): PumpConfig {
+public fun new(values: vector<u64>): PumpConfig {
     assert_values(values);
 
     PumpConfig {
@@ -31,18 +31,25 @@ public fun new<Quote>(values: vector<u64>): PumpConfig {
         virtual_liquidity: values[1],
         target_quote_liquidity: values[2],
         liquidity_provision: bps::new(values[3]),
-        quote_type: type_name::get<Quote>(),
     }
 }
 
 // === Public Package Functions ===
 
-public(package) fun get<Quote>(self: &PumpConfig, total_supply: u64): vector<u64> {
-    assert!(type_name::get<Quote>() == self.quote_type, memez_errors::invalid_quote_type!());
+public(package) fun burn_tax(self: &PumpConfig): u64 {
+    self.burn_tax
+}
 
-    let liquidity_provision = self.liquidity_provision.calc(total_supply);
+public(package) fun virtual_liquidity(self: &PumpConfig): u64 {
+    self.virtual_liquidity
+}
 
-    vector[self.burn_tax, self.virtual_liquidity, self.target_quote_liquidity, liquidity_provision]
+public(package) fun target_quote_liquidity(self: &PumpConfig): u64 {
+    self.target_quote_liquidity
+}
+
+public(package) fun liquidity_provision(self: &PumpConfig, total_supply: u64): u64 {
+    self.liquidity_provision.calc(total_supply)
 }
 
 // === Private Functions ===
@@ -51,11 +58,8 @@ fun assert_values(values: vector<u64>) {
     assert!(values.length() == VALUES_LENGTH, memez_errors::invalid_config!());
     assert!(values[1] != 0);
     assert!(values[2] != 0);
+
+    assert!(values[0] <= MAX_BURN_TAX, memez_errors::invalid_burn_tax!());
 }
 
 // === Test Only Functions ===
-
-#[test_only]
-public fun quote_type(self: &PumpConfig): TypeName {
-    self.quote_type
-}

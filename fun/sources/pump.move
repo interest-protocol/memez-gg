@@ -70,40 +70,7 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
     config: &MemezConfig,
     migrator_list: &MemezMigratorList,
     meme_treasury_cap: TreasuryCap<Meme>,
-    creation_fee: Coin<SUI>,
-    total_supply: u64,
-    is_token: bool,
-    first_purchase: Coin<Quote>,
-    metadata: MemezMetadata,
-    stake_holders: vector<address>,
-    dev: address,
-    allowed_versions: AllowedVersions,
-    ctx: &mut TxContext,
-): (MemezFun<Pump, Meme, Quote>, MetadataCap) {
-    let pump_config = config.get_pump<Quote, ConfigKey>(total_supply);
-
-    new_impl<Meme, Quote, ConfigKey, MigrationWitness>(
-        config,
-        migrator_list,
-        meme_treasury_cap,
-        creation_fee,
-        pump_config,
-        total_supply,
-        is_token,
-        first_purchase,
-        metadata,
-        stake_holders,
-        dev,
-        allowed_versions,
-        ctx,
-    )
-}
-
-public fun new_with_config<Meme, Quote, ConfigKey, MigrationWitness>(
-    config: &MemezConfig,
-    migrator_list: &MemezMigratorList,
-    meme_treasury_cap: TreasuryCap<Meme>,
-    creation_fee: Coin<SUI>,
+    mut creation_fee: Coin<SUI>,
     pump_config: PumpConfig,
     total_supply: u64,
     is_token: bool,
@@ -114,25 +81,86 @@ public fun new_with_config<Meme, Quote, ConfigKey, MigrationWitness>(
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ): (MemezFun<Pump, Meme, Quote>, MetadataCap) {
-    config.assert_allows_custom_config<ConfigKey>();
+    allowed_versions.assert_pkg_version();
 
-    let pump_config = pump_config.get<Quote>(total_supply);
+    config.assert_quote_coin<ConfigKey, Quote>();
 
-    new_impl<Meme, Quote, ConfigKey, MigrationWitness>(
-        config,
-        migrator_list,
+    let fees = config.fees<ConfigKey>();
+
+    fees.creation().take(&mut creation_fee, ctx);
+
+    fees.assert_dynamic_stake_holders(stake_holders);
+
+    creation_fee.destroy_or_return!(ctx);
+
+    let meme_token_cap = if (is_token) option::some(memez_token_cap::new(&meme_treasury_cap, ctx))
+    else option::none();
+
+    let (ipx_meme_coin_treasury, metadata_cap, mut meme_balance) = new_treasury!(
         meme_treasury_cap,
-        creation_fee,
-        pump_config,
         total_supply,
-        is_token,
-        first_purchase,
-        metadata,
-        stake_holders,
-        dev,
-        allowed_versions,
         ctx,
-    )
+    );
+
+    let allocation = fees.allocation(&mut meme_balance, stake_holders);
+
+    let liquidity_provision = meme_balance.split(pump_config.liquidity_provision(total_supply));
+
+    let meme_balance_value = meme_balance.value();
+
+    let pump_state = PumpState<Meme, Quote> {
+        id: object::new(ctx),
+        dev_purchase: balance::zero(),
+        liquidity_provision,
+        constant_product: memez_constant_product::new(
+            pump_config.virtual_liquidity(),
+            pump_config.target_quote_liquidity(),
+            meme_balance,
+            fees.swap(stake_holders),
+            pump_config.burn_tax(),
+        ),
+        meme_token_cap,
+        migration_fee: fees.migration(stake_holders),
+        allocation,
+    };
+
+    let inner_state = object::id_address(&pump_state);
+
+    let mut memez_fun = memez_fun::new<Pump, Meme, Quote, ConfigKey, MigrationWitness>(
+        migrator_list,
+        memez_versioned::create(PUMP_STATE_VERSION_V1, pump_state, ctx),
+        is_token,
+        inner_state,
+        metadata,
+        ipx_meme_coin_treasury,
+        pump_config.virtual_liquidity(),
+        pump_config.target_quote_liquidity(),
+        meme_balance_value,
+        total_supply,
+        dev,
+        ctx,
+    );
+
+    let memez_fun_address = memez_fun.address();
+
+    let state = memez_fun.state_mut<Meme, Quote>();
+
+    state.constant_product.set_memez_fun(memez_fun_address);
+
+    if (first_purchase.value() != 0) {
+        let meme_coin = memez_fun.cp_pump_unchecked!(
+            |self| self.state_mut<Meme, Quote>(),
+            first_purchase,
+            0,
+            ctx,
+        );
+
+        let state = memez_fun.state_mut<Meme, Quote>();
+
+        state.dev_purchase.join(meme_coin.into_balance());
+    } else first_purchase.destroy_zero();
+
+    (memez_fun, metadata_cap)
 }
 
 public fun pump<Meme, Quote>(
@@ -277,101 +305,6 @@ fun dump_amount<Meme, Quote>(self: &mut MemezFun<Pump, Meme, Quote>, amount_in: 
 }
 
 // === Private Functions ===
-
-fun new_impl<Meme, Quote, ConfigKey, MigrationWitness>(
-    config: &MemezConfig,
-    migrator_list: &MemezMigratorList,
-    meme_treasury_cap: TreasuryCap<Meme>,
-    mut creation_fee: Coin<SUI>,
-    pump_config: vector<u64>,
-    total_supply: u64,
-    is_token: bool,
-    first_purchase: Coin<Quote>,
-    metadata: MemezMetadata,
-    stake_holders: vector<address>,
-    dev: address,
-    allowed_versions: AllowedVersions,
-    ctx: &mut TxContext,
-): (MemezFun<Pump, Meme, Quote>, MetadataCap) {
-    allowed_versions.assert_pkg_version();
-
-    let fees = config.fees<ConfigKey>();
-
-    fees.creation().take(&mut creation_fee, ctx);
-
-    fees.assert_dynamic_stake_holders(stake_holders);
-
-    creation_fee.destroy_or_return!(ctx);
-
-    let meme_token_cap = if (is_token) option::some(memez_token_cap::new(&meme_treasury_cap, ctx))
-    else option::none();
-
-    let (ipx_meme_coin_treasury, metadata_cap, mut meme_balance) = new_treasury!(
-        meme_treasury_cap,
-        total_supply,
-        ctx,
-    );
-
-    let allocation = fees.allocation(&mut meme_balance, stake_holders);
-
-    let liquidity_provision = meme_balance.split(pump_config[3]);
-
-    let meme_balance_value = meme_balance.value();
-
-    let pump_state = PumpState<Meme, Quote> {
-        id: object::new(ctx),
-        dev_purchase: balance::zero(),
-        liquidity_provision,
-        constant_product: memez_constant_product::new(
-            pump_config[1],
-            pump_config[2],
-            meme_balance,
-            fees.swap(stake_holders),
-            pump_config[0],
-        ),
-        meme_token_cap,
-        migration_fee: fees.migration(stake_holders),
-        allocation,
-    };
-
-    let inner_state = object::id_address(&pump_state);
-
-    let mut memez_fun = memez_fun::new<Pump, Meme, Quote, ConfigKey, MigrationWitness>(
-        migrator_list,
-        memez_versioned::create(PUMP_STATE_VERSION_V1, pump_state, ctx),
-        is_token,
-        inner_state,
-        metadata,
-        ipx_meme_coin_treasury,
-        pump_config[1],
-        pump_config[2],
-        meme_balance_value,
-        total_supply,
-        dev,
-        ctx,
-    );
-
-    let memez_fun_address = memez_fun.address();
-
-    let state = memez_fun.state_mut<Meme, Quote>();
-
-    state.constant_product.set_memez_fun(memez_fun_address);
-
-    if (first_purchase.value() != 0) {
-        let meme_coin = memez_fun.cp_pump_unchecked!(
-            |self| self.state_mut<Meme, Quote>(),
-            first_purchase,
-            0,
-            ctx,
-        );
-
-        let state = memez_fun.state_mut<Meme, Quote>();
-
-        state.dev_purchase.join(meme_coin.into_balance());
-    } else first_purchase.destroy_zero();
-
-    (memez_fun, metadata_cap)
-}
 
 fun token_cap<Meme, Quote>(state: &PumpState<Meme, Quote>): &MemezTokenCap<Meme> {
     state.meme_token_cap.borrow()

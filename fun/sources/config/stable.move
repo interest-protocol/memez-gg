@@ -5,7 +5,6 @@ module memez_fun::memez_stable_config;
 
 use interest_bps::bps::{Self, BPS};
 use memez_fun::memez_errors;
-use std::type_name::{Self, TypeName};
 
 // === Constants ===
 
@@ -14,35 +13,35 @@ const VALUES_LENGTH: u64 = 3;
 // === Structs ===
 
 public struct StableConfig has copy, drop, store {
-    max_target_quote_liquidity: u64,
+    target_quote_liquidity: u64,
     liquidity_provision: BPS,
     meme_sale_amount: BPS,
-    quote_type: TypeName,
 }
 
 // === Public Functions ===
 
-public fun new<Quote>(values: vector<u64>): StableConfig {
+public fun new(values: vector<u64>): StableConfig {
     assert_values(values);
 
     StableConfig {
-        max_target_quote_liquidity: values[0],
+        target_quote_liquidity: values[0],
         liquidity_provision: bps::new(values[1]),
         meme_sale_amount: bps::new(values[2]),
-        quote_type: type_name::get<Quote>(),
     }
 }
 
 // === Public Package Functions ===
 
-public(package) fun get<Quote>(self: &StableConfig, total_supply: u64): vector<u64> {
-    assert!(type_name::get<Quote>() == self.quote_type, memez_errors::invalid_quote_type!());
+public(package) fun target_quote_liquidity(self: &StableConfig): u64 {
+    self.target_quote_liquidity
+}
 
-    let liquidity_provision = self.liquidity_provision.calc(total_supply);
+public(package) fun liquidity_provision(self: &StableConfig, total_supply: u64): u64 {
+    self.liquidity_provision.calc(total_supply)
+}
 
-    let meme_sale_amount = self.meme_sale_amount.calc(total_supply);
-
-    vector[self.max_target_quote_liquidity, liquidity_provision, meme_sale_amount]
+public(package) fun meme_sale_amount(self: &StableConfig, total_supply: u64): u64 {
+    self.meme_sale_amount.calc(total_supply)
 }
 
 // === Private Functions ===
@@ -52,11 +51,4 @@ fun assert_values(values: vector<u64>) {
     assert!(values[0] != 0);
     assert!(values[1] != 0);
     assert!(values[2] != 0);
-}
-
-// === Test Only Functions ===
-
-#[test_only]
-public fun quote_type(self: &StableConfig): TypeName {
-    self.quote_type
 }

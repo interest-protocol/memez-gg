@@ -4,29 +4,15 @@
 module memez_fun::memez_config;
 
 use memez_acl::acl::AuthWitness;
-use memez_fun::{
-    memez_auction_config::{Self, AuctionConfig},
-    memez_errors,
-    memez_fees::{Self, MemezFees},
-    memez_pump_config::{Self, PumpConfig},
-    memez_stable_config::{Self, StableConfig}
-};
-use std::type_name;
-use sui::dynamic_field as df;
+use memez_fun::{memez_errors, memez_fees::{Self, MemezFees}};
+use std::type_name::{Self, TypeName};
+use sui::{dynamic_field as df, vec_set::{Self, VecSet}};
 
 // === Structs ===
 
-public struct DefaultKey() has copy, drop, store;
-
 public struct FeesKey<phantom T>() has copy, drop, store;
 
-public struct AuctionKey<phantom T>() has copy, drop, store;
-
-public struct PumpKey<phantom T>() has copy, drop, store;
-
-public struct StableKey<phantom T>() has copy, drop, store;
-
-public struct CustomConfigKey<phantom T>() has copy, drop, store;
+public struct QuoteListKey<phantom T>() has copy, drop, store;
 
 public struct MemezConfig has key {
     id: UID,
@@ -54,47 +40,29 @@ public fun set_fees<T>(
     add<FeesKey<T>, _>(self, memez_fees::new(values, recipients));
 }
 
-public fun set_auction<Quote, T>(
-    self: &mut MemezConfig,
-    _: &AuthWitness,
-    values: vector<u64>,
-    _ctx: &mut TxContext,
-) {
-    add<AuctionKey<T>, _>(self, memez_auction_config::new<Quote>(values));
+public fun add_quote_coin<T, Quote>(self: &mut MemezConfig) {
+    let quote_coin_name = type_name::get<Quote>();
+
+    let key = QuoteListKey<T>();
+
+    if (df::exists_(&self.id, key)) {
+        let mut quote_list = df::borrow_mut<_, VecSet<TypeName>>(&mut self.id, key);
+        quote_list.insert(quote_coin_name);
+    } else {
+        df::add(&mut self.id, key, vec_set::singleton(quote_coin_name));
+    }
 }
 
-public fun set_pump<Quote, T>(
-    self: &mut MemezConfig,
-    _: &AuthWitness,
-    values: vector<u64>,
-    _ctx: &mut TxContext,
-) {
-    add<PumpKey<T>, _>(self, memez_pump_config::new<Quote>(values));
-}
+public fun remove_quote_coin<T, Quote>(self: &mut MemezConfig) {
+    let quote_coin_name = type_name::get<Quote>();
 
-public fun set_stable<Quote, T>(
-    self: &mut MemezConfig,
-    _: &AuthWitness,
-    values: vector<u64>,
-    _ctx: &mut TxContext,
-) {
-    add<StableKey<T>, _>(self, memez_stable_config::new<Quote>(values));
-}
+    let key = QuoteListKey<T>();
 
-public fun remove<T, Model: drop + store>(
-    self: &mut MemezConfig,
-    _: &AuthWitness,
-    _ctx: &mut TxContext,
-) {
-    df::remove_if_exists<_, Model>(&mut self.id, type_name::get<T>());
-}
+    if (!df::exists_(&self.id, key)) return;
 
-public fun allow_custom_config<T>(self: &mut MemezConfig, _: &AuthWitness, _ctx: &mut TxContext) {
-    add<CustomConfigKey<T>, _>(self, true);
-}
+    let mut quote_list = df::borrow_mut<_, VecSet<TypeName>>(&mut self.id, key);
 
-public fun disallow_custom_config<T>(self: &mut MemezConfig, _: &AuthWitness, _ctx: &mut TxContext) {
-    df::remove_if_exists<_, bool>(&mut self.id, type_name::get<CustomConfigKey<T>>());
+    quote_list.remove(&quote_coin_name);
 }
 
 // === Public Package Functions ===
@@ -107,37 +75,20 @@ public(package) fun fees<T>(self: &MemezConfig): MemezFees {
     *df::borrow(&self.id, key)
 }
 
-public(package) fun get_auction<Quote, T>(self: &MemezConfig, total_supply: u64): vector<u64> {
-    self.get!<AuctionKey<T>, AuctionConfig, Quote>(total_supply)
-}
-
-public(package) fun get_pump<Quote, T>(self: &MemezConfig, total_supply: u64): vector<u64> {
-    self.get!<PumpKey<T>, PumpConfig, Quote>(total_supply)
-}
-
-public(package) fun get_stable<Quote, T>(self: &MemezConfig, total_supply: u64): vector<u64> {
-    self.get!<StableKey<T>, StableConfig, Quote>(total_supply)
-}
-
-public(package) fun assert_allows_custom_config<T>(self: &MemezConfig) {
-    let key = type_name::get<CustomConfigKey<T>>();
+public(package) fun assert_quote_coin<T, Quote>(self: &MemezConfig) {
+    let key = QuoteListKey<T>();
 
     assert!(df::exists_(&self.id, key), memez_errors::model_key_not_supported!());
+
+    let quote_list = df::borrow<_, VecSet<TypeName>>(&self.id, key);
+
+    assert!(
+        quote_list.contains(&type_name::get<Quote>()),
+        memez_errors::quote_coin_not_supported!(),
+    );
 }
 
 // === Private Functions ===
-
-macro fun get<$Key, $Model, $Quote>($self: &MemezConfig, $total_supply: u64): _ {
-    let self = $self;
-    let total_supply = $total_supply;
-
-    assert!(
-        df::exists_with_type<_, $Model>(&self.id, type_name::get<$Key>()),
-        memez_errors::model_key_not_supported!(),
-    );
-
-    df::borrow<_, $Model>(&self.id, type_name::get<$Key>()).get<$Quote>(total_supply)
-}
 
 fun add<ModelKey, Model: drop + store>(self: &mut MemezConfig, model: Model) {
     let key = type_name::get<ModelKey>();

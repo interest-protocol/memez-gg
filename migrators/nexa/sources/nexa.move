@@ -1,15 +1,10 @@
 module nexa::nexa_migrator;
 
-use bluefin_spot::config::GlobalConfig;
-use bluefin_spot::pool::{Self, Pool, create_pool_with_liquidity};
+use bluefin_spot::{config::GlobalConfig, pool::{Self, Pool, create_pool_with_liquidity}};
 use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
-use memez_acl::acl::AuthWitness;
 use memez_fun::memez_fun::MemezMigrator;
 use std::type_name::{Self, TypeName};
-use sui::clock::Clock;
-use sui::coin::{Coin, CoinMetadata};
-use sui::event::emit;
-use sui::sui::SUI;
+use sui::{clock::Clock, coin::{Coin, CoinMetadata}, event::emit, sui::SUI};
 
 // === Constants ===
 
@@ -45,6 +40,10 @@ const EInvalidDecimals: u64 = 1;
 const EInvalidTotalSupply: u64 = 2;
 
 // === Structs ===
+
+public struct Admin has key, store {
+    id: UID,
+}
 
 public struct Witness() has drop;
 
@@ -89,7 +88,12 @@ fun init(ctx: &mut TxContext) {
         migrator_reward: ONE_SUI,
     };
 
+    let admin = Admin {
+        id: object::new(ctx),
+    };
+
     transfer::share_object(recrd);
+    transfer::share_object(admin);
 }
 
 // === Public Mutative Functions ===
@@ -220,18 +224,18 @@ public fun migrate_to_existing_pool<Meme>(
 
 // === Admin Functions ===
 
-public fun set_initialize_price(self: &mut NexaConfig, _: &AuthWitness, initialize_price: u128) {
+public fun set_initialize_price(self: &mut NexaConfig, _: &Admin, initialize_price: u128) {
     assert!(initialize_price != 0);
     emit(SetInitializePrice(self.initialize_price, initialize_price));
     self.initialize_price = initialize_price;
 }
 
-public fun set_treasury(self: &mut NexaConfig, _: &AuthWitness, treasury: address) {
+public fun set_treasury(self: &mut NexaConfig, _: &Admin, treasury: address) {
     emit(SetTreasury(self.treasury, treasury));
     self.treasury = treasury;
 }
 
-public fun update_migrator_reward(self: &mut NexaConfig, _: &AuthWitness, migrator_reward: u64) {
+public fun update_migrator_reward(self: &mut NexaConfig, _: &Admin, migrator_reward: u64) {
     emit(UpdateMigratorReward(self.migrator_reward, migrator_reward));
     self.migrator_reward = migrator_reward;
 }

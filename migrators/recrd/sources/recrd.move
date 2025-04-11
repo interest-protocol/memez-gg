@@ -31,6 +31,8 @@ const MEME_DECIMALS: u8 = 9;
 
 const MEME_TOTAL_SUPPLY: u64 = 1_000_000_000_000_000_000;
 
+const ONE_SUI: u64 = 1_000_000_000;
+
 // === Errors ===
 
 const EInvalidDecimals: u64 = 0;
@@ -49,6 +51,7 @@ public struct RecrdConfig has key {
     id: UID,
     initialize_price: u128,
     treasury: address,
+    reward_value: u64,
 }
 
 public struct PoolCreationCapKey has copy, drop, store (TypeName)
@@ -67,6 +70,8 @@ public struct SetTreasury(address, address) has copy, drop;
 
 public struct SetInitializePrice(u128, u128) has copy, drop;
 
+public struct SetRewardValue(u64, u64) has copy, drop;
+
 // === Initializer ===
 
 fun init(ctx: &mut TxContext) {
@@ -74,6 +79,7 @@ fun init(ctx: &mut TxContext) {
         id: object::new(ctx),
         initialize_price: INITIALIZE_PRICE,
         treasury: @treasury,
+        reward_value: ONE_SUI,
     };
 
     let admin = Admin {
@@ -121,11 +127,13 @@ public fun migrate<Meme>(
     meme_metadata: &CoinMetadata<Meme>,
     migrator: MemezMigrator<Meme, SUI>,
     ctx: &mut TxContext,
-) {
+): Coin<SUI> {
     assert!(meme_metadata.get_decimals() == MEME_DECIMALS, EInvalidDecimals);
     assert!(ipx_treasury.total_supply<Meme>() == MEME_TOTAL_SUPPLY, EInvalidTotalSupply);
 
-    let (meme_balance, sui_balance) = migrator.destroy(Witness());
+    let (meme_balance, mut sui_balance) = migrator.destroy(Witness());
+
+    let reward = sui_balance.split(config.reward_value).into_coin(ctx);
 
     let pool_creation_cap = config.pool_creation_cap<Meme>();
 
@@ -162,6 +170,8 @@ public fun migrate<Meme>(
 
     transfer_or_burn(excess_meme, DEAD_ADDRESS);
     transfer_or_burn(excess_sui, config.treasury);
+
+    reward
 }
 
 // === Admin Functions ===
@@ -175,6 +185,11 @@ public fun set_initialize_price(self: &mut RecrdConfig, _: &Admin, initialize_pr
 public fun set_treasury(self: &mut RecrdConfig, _: &Admin, treasury: address) {
     emit(SetTreasury(self.treasury, treasury));
     self.treasury = treasury;
+}
+
+public fun set_reward_value(self: &mut RecrdConfig, _: &Admin, reward_value: u64) {
+    emit(SetRewardValue(self.reward_value, reward_value));
+    self.reward_value = reward_value;
 }
 
 // === Private Functions ===

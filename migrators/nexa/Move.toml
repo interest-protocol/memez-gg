@@ -7,7 +7,6 @@ authors = ["Jose Cerqueira (jose@interestprotocol.com)"]
 [dependencies]
 IPXCoinStandard = { git = "https://github.com/interest-protocol/ipx-coin-standard.git", rev = "main", override = true }
 
-MemezACL = { local = "../../acl" }
 MemezFun = { local = "../../fun" }
 BluefinSpot = { local = "../../dependencies/bluefin" }
 

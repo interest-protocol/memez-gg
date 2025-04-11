@@ -34,6 +34,8 @@ const MEME_TOTAL_SUPPLY: u64 = 1_000_000_000_000_000_000;
 // 1%
 const FEE_BASIS_POINTS: u64 = 10_000;
 
+const ONE_SUI: u64 = 1_000_000_000;
+
 // === Errors ===
 
 const EInvalidTickSpacing: u64 = 0;
@@ -50,6 +52,7 @@ public struct NexaConfig has key {
     id: UID,
     initialize_price: u128,
     treasury: address,
+    migrator_reward: u64,
 }
 
 // === Events ===
@@ -66,6 +69,8 @@ public struct SetTreasury(address, address) has copy, drop;
 
 public struct SetInitializePrice(u128, u128) has copy, drop;
 
+public struct UpdateMigratorReward(u64, u64) has copy, drop;
+
 // === Initializer ===
 
 fun init(ctx: &mut TxContext) {
@@ -73,6 +78,7 @@ fun init(ctx: &mut TxContext) {
         id: object::new(ctx),
         initialize_price: INITIALIZE_PRICE,
         treasury: @treasury,
+        migrator_reward: ONE_SUI,
     };
 
     transfer::share_object(recrd);
@@ -95,11 +101,13 @@ public fun migrate_to_new_pool<Meme, CoinTypeFee>(
     meme_metadata: &CoinMetadata<Meme>,
     migrator: MemezMigrator<Meme, SUI>,
     ctx: &mut TxContext,
-) {
+): Coin<SUI> {
     assert!(meme_metadata.get_decimals() == MEME_DECIMALS, EInvalidDecimals);
     assert!(ipx_treasury.total_supply<Meme>() == MEME_TOTAL_SUPPLY, EInvalidTotalSupply);
 
-    let (meme_balance, sui_balance) = migrator.destroy(Witness());
+    let (meme_balance, mut sui_balance) = migrator.destroy(Witness());
+
+    let reward = sui_balance.split(nexa_config.migrator_reward).into_coin(ctx);
 
     let meme_balance_value = meme_balance.value();
 
@@ -147,6 +155,8 @@ public fun migrate_to_new_pool<Meme, CoinTypeFee>(
 
     transfer_or_burn(extra_meme.into_coin(ctx), DEAD_ADDRESS);
     transfer_or_burn(extra_sui.into_coin(ctx), nexa_config.treasury);
+
+    reward
 }
 
 // @dev We do not need to check decimals nor total supply here because we do not set the initial price.
@@ -157,10 +167,12 @@ public fun migrate_to_existing_pool<Meme>(
     pool: &mut Pool<Meme, SUI>,
     migrator: MemezMigrator<Meme, SUI>,
     ctx: &mut TxContext,
-) {
+): Coin<SUI> {
     assert!(pool.get_tick_spacing() == TICK_SPACING, EInvalidTickSpacing);
 
-    let (meme_balance, sui_balance) = migrator.destroy(Witness());
+    let (meme_balance, mut sui_balance) = migrator.destroy(Witness());
+
+    let reward = sui_balance.split(nexa_config.migrator_reward).into_coin(ctx);
 
     let mut position = pool::open_position(protocol_config, pool, MIN_TICK, MAX_TICK, ctx);
 
@@ -194,6 +206,8 @@ public fun migrate_to_existing_pool<Meme>(
     transfer::public_transfer(position, nexa_config.treasury);
     transfer_or_burn(extra_meme.into_coin(ctx), DEAD_ADDRESS);
     transfer_or_burn(extra_sui.into_coin(ctx), nexa_config.treasury);
+
+    reward
 }
 
 // === Admin Functions ===
@@ -207,6 +221,11 @@ public fun set_initialize_price(self: &mut NexaConfig, _: &AuthWitness, initiali
 public fun set_treasury(self: &mut NexaConfig, _: &AuthWitness, treasury: address) {
     emit(SetTreasury(self.treasury, treasury));
     self.treasury = treasury;
+}
+
+public fun update_migrator_reward(self: &mut NexaConfig, _: &AuthWitness, migrator_reward: u64) {
+    emit(UpdateMigratorReward(self.migrator_reward, migrator_reward));
+    self.migrator_reward = migrator_reward;
 }
 
 // === Private Functions ===

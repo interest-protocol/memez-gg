@@ -1,16 +1,16 @@
 module recrd::recrd_migrator;
 
-use cetus_clmm::{
-    config::GlobalConfig,
-    factory::Pools,
-    pool::{Self, Pool},
-    pool_creator::create_pool_v2
-};
+use cetus_clmm::{config::GlobalConfig, factory::{Self, Pools, PoolCreationCap}, pool_creator};
 use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
-use memez_acl::acl::AuthWitness;
 use memez_fun::memez_fun::MemezMigrator;
 use std::type_name::{Self, TypeName};
-use sui::{clock::Clock, coin::{Coin, CoinMetadata}, event::emit, sui::SUI};
+use sui::{
+    clock::Clock,
+    coin::{Coin, CoinMetadata, TreasuryCap},
+    dynamic_object_field as dof,
+    event::emit,
+    sui::SUI
+};
 
 // === Constants ===
 
@@ -33,13 +33,15 @@ const MEME_TOTAL_SUPPLY: u64 = 1_000_000_000_000_000_000;
 
 // === Errors ===
 
-const EInvalidTickSpacing: u64 = 0;
+const EInvalidDecimals: u64 = 0;
 
-const EInvalidDecimals: u64 = 1;
-
-const EInvalidTotalSupply: u64 = 2;
+const EInvalidTotalSupply: u64 = 1;
 
 // === Structs ===
+
+public struct Admin has key, store {
+    id: UID,
+}
 
 public struct Witness() has drop;
 
@@ -49,17 +51,11 @@ public struct RecrdConfig has key {
     treasury: address,
 }
 
+public struct PoolCreationCapKey has copy, drop, store (TypeName)
+
 // === Events ===
 
 public struct NewPool has copy, drop {
-    pool: address,
-    tick_spacing: u32,
-    meme: TypeName,
-    sui_balance: u64,
-    meme_balance: u64,
-}
-
-public struct AddToExistingPool has copy, drop {
     pool: address,
     tick_spacing: u32,
     meme: TypeName,
@@ -80,12 +76,42 @@ fun init(ctx: &mut TxContext) {
         treasury: @treasury,
     };
 
+    let admin = Admin {
+        id: object::new(ctx),
+    };
+
     transfer::share_object(recrd);
+    transfer::share_object(admin);
 }
 
 // === Public Mutative Functions ===
 
-public fun migrate_to_new_pool<Meme>(
+public fun register_pool<Meme>(
+    config: &mut RecrdConfig,
+    cetus_config: &GlobalConfig,
+    cetus_pools: &mut Pools,
+    meme_coin_treasury_cap: &mut TreasuryCap<Meme>,
+    ctx: &mut TxContext,
+) {
+    let pool_creation_cap = factory::mint_pool_creation_cap(
+        cetus_config,
+        cetus_pools,
+        meme_coin_treasury_cap,
+        ctx,
+    );
+
+    factory::register_permission_pair<Meme, SUI>(
+        cetus_config,
+        cetus_pools,
+        TICK_SPACING,
+        &pool_creation_cap,
+        ctx,
+    );
+
+    config.save_pool_creation_cap<Meme>(pool_creation_cap);
+}
+
+public fun migrate<Meme>(
     config: &mut RecrdConfig,
     clock: &Clock,
     ipx_treasury: &IPXTreasuryStandard,
@@ -101,12 +127,15 @@ public fun migrate_to_new_pool<Meme>(
 
     let (meme_balance, sui_balance) = migrator.destroy(Witness());
 
+    let pool_creation_cap = config.pool_creation_cap<Meme>();
+
     let sui_balance_value = sui_balance.value();
     let meme_balance_value = meme_balance.value();
 
-    let (position, excess_meme, excess_sui) = create_pool_v2(
+    let (position, excess_meme, excess_sui) = pool_creator::create_pool_v2_with_creation_cap(
         cetus_config,
         cetus_pools,
+        pool_creation_cap,
         TICK_SPACING,
         config.initialize_price,
         b"".to_string(),
@@ -135,62 +164,15 @@ public fun migrate_to_new_pool<Meme>(
     transfer_or_burn(excess_sui, config.treasury);
 }
 
-// @dev We do not need to check decimals nor total supply here because we do not set the initial price.
-public fun migrate_to_existing_pool<Meme>(
-    config: &mut RecrdConfig,
-    clock: &Clock,
-    cetus_config: &GlobalConfig,
-    pool: &mut Pool<Meme, SUI>,
-    migrator: MemezMigrator<Meme, SUI>,
-    ctx: &mut TxContext,
-) {
-    assert!(pool.tick_spacing() == TICK_SPACING, EInvalidTickSpacing);
-
-    let (mut meme_balance, mut sui_balance) = migrator.destroy(Witness());
-
-    let mut position = pool::open_position(cetus_config, pool, MIN_TICK, MAX_TICK, ctx);
-
-    let meme_balance_value = meme_balance.value();
-    let sui_balance_value = sui_balance.value();
-
-    let receipt = pool::add_liquidity_fix_coin(
-        cetus_config,
-        pool,
-        &mut position,
-        meme_balance_value,
-        false,
-        clock,
-    );
-
-    let (amount_a, amount_b) = receipt.add_liquidity_pay_amount();
-
-    let meme_to_add = meme_balance.split(meme_balance_value.min(amount_a));
-    let sui_to_add = sui_balance.split(sui_balance_value.min(amount_b));
-
-    emit(AddToExistingPool {
-        pool: position.pool_id().to_address(),
-        tick_spacing: TICK_SPACING,
-        meme: type_name::get<Meme>(),
-        sui_balance: sui_to_add.value(),
-        meme_balance: meme_to_add.value(),
-    });
-
-    pool::repay_add_liquidity(cetus_config, pool, meme_to_add, sui_to_add, receipt);
-
-    transfer::public_transfer(position, DEAD_ADDRESS);
-    transfer_or_burn(meme_balance.into_coin(ctx), DEAD_ADDRESS);
-    transfer_or_burn(sui_balance.into_coin(ctx), config.treasury);
-}
-
 // === Admin Functions ===
 
-public fun set_initialize_price(self: &mut RecrdConfig, _: &AuthWitness, initialize_price: u128) {
+public fun set_initialize_price(self: &mut RecrdConfig, _: &Admin, initialize_price: u128) {
     assert!(initialize_price != 0);
     emit(SetInitializePrice(self.initialize_price, initialize_price));
     self.initialize_price = initialize_price;
 }
 
-public fun set_treasury(self: &mut RecrdConfig, _: &AuthWitness, treasury: address) {
+public fun set_treasury(self: &mut RecrdConfig, _: &Admin, treasury: address) {
     emit(SetTreasury(self.treasury, treasury));
     self.treasury = treasury;
 }
@@ -203,4 +185,12 @@ fun transfer_or_burn<CoinType>(coin: Coin<CoinType>, to: address) {
     } else {
         transfer::public_transfer(coin, to);
     }
+}
+
+fun pool_creation_cap<Meme>(config: &RecrdConfig): &PoolCreationCap {
+    dof::borrow<_, PoolCreationCap>(&config.id, PoolCreationCapKey(type_name::get<Meme>()))
+}
+
+fun save_pool_creation_cap<Meme>(config: &mut RecrdConfig, pool_creation_cap: PoolCreationCap) {
+    dof::add(&mut config.id, PoolCreationCapKey(type_name::get<Meme>()), pool_creation_cap);
 }

@@ -6,10 +6,8 @@ authors = ["Jose Cerqueira (jose@interestprotocol.com)"]
 
 
 [dependencies]
-Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/mainnet", override = true }
-IPXCoinStandard = { git = "https://github.com/interest-protocol/ipx-coin-standard.git", rev = "main" }
+IPXCoinStandard = { git = "https://github.com/interest-protocol/ipx-coin-standard.git", rev = "main", override = true }
 
-MemezACL = { local = "../../acl" }
 MemezFun = { local = "../../fun" }
 CetusClmm = { local = "../../dependencies/cetus_clmm" }
 

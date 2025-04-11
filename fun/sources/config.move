@@ -46,7 +46,7 @@ public fun add_quote_coin<T, Quote>(self: &mut MemezConfig) {
     let key = QuoteListKey<T>();
 
     if (df::exists_(&self.id, key)) {
-        let mut quote_list = df::borrow_mut<_, VecSet<TypeName>>(&mut self.id, key);
+        let quote_list = df::borrow_mut<_, VecSet<TypeName>>(&mut self.id, key);
         quote_list.insert(quote_coin_name);
     } else {
         df::add(&mut self.id, key, vec_set::singleton(quote_coin_name));
@@ -60,7 +60,7 @@ public fun remove_quote_coin<T, Quote>(self: &mut MemezConfig) {
 
     if (!df::exists_(&self.id, key)) return;
 
-    let mut quote_list = df::borrow_mut<_, VecSet<TypeName>>(&mut self.id, key);
+    let quote_list = df::borrow_mut<_, VecSet<TypeName>>(&mut self.id, key);
 
     quote_list.remove(&quote_coin_name);
 }

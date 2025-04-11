@@ -3,7 +3,6 @@ module memez_fun::memez_auction_config_tests;
 
 use memez_fun::{memez_auction_config, memez_errors};
 use std::unit_test::assert_eq;
-use sui::test_utils::destroy;
 
 // @dev 50,000,000 = 5%
 const LIQUIDITY_PROVISION: u64 = 500;
@@ -33,8 +32,6 @@ fun test_end_to_end() {
     assert_eq!(auction.seed_liquidity(1_000), MIN_SEED_LIQUIDITY);
     assert_eq!(auction.liquidity_provision(1_000_000_000), 50_000_000);
     assert_eq!(auction.seed_liquidity(1_000_000_000), 1_000_000);
-
-    destroy(auction);
 }
 
 #[
@@ -45,11 +42,9 @@ fun test_end_to_end() {
     ),
 ]
 fun test_new_invalid_config() {
-    let auction = memez_auction_config::new(vector[
+    memez_auction_config::new(vector[
         THIRTY_MINUTES_MS,
         TARGET_SUI_LIQUIDITY,
         LIQUIDITY_PROVISION,
     ]);
-
-    destroy(auction);
 }

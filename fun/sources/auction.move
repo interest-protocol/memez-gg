@@ -78,7 +78,7 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
     stake_holders: vector<address>,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
-): MetadataCap {
+): (MemezFun<Auction, Meme, Quote>, MetadataCap) {
     let auction_config = config.get_auction<Quote, ConfigKey>(total_supply);
 
     new_impl<Meme, Quote, ConfigKey, MigrationWitness>(
@@ -110,7 +110,7 @@ public fun new_with_config<Meme, Quote, ConfigKey, MigrationWitness>(
     stake_holders: vector<address>,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
-): MetadataCap {
+): (MemezFun<Auction, Meme, Quote>, MetadataCap) {
     config.assert_allows_custom_config<ConfigKey>();
 
     let auction_config = auction_config.get<Quote>(total_supply);
@@ -268,7 +268,7 @@ fun new_impl<Meme, Quote, ConfigKey, MigrationWitness>(
     stake_holders: vector<address>,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
-): MetadataCap {
+): (MemezFun<Auction, Meme, Quote>, MetadataCap) {
     allowed_versions.assert_pkg_version();
 
     let fees = config.fees<ConfigKey>();
@@ -342,9 +342,7 @@ fun new_impl<Meme, Quote, ConfigKey, MigrationWitness>(
 
     state.fixed_rate.set_memez_fun(memez_fun_address);
 
-    memez_fun.share();
-
-    metadata_cap
+    (memez_fun, metadata_cap)
 }
 
 fun expected_drip_amount<Meme, Quote>(self: &AuctionState<Meme, Quote>, clock: &Clock): u64 {

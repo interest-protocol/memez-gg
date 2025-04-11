@@ -61,7 +61,7 @@ public struct MemezMigrator<phantom Meme, phantom Quote> {
     meme_balance: Balance<Meme>,
 }
 
-public struct MemezFun<phantom Curve, phantom Meme, phantom Quote> has key {
+public struct MemezFun<phantom Curve, phantom Meme, phantom Quote> has key, store {
     id: UID,
     dev: address,
     is_token: bool,
@@ -555,10 +555,6 @@ public(package) macro fun fr_dump_amount<$Curve, $Meme, $Quote, $State>(
             amount_in,
             extra_meme_sale_amount,
         )
-}
-
-public(package) fun share<Curve, Meme, Quote>(self: MemezFun<Curve, Meme, Quote>) {
-    transfer::share_object(self);
 }
 
 public(package) fun addr<Curve, Meme, Quote>(self: &MemezFun<Curve, Meme, Quote>): address {

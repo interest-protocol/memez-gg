@@ -77,7 +77,7 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
     dev: address,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
-): MetadataCap {
+): (MemezFun<Stable, Meme, Quote>, MetadataCap) {
     let stable_config = config.get_stable<Quote, ConfigKey>(total_supply);
 
     new_impl<Meme, Quote, ConfigKey, MigrationWitness>(
@@ -113,7 +113,7 @@ public fun new_with_config<Meme, Quote, ConfigKey, MigrationWitness>(
     dev: address,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
-): MetadataCap {
+): (MemezFun<Stable, Meme, Quote>, MetadataCap) {
     config.assert_allows_custom_config<ConfigKey>();
 
     let stable_config = stable_config.get<Quote>(total_supply);
@@ -257,7 +257,7 @@ fun new_impl<Meme, Quote, ConfigKey, MigrationWitness>(
     dev: address,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
-): MetadataCap {
+): (MemezFun<Stable, Meme, Quote>, MetadataCap) {
     allowed_versions.assert_pkg_version();
 
     let fees = config.fees<ConfigKey>();
@@ -326,9 +326,7 @@ fun new_impl<Meme, Quote, ConfigKey, MigrationWitness>(
 
     state.fixed_rate.set_memez_fun(memez_fun_address);
 
-    memez_fun.share();
-
-    metadata_cap
+    (memez_fun, metadata_cap)
 }
 
 fun token_cap<Meme, Quote>(state: &StableState<Meme, Quote>): &MemezTokenCap<Meme> {

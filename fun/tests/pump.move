@@ -163,7 +163,7 @@ fun test_new_coin_with_config() {
 
     let ctx = world.scenario.ctx();
 
-    let metadata_cap = memez_pump::new_with_config<
+    let (mut memez_fun, metadata_cap) = memez_pump::new_with_config<
         Meme,
         SUI,
         ConfigurableWitness,
@@ -185,10 +185,6 @@ fun test_new_coin_with_config() {
     );
 
     destroy(metadata_cap);
-
-    world.scenario.next_tx(ADMIN);
-
-    let mut memez_fun = world.scenario.take_shared<MemezFun<Pump, Meme, SUI>>();
 
     memez_fun.assert_uses_coin();
 
@@ -599,7 +595,7 @@ fun test_token_end_to_end() {
 fun new_invalid_version() {
     let mut world = start();
 
-    let metadata_cap = memez_pump::new<Meme, SUI, DefaultKey, MigrationWitness>(
+    let (memez_fun, metadata_cap) = memez_pump::new<Meme, SUI, DefaultKey, MigrationWitness>(
         &world.config,
         &world.migrator_list,
         create_treasury_cap_for_testing(world.scenario.ctx()),
@@ -615,7 +611,7 @@ fun new_invalid_version() {
     );
 
     destroy(metadata_cap);
-
+    destroy(memez_fun);
     world.end();
 }
 
@@ -623,7 +619,7 @@ fun new_invalid_version() {
 fun new_low_creation_fee() {
     let mut world = start();
 
-    let metadata_cap = memez_pump::new<Meme, SUI, DefaultKey, MigrationWitness>(
+    let (memez_fun, metadata_cap) = memez_pump::new<Meme, SUI, DefaultKey, MigrationWitness>(
         &world.config,
         &world.migrator_list,
         create_treasury_cap_for_testing(world.scenario.ctx()),
@@ -639,7 +635,7 @@ fun new_low_creation_fee() {
     );
 
     destroy(metadata_cap);
-
+    destroy(memez_fun);
     world.end();
 }
 
@@ -1650,7 +1646,7 @@ fun new_invalid_dynamic_stake_holders() {
 
     let version = memez_allowed_versions::get_allowed_versions_for_testing(1);
 
-    let metadata_cap = memez_pump::new<Meme, SUI, DefaultKey, MigrationWitness>(
+    let (memez_fun, metadata_cap) = memez_pump::new<Meme, SUI, DefaultKey, MigrationWitness>(
         config,
         migrator_list,
         create_treasury_cap_for_testing(ctx),
@@ -1665,6 +1661,7 @@ fun new_invalid_dynamic_stake_holders() {
         ctx,
     );
 
+    destroy(memez_fun);
     destroy(metadata_cap);
     world.end();
 }
@@ -1686,7 +1683,12 @@ fun new_invalid_quote_type() {
 
     let version = memez_allowed_versions::get_allowed_versions_for_testing(1);
 
-    let metadata_cap = memez_pump::new<Meme, InvalidQuote, DefaultKey, MigrationWitness>(
+    let (memez_fun, metadata_cap) = memez_pump::new<
+        Meme,
+        InvalidQuote,
+        DefaultKey,
+        MigrationWitness,
+    >(
         config,
         migrator_list,
         create_treasury_cap_for_testing(ctx),
@@ -1701,6 +1703,7 @@ fun new_invalid_quote_type() {
         ctx,
     );
 
+    destroy(memez_fun);
     destroy(metadata_cap);
     world.end();
 }
@@ -1715,7 +1718,7 @@ fun set_up_pool(
 
     let version = memez_allowed_versions::get_allowed_versions_for_testing(1);
 
-    let metadata_cap = memez_pump::new<Meme, SUI, DefaultKey, MigrationWitness>(
+    let (memez_fun, metadata_cap) = memez_pump::new<Meme, SUI, DefaultKey, MigrationWitness>(
         &world.config,
         &world.migrator_list,
         create_treasury_cap_for_testing(ctx),
@@ -1732,9 +1735,7 @@ fun set_up_pool(
 
     destroy(metadata_cap);
 
-    world.scenario.next_tx(ADMIN);
-
-    world.scenario.take_shared<MemezFun<Pump, Meme, SUI>>()
+    memez_fun
 }
 
 fun start(): World {

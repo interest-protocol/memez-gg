@@ -79,7 +79,7 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
     dev: address,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
-): MetadataCap {
+): (MemezFun<Pump, Meme, Quote>, MetadataCap) {
     let pump_config = config.get_pump<Quote, ConfigKey>(total_supply);
 
     new_impl<Meme, Quote, ConfigKey, MigrationWitness>(
@@ -113,7 +113,7 @@ public fun new_with_config<Meme, Quote, ConfigKey, MigrationWitness>(
     dev: address,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
-): MetadataCap {
+): (MemezFun<Pump, Meme, Quote>, MetadataCap) {
     config.assert_allows_custom_config<ConfigKey>();
 
     let pump_config = pump_config.get<Quote>(total_supply);
@@ -292,7 +292,7 @@ fun new_impl<Meme, Quote, ConfigKey, MigrationWitness>(
     dev: address,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
-): MetadataCap {
+): (MemezFun<Pump, Meme, Quote>, MetadataCap) {
     allowed_versions.assert_pkg_version();
 
     let fees = config.fees<ConfigKey>();
@@ -370,9 +370,7 @@ fun new_impl<Meme, Quote, ConfigKey, MigrationWitness>(
         state.dev_purchase.join(meme_coin.into_balance());
     } else first_purchase.destroy_zero();
 
-    memez_fun.share();
-
-    metadata_cap
+    (memez_fun, metadata_cap)
 }
 
 fun token_cap<Meme, Quote>(state: &PumpState<Meme, Quote>): &MemezTokenCap<Meme> {

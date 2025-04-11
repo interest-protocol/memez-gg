@@ -81,7 +81,7 @@ fun test_new() {
     );
     memez_fun.assert_is_bonding();
 
-    memez_fun.share();
+    transfer::public_share_object(memez_fun);
     end(world);
 }
 
@@ -114,7 +114,7 @@ fun test_new_invalid_witness() {
         world.scenario.ctx(),
     );
 
-    memez_fun.share();
+    transfer::public_share_object(memez_fun);
     end(world);
 }
 
@@ -421,7 +421,7 @@ fun test_progress_asserts() {
 
     memez_fun.assert_migrated();
 
-    memez_fun.share();
+    transfer::public_share_object(memez_fun);
     destroy(migrator);
     end(world);
 }
@@ -459,7 +459,7 @@ fun test_migrate() {
     assert_eq(meme_balance.value(), 2000);
     assert_eq(sui_balance.value(), 1000);
 
-    memez_fun.share();
+    transfer::public_share_object(memez_fun);
 
     destroy(meme_balance);
     destroy(sui_balance);
@@ -496,7 +496,7 @@ fun test_migrate_invalid_witness() {
 
     let (meme_balance, sui_balance) = migrator.destroy(Meme());
 
-    memez_fun.share();
+    transfer::public_share_object(memez_fun);
 
     destroy(meme_balance);
     destroy(sui_balance);

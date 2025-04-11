@@ -157,7 +157,7 @@ fun test_new_coin_with_config() {
 
     let ctx = world.scenario.ctx();
 
-    let metadata_cap = memez_auction::new_with_config<
+    let (mut memez_fun, metadata_cap) = memez_auction::new_with_config<
         Meme,
         SUI,
         ConfigurableWitness,
@@ -178,10 +178,6 @@ fun test_new_coin_with_config() {
     );
 
     destroy(metadata_cap);
-
-    world.scenario.next_tx(ADMIN);
-
-    let mut memez_fun = world.scenario.take_shared<MemezFun<Auction, Meme, SUI>>();
 
     let auction_config = auction_config.get<SUI>(total_supply);
 
@@ -683,7 +679,7 @@ fun test_coin_end_to_end_with_stake_holders() {
 
     world.clock.increment_for_testing(start_time);
 
-    let metadata_cap = memez_auction::new<Meme, SUI, DefaultKey, MigrationWitness>(
+    let (mut memez_fun, metadata_cap) = memez_auction::new<Meme, SUI, DefaultKey, MigrationWitness>(
         &world.config,
         &world.migrator_list,
         &world.clock,
@@ -698,10 +694,6 @@ fun test_coin_end_to_end_with_stake_holders() {
     );
 
     destroy(metadata_cap);
-
-    world.scenario.next_tx(ADMIN);
-
-    let mut memez_fun = world.scenario.take_shared<MemezFun<Auction, Meme, SUI>>();
 
     world.scenario.next_tx(ADMIN);
 
@@ -931,7 +923,7 @@ fun test_distribute_stake_holders_allocation_not_migrating() {
 fun new_invalid_dynamic_stake_holders() {
     let mut world = start();
 
-    let metadata_cap = memez_auction::new<Meme, SUI, DefaultKey, MigrationWitness>(
+    let (memez_fun, metadata_cap) = memez_auction::new<Meme, SUI, DefaultKey, MigrationWitness>(
         &world.config,
         &world.migrator_list,
         &world.clock,
@@ -946,7 +938,7 @@ fun new_invalid_dynamic_stake_holders() {
     );
 
     destroy(metadata_cap);
-
+    destroy(memez_fun);
     world.end();
 }
 
@@ -960,7 +952,7 @@ fun new_invalid_dynamic_stake_holders() {
 fun new_invalid_version() {
     let mut world = start();
 
-    let metadata_cap = memez_auction::new<Meme, SUI, DefaultKey, MigrationWitness>(
+    let (memez_fun, metadata_cap) = memez_auction::new<Meme, SUI, DefaultKey, MigrationWitness>(
         &world.config,
         &world.migrator_list,
         &world.clock,
@@ -975,7 +967,7 @@ fun new_invalid_version() {
     );
 
     destroy(metadata_cap);
-
+    destroy(memez_fun);
     world.end();
 }
 
@@ -995,7 +987,12 @@ fun new_invalid_quote_type() {
 
     let ctx = world.scenario.ctx();
 
-    let metadata_cap = memez_auction::new<Meme, InvalidQuote, DefaultKey, MigrationWitness>(
+    let (memez_fun, metadata_cap) = memez_auction::new<
+        Meme,
+        InvalidQuote,
+        DefaultKey,
+        MigrationWitness,
+    >(
         config,
         migrator_list,
         clock,
@@ -1010,6 +1007,7 @@ fun new_invalid_quote_type() {
     );
 
     destroy(metadata_cap);
+    destroy(memez_fun);
     world.end();
 }
 
@@ -1017,7 +1015,7 @@ fun new_invalid_quote_type() {
 fun new_low_creation_fee() {
     let mut world = start();
 
-    let metadata_cap = memez_auction::new<Meme, SUI, DefaultKey, MigrationWitness>(
+    let (memez_fun, metadata_cap) = memez_auction::new<Meme, SUI, DefaultKey, MigrationWitness>(
         &world.config,
         &world.migrator_list,
         &world.clock,
@@ -1032,7 +1030,7 @@ fun new_low_creation_fee() {
     );
 
     destroy(metadata_cap);
-
+    destroy(memez_fun);
     world.end();
 }
 
@@ -1383,7 +1381,7 @@ fun set_up_pool(
 ): MemezFun<Auction, Meme, SUI> {
     let ctx = world.scenario.ctx();
 
-    let metadata_cap = memez_auction::new<Meme, SUI, DefaultKey, MigrationWitness>(
+    let (memez_fun, metadata_cap) = memez_auction::new<Meme, SUI, DefaultKey, MigrationWitness>(
         &world.config,
         &world.migrator_list,
         &world.clock,
@@ -1399,9 +1397,7 @@ fun set_up_pool(
 
     destroy(metadata_cap);
 
-    world.scenario.next_tx(ADMIN);
-
-    world.scenario.take_shared<MemezFun<Auction, Meme, SUI>>()
+    memez_fun
 }
 
 fun start(): World {

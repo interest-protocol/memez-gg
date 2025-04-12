@@ -68,6 +68,9 @@ const EInvalidBurnTax: u64 = 24;
 #[test_only]
 const EQuoteCoinNotSupported: u64 = 25;
 
+#[test_only]
+const EMigratorWitnessNotSupported: u64 = 26;
+
 // === Public Package Functions ===
 
 public(package) macro fun insufficient_value(): u64 {
@@ -172,4 +175,8 @@ public(package) macro fun invalid_burn_tax(): u64 {
 
 public(package) macro fun quote_coin_not_supported(): u64 {
     25
+}
+
+public(package) macro fun migrator_witness_not_supported(): u64 {
+    26
 }

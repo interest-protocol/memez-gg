@@ -27,7 +27,6 @@ use memez_fun::{
     memez_allowed_versions::AllowedVersions,
     memez_events,
     memez_metadata::MemezMetadata,
-    memez_migrator_list::MemezMigratorList,
     memez_versioned::Versioned
 };
 use std::{string::String, type_name::{Self, TypeName}};
@@ -95,7 +94,6 @@ public fun destroy<Meme, Quote, Witness: drop>(
 // === Public Package Functions ===
 
 public(package) fun new<Curve, Meme, Quote, ConfigKey, MigrationWitness>(
-    migrator: &MemezMigratorList,
     state: Versioned,
     is_token: bool,
     inner_state: address,
@@ -110,8 +108,6 @@ public(package) fun new<Curve, Meme, Quote, ConfigKey, MigrationWitness>(
 ): MemezFun<Curve, Meme, Quote> {
     let config_key = type_name::get<ConfigKey>();
     let migration_witness = type_name::get<MigrationWitness>();
-
-    migrator.assert_is_whitelisted(migration_witness);
 
     metadata
         .borrow_mut()

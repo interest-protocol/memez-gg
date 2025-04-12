@@ -31,7 +31,6 @@ use memez_fun::{
     memez_fees::{Allocation, Fee},
     memez_fun::{new as new_memez_fun_pool, MemezFun, MemezMigrator},
     memez_metadata::MemezMetadata,
-    memez_migrator_list::MemezMigratorList,
     memez_pump_config::PumpConfig,
     memez_token_cap::{Self, MemezTokenCap},
     memez_versioned::{Self, Versioned}
@@ -66,7 +65,6 @@ public struct PumpState<phantom Meme, phantom Quote> has key, store {
 
 public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
     config: &MemezConfig,
-    migrator_list: &MemezMigratorList,
     meme_treasury_cap: TreasuryCap<Meme>,
     mut creation_fee: Coin<SUI>,
     pump_config: PumpConfig,
@@ -82,6 +80,7 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
     allowed_versions.assert_pkg_version();
 
     config.assert_quote_coin<ConfigKey, Quote>();
+    config.assert_migrator_witness<ConfigKey, MigrationWitness>();
 
     let fees = config.fees<ConfigKey>();
 
@@ -125,7 +124,6 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
     let inner_state = object::id_address(&pump_state);
 
     let mut memez_fun = new_memez_fun_pool<Pump, Meme, Quote, ConfigKey, MigrationWitness>(
-        migrator_list,
         memez_versioned::create(PUMP_STATE_VERSION_V1, pump_state, ctx),
         is_token,
         inner_state,

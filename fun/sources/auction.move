@@ -34,7 +34,6 @@ use memez_fun::{
     memez_fixed_rate::{Self, FixedRate},
     memez_fun::{new as new_memez_fun_pool, MemezFun, MemezMigrator},
     memez_metadata::MemezMetadata,
-    memez_migrator_list::MemezMigratorList,
     memez_token_cap::{Self, MemezTokenCap},
     memez_versioned::{Self, Versioned}
 };
@@ -66,7 +65,6 @@ public struct AuctionState<phantom Meme, phantom Quote> has key, store {
 
 public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
     config: &MemezConfig,
-    migrator_list: &MemezMigratorList,
     clock: &Clock,
     meme_treasury_cap: TreasuryCap<Meme>,
     mut creation_fee: Coin<SUI>,
@@ -81,6 +79,7 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
     allowed_versions.assert_pkg_version();
 
     config.assert_quote_coin<ConfigKey, Quote>();
+    config.assert_migrator_witness<ConfigKey, MigrationWitness>();
 
     let fees = config.fees<ConfigKey>();
 
@@ -133,7 +132,6 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
     let inner_state = object::id_address(&auction_state);
 
     let mut memez_fun = new_memez_fun_pool<Auction, Meme, Quote, ConfigKey, MigrationWitness>(
-        migrator_list,
         memez_versioned::create(AUCTION_STATE_VERSION_V1, auction_state, ctx),
         is_token,
         inner_state,

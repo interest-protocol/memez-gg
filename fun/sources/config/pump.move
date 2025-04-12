@@ -7,7 +7,7 @@ use interest_bps::bps::{Self, BPS};
 
 // === Constants ===
 
-const VALUES_LENGTH: u64 = 4;
+const VALUES_LENGTH: u64 = 5;
 
 const MAX_BURN_TAX: u64 = 6_000;
 
@@ -18,6 +18,7 @@ public struct PumpConfig has copy, drop, store {
     virtual_liquidity: u64,
     target_quote_liquidity: u64,
     liquidity_provision: BPS,
+    total_supply: u64,
 }
 
 // === Public Functions ===
@@ -30,6 +31,7 @@ public fun new(values: vector<u64>): PumpConfig {
         virtual_liquidity: values[1],
         target_quote_liquidity: values[2],
         liquidity_provision: bps::new(values[3]),
+        total_supply: values[4],
     }
 }
 
@@ -47,8 +49,12 @@ public(package) fun target_quote_liquidity(self: &PumpConfig): u64 {
     self.target_quote_liquidity
 }
 
-public(package) fun liquidity_provision(self: &PumpConfig, total_supply: u64): u64 {
-    self.liquidity_provision.calc(total_supply)
+public(package) fun liquidity_provision(self: &PumpConfig): u64 {
+    self.liquidity_provision.calc(self.total_supply)
+}
+
+public(package) fun total_supply(self: &PumpConfig): u64 {
+    self.total_supply
 }
 
 // === Private Functions ===
@@ -59,6 +65,7 @@ fun assert_values(values: vector<u64>) {
     assert!(values[2] != 0);
 
     assert!(values[0] <= MAX_BURN_TAX, memez_fun::memez_errors::invalid_burn_tax!());
+    assert!(values[4] != 0);
 }
 
 // === Test Only Functions ===

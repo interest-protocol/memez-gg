@@ -68,7 +68,6 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
     meme_treasury_cap: TreasuryCap<Meme>,
     mut creation_fee: Coin<SUI>,
     pump_config: PumpConfig,
-    total_supply: u64,
     is_token: bool,
     first_purchase: Coin<Quote>,
     metadata: MemezMetadata,
@@ -97,11 +96,11 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
         ipx_meme_coin_treasury,
         metadata_cap,
         mut meme_balance,
-    ) = meme_treasury_cap.new_ipx_treasury!(total_supply, ctx);
+    ) = meme_treasury_cap.new_ipx_treasury!(pump_config.total_supply(), ctx);
 
     let allocation = fees.allocation(&mut meme_balance, stake_holders);
 
-    let liquidity_provision = meme_balance.split(pump_config.liquidity_provision(total_supply));
+    let liquidity_provision = meme_balance.split(pump_config.liquidity_provision());
 
     let meme_balance_value = meme_balance.value();
 
@@ -132,7 +131,7 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
         pump_config.virtual_liquidity(),
         pump_config.target_quote_liquidity(),
         meme_balance_value,
-        total_supply,
+        pump_config.total_supply(),
         dev,
         ctx,
     );

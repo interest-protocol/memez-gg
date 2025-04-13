@@ -21,11 +21,12 @@ fun test_end_to_end() {
         MAX_TARGET_SUI_LIQUIDITY,
         LIQUIDITY_PROVISION,
         MEME_SALE_AMOUNT,
+        100,
     ]);
 
     assert_eq!(stable.target_quote_liquidity(), MAX_TARGET_SUI_LIQUIDITY);
-    assert_eq!(stable.liquidity_provision(100), 6);
-    assert_eq!(stable.meme_sale_amount(100), 20);
+    assert_eq!(stable.liquidity_provision(), 6);
+    assert_eq!(stable.meme_sale_amount(), 20);
 }
 
 #[test, expected_failure(abort_code = memez_errors::EInvalidConfig, location = memez_stable_config)]

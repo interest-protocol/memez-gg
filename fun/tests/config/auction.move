@@ -19,19 +19,28 @@ public struct InvalidQuote()
 
 #[test]
 fun test_end_to_end() {
-    let auction = memez_auction_config::new(vector[
+    let auction_1 = memez_auction_config::new(vector[
         THIRTY_MINUTES_MS,
         TARGET_SUI_LIQUIDITY,
         LIQUIDITY_PROVISION,
         SEED_LIQUIDITY,
+        1_000
     ]);
 
-    assert_eq!(auction.auction_duration(), THIRTY_MINUTES_MS);
-    assert_eq!(auction.target_quote_liquidity(), TARGET_SUI_LIQUIDITY);
-    assert_eq!(auction.liquidity_provision(1_000), 50);
-    assert_eq!(auction.seed_liquidity(1_000), MIN_SEED_LIQUIDITY);
-    assert_eq!(auction.liquidity_provision(1_000_000_000), 50_000_000);
-    assert_eq!(auction.seed_liquidity(1_000_000_000), 1_000_000);
+    let auction_2 = memez_auction_config::new(vector[
+        THIRTY_MINUTES_MS,
+        TARGET_SUI_LIQUIDITY,
+        LIQUIDITY_PROVISION,
+        SEED_LIQUIDITY,
+        1_000_000_000
+    ]);
+
+    assert_eq!(auction_1.auction_duration(), THIRTY_MINUTES_MS);
+    assert_eq!(auction_1.target_quote_liquidity(), TARGET_SUI_LIQUIDITY);
+    assert_eq!(auction_1.liquidity_provision(), 50);
+    assert_eq!(auction_1.seed_liquidity(), MIN_SEED_LIQUIDITY);
+    assert_eq!(auction_2.liquidity_provision(), 50_000_000);
+    assert_eq!(auction_2.seed_liquidity(), 1_000_000);
 }
 
 #[
@@ -46,5 +55,6 @@ fun test_new_invalid_config() {
         THIRTY_MINUTES_MS,
         TARGET_SUI_LIQUIDITY,
         LIQUIDITY_PROVISION,
+        SEED_LIQUIDITY,
     ]);
 }

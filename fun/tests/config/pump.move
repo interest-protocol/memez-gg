@@ -22,12 +22,13 @@ fun test_end_to_end() {
         VIRTUAL_LIQUIDITY,
         TARGET_SUI_LIQUIDITY,
         LIQUIDITY_PROVISION,
+        1_000,
     ]);
 
     assert_eq!(pump.burn_tax(), BURN_TAX);
     assert_eq!(pump.virtual_liquidity(), VIRTUAL_LIQUIDITY);
     assert_eq!(pump.target_quote_liquidity(), TARGET_SUI_LIQUIDITY);
-    assert_eq!(pump.liquidity_provision(1_000), 60);
+    assert_eq!(pump.liquidity_provision(), 60);
 }
 
 #[test, expected_failure(abort_code = memez_errors::EInvalidConfig, location = memez_pump_config)]
@@ -37,7 +38,6 @@ fun test_new_invalid_config() {
         VIRTUAL_LIQUIDITY,
         TARGET_SUI_LIQUIDITY,
         LIQUIDITY_PROVISION,
-        0,
     ]);
 }
 
@@ -48,5 +48,6 @@ fun test_new_invalid_config_2() {
         VIRTUAL_LIQUIDITY,
         TARGET_SUI_LIQUIDITY,
         LIQUIDITY_PROVISION,
+        1_000,
     ]);
 }

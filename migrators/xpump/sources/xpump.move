@@ -1,7 +1,13 @@
-module recrd_migrator::recrd_migrator;
+module xpump_migrator::xpump_migrator;
 
-use cetus_clmm::{config::GlobalConfig, factory::{Self, Pools, PoolCreationCap}, pool_creator};
+use cetus_clmm::{
+    config::GlobalConfig,
+    factory::{Self, Pools, PoolCreationCap},
+    pool::Pool,
+    pool_creator
+};
 use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
+use lp_burn::lp_burn::{CetusLPBurnProof, BurnManager};
 use memez_fun::memez_fun::MemezMigrator;
 use std::type_name::{Self, TypeName};
 use sui::{
@@ -47,14 +53,16 @@ public struct Admin has key, store {
 
 public struct Witness() has drop;
 
-public struct RecrdConfig has key {
+public struct XPumpConfig has key {
     id: UID,
     initialize_price: u128,
     treasury: address,
     reward_value: u64,
 }
 
-public struct PoolCreationCapKey has copy, drop, store (TypeName)
+public struct PoolCreationCapKey(TypeName) has copy, drop, store;
+
+public struct LpBurnConfigKey(TypeName) has copy, drop, store;
 
 // === Events ===
 
@@ -72,10 +80,12 @@ public struct SetInitializePrice(u128, u128) has copy, drop;
 
 public struct SetRewardValue(u64, u64) has copy, drop;
 
+public struct CollectFee(address, u64, u64) has copy, drop;
+
 // === Initializer ===
 
 fun init(ctx: &mut TxContext) {
-    let recrd = RecrdConfig {
+    let xpump_config = XPumpConfig {
         id: object::new(ctx),
         initialize_price: INITIALIZE_PRICE,
         treasury: @treasury,
@@ -86,14 +96,14 @@ fun init(ctx: &mut TxContext) {
         id: object::new(ctx),
     };
 
-    transfer::share_object(recrd);
+    transfer::share_object(xpump_config);
     transfer::share_object(admin);
 }
 
 // === Public Mutative Functions ===
 
 public fun register_pool<Meme>(
-    config: &mut RecrdConfig,
+    config: &mut XPumpConfig,
     cetus_config: &GlobalConfig,
     cetus_pools: &mut Pools,
     meme_coin_treasury_cap: &mut TreasuryCap<Meme>,
@@ -118,7 +128,8 @@ public fun register_pool<Meme>(
 }
 
 public fun migrate<Meme>(
-    config: &mut RecrdConfig,
+    config: &mut XPumpConfig,
+    burn_manager: &mut BurnManager,
     clock: &Clock,
     ipx_treasury: &IPXTreasuryStandard,
     cetus_config: &GlobalConfig,
@@ -166,7 +177,12 @@ public fun migrate<Meme>(
         meme_balance: meme_balance_value - excess_meme.value(),
     });
 
-    transfer::public_transfer(position, DEAD_ADDRESS);
+    let burn_proof = burn_manager.burn_lp_v2(
+        position,
+        ctx,
+    );
+
+    config.save_lp_burn_proof<Meme>(burn_proof);
 
     transfer_or_burn(excess_meme, DEAD_ADDRESS);
     transfer_or_burn(excess_sui, config.treasury);
@@ -176,20 +192,40 @@ public fun migrate<Meme>(
 
 // === Admin Functions ===
 
-public fun set_initialize_price(self: &mut RecrdConfig, _: &Admin, initialize_price: u128) {
+public fun set_initialize_price(self: &mut XPumpConfig, _: &Admin, initialize_price: u128) {
     assert!(initialize_price != 0);
     emit(SetInitializePrice(self.initialize_price, initialize_price));
     self.initialize_price = initialize_price;
 }
 
-public fun set_treasury(self: &mut RecrdConfig, _: &Admin, treasury: address) {
+public fun set_treasury(self: &mut XPumpConfig, _: &Admin, treasury: address) {
     emit(SetTreasury(self.treasury, treasury));
     self.treasury = treasury;
 }
 
-public fun set_reward_value(self: &mut RecrdConfig, _: &Admin, reward_value: u64) {
+public fun set_reward_value(self: &mut XPumpConfig, _: &Admin, reward_value: u64) {
     emit(SetRewardValue(self.reward_value, reward_value));
     self.reward_value = reward_value;
+}
+
+public fun collect_fee<Meme>(
+    config: &mut XPumpConfig,
+    burn_manager: &BurnManager,
+    cetus_config: &GlobalConfig,
+    pool: &mut Pool<Meme, SUI>,
+    _: &Admin,
+    ctx: &mut TxContext,
+): (Coin<Meme>, Coin<SUI>) {
+    let (meme_fee, sui_fee) = burn_manager.collect_fee<Meme, SUI>(
+        cetus_config,
+        pool,
+        config.lp_burn_proof_mut<Meme>(),
+        ctx,
+    );
+
+    emit(CollectFee(object::id_address(pool), meme_fee.value(), sui_fee.value()));
+
+    (meme_fee, sui_fee)
 }
 
 // === Private Functions ===
@@ -202,10 +238,18 @@ fun transfer_or_burn<CoinType>(coin: Coin<CoinType>, to: address) {
     }
 }
 
-fun pool_creation_cap<Meme>(config: &RecrdConfig): &PoolCreationCap {
+fun pool_creation_cap<Meme>(config: &XPumpConfig): &PoolCreationCap {
     dof::borrow<_, PoolCreationCap>(&config.id, PoolCreationCapKey(type_name::get<Meme>()))
 }
 
-fun save_pool_creation_cap<Meme>(config: &mut RecrdConfig, pool_creation_cap: PoolCreationCap) {
+fun lp_burn_proof_mut<Meme>(config: &mut XPumpConfig): &mut CetusLPBurnProof {
+    dof::borrow_mut<_, CetusLPBurnProof>(&mut config.id, LpBurnConfigKey(type_name::get<Meme>()))
+}
+
+fun save_lp_burn_proof<Meme>(config: &mut XPumpConfig, lp_burn_proof: CetusLPBurnProof) {
+    dof::add(&mut config.id, LpBurnConfigKey(type_name::get<Meme>()), lp_burn_proof);
+}
+
+fun save_pool_creation_cap<Meme>(config: &mut XPumpConfig, pool_creation_cap: PoolCreationCap) {
     dof::add(&mut config.id, PoolCreationCapKey(type_name::get<Meme>()), pool_creation_cap);
 }

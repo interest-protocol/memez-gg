@@ -1,5 +1,5 @@
 [package]
-name = "nexa"
+name = "NexaMigrator"
 edition = "2024.beta" # edition = "legacy" to use legacy (pre-2024) Move
 license = "MIT"          
 authors = ["Jose Cerqueira (jose@interestprotocol.com)"]   
@@ -11,5 +11,5 @@ MemezFun = { local = "../../fun" }
 BluefinSpot = { local = "../../dependencies/bluefin" }
 
 [addresses]
-nexa = "0x0"
+nexa_migrator = "0x0"
 treasury = "0x1"

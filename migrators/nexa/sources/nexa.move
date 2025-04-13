@@ -1,4 +1,4 @@
-module nexa::nexa_migrator;
+module nexa_migrator::nexa_migrator;
 
 use bluefin_spot::{config::GlobalConfig, pool::{Self, Pool, create_pool_with_liquidity}};
 use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;

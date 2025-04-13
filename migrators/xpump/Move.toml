@@ -1,5 +1,5 @@
 [package]
-name = "RecrdMigrator"
+name = "XPumpMigrator"
 edition = "2024.beta" 
 license = "MIT"          
 authors = ["Jose Cerqueira (jose@interestprotocol.com)"]     
@@ -7,11 +7,12 @@ authors = ["Jose Cerqueira (jose@interestprotocol.com)"]
 
 [dependencies]
 IPXCoinStandard = { git = "https://github.com/interest-protocol/ipx-coin-standard.git", rev = "main", override = true }
+LpBurn = { git = "https://github.com/CetusProtocol/cetus-clmm-interface.git", subdir = "sui/lp_burn", rev = "mainnet-v1.26.0"}
 
 MemezFun = { local = "../../fun" }
-CetusClmm = { local = "../../dependencies/cetus_clmm" }
+CetusClmm = { local = "../../dependencies/cetus_clmm", override = true }
 
 [addresses]
-recrd_migrator = "0x0"
+xpump_migrator = "0x0"
 cetus_clmm = "0x1eabed72c53feb3805120a081dc15963c204dc8d091542592abaf7a35689b2fb"
 treasury = "0x0"

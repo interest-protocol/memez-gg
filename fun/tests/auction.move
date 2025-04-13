@@ -848,6 +848,34 @@ fun new_invalid_dynamic_stake_holders() {
 #[
     test,
     expected_failure(
+        abort_code = memez_errors::EMigratorWitnessNotSupported,
+        location = memez_config,
+    ),
+]
+fun new_invalid_migrator_witness() {
+    let mut world = start();
+
+    let (memez_fun, metadata_cap) = memez_auction::new<Meme, SUI, DefaultKey, DefaultKey>(
+        &world.config,
+        &world.clock,
+        create_treasury_cap_for_testing(world.scenario.ctx()),
+        mint_for_testing(2_000_000_000, world.scenario.ctx()),
+        default_auction_config(1_000_000_000 * POW_9),
+        true,
+        memez_metadata::new_for_test(world.scenario.ctx()),
+        vector[],
+        memez_allowed_versions::get_allowed_versions_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    destroy(metadata_cap);
+    destroy(memez_fun);
+    world.end();
+}
+
+#[
+    test,
+    expected_failure(
         abort_code = memez_errors::EOutdatedPackageVersion,
         location = memez_allowed_versions,
     ),

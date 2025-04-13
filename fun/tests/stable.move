@@ -183,6 +183,40 @@ fun test_new_max_target_sui_liquidity() {
 #[
     test,
     expected_failure(
+        abort_code = memez_errors::EMigratorWitnessNotSupported,
+        location = memez_config,
+    ),
+]
+fun test_new_invalid_migrator_witness() {
+    let mut world = start();
+
+    let total_supply = POW_9 * POW_9;
+
+    let dev_allocation = POW_9 / 10;
+
+    let (memez_fun, metadata_cap) = memez_stable::new<Meme, SUI, DefaultKey, DefaultKey>(
+        &world.config,
+        create_treasury_cap_for_testing(world.scenario.ctx()),
+        mint_for_testing(2_000_000_000, world.scenario.ctx()),
+        stable_default_config(total_supply),
+        10_000 * POW_9,
+        false,
+        memez_metadata::new_for_test(world.scenario.ctx()),
+        vector[dev_allocation, DAY],
+        vector[STAKE_HOLDER],
+        DEV,
+        memez_allowed_versions::get_allowed_versions_for_testing(1),
+        world.scenario.ctx(),
+    );
+
+    destroy(metadata_cap);
+    destroy(memez_fun);
+    world.end();
+}
+
+#[
+    test,
+    expected_failure(
         abort_code = memez_errors::EInvalidDynamicStakeHolders,
         location = memez_fees,
     ),

@@ -1696,6 +1696,47 @@ fun new_invalid_dynamic_stake_holders() {
 #[
     test,
     expected_failure(
+        abort_code = memez_errors::EMigratorWitnessNotSupported,
+        location = memez_config,
+    ),
+]
+fun new_invalid_migrator_witness() {
+    let mut world = start();
+
+    let config = &world.config;
+
+    let ctx = world.scenario.ctx();
+
+    let version = memez_allowed_versions::get_allowed_versions_for_testing(1);
+
+    let (memez_fun, metadata_cap) = memez_pump::new<Meme, SUI, DefaultKey, DefaultKey>(
+        config,
+        create_treasury_cap_for_testing(ctx),
+        mint_for_testing(2_000_000_000, ctx),
+        memez_pump_config::new(vector[
+            BURN_TAX,
+            VIRTUAL_LIQUIDITY,
+            TARGET_LIQUIDITY,
+            PROVISION_LIQUIDITY,
+            1_000_000_000_000_000_000,
+        ]),
+        false,
+        mint_for_testing(0, ctx),
+        memez_metadata::new_for_test(ctx),
+        vector[STAKE_HOLDER],
+        DEV,
+        version,
+        ctx,
+    );
+
+    destroy(memez_fun);
+    destroy(metadata_cap);
+    world.end();
+}
+
+#[
+    test,
+    expected_failure(
         abort_code = memez_errors::EQuoteCoinNotSupported,
         location = memez_config,
     ),

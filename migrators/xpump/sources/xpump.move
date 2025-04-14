@@ -97,7 +97,7 @@ fun init(ctx: &mut TxContext) {
     };
 
     transfer::share_object(xpump_config);
-    transfer::share_object(admin);
+    transfer::public_transfer(admin, ctx.sender());
 }
 
 // === Public Mutative Functions ===

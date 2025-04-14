@@ -87,7 +87,7 @@ fun init(ctx: &mut TxContext) {
     };
 
     transfer::share_object(recrd);
-    transfer::share_object(admin);
+    transfer::public_transfer(admin, ctx.sender());
 }
 
 // === Public Mutative Functions ===

@@ -33,60 +33,68 @@ fun init(ctx: &mut TxContext) {
 
 // === Public Admin Functions ===
 
-public fun set_fees<T>(
+public fun set_fees<ConfigWitness>(
     self: &mut MemezConfig,
     _: &AdminWitness<MEMEZ>,
     values: vector<vector<u64>>,
     recipients: vector<vector<address>>,
     _ctx: &mut TxContext,
 ) {
-    add<FeesKey<T>, _>(self, memez_fees::new(values, recipients));
+    add<FeesKey<ConfigWitness>, _>(self, memez_fees::new(values, recipients));
 }
 
-public fun remove<T, Model: drop + store>(
+public fun remove<ConfigWitness, Model: drop + store>(
     self: &mut MemezConfig,
     _: &AdminWitness<MEMEZ>,
     _ctx: &mut TxContext,
 ) {
-    df::remove_if_exists<_, Model>(&mut self.id, type_name::get<T>());
+    df::remove_if_exists<_, Model>(&mut self.id, type_name::get<ConfigWitness>());
 }
 
-public fun add_quote_coin<T, Quote>(self: &mut MemezConfig, _: &AdminWitness<MEMEZ>, _: &mut TxContext) {
-    self.add_to_set<Quote, _>(QuoteListKey<T>());
-}
-
-public fun remove_quote_coin<T, Quote>(self: &mut MemezConfig, _: &AdminWitness<MEMEZ>, _: &mut TxContext) {
-    self.remove_from_set<Quote, _>(QuoteListKey<T>());
-}
-
-public fun add_migrator_witness<T, Witness>(
+public fun add_quote_coin<ConfigWitness, Quote>(
     self: &mut MemezConfig,
     _: &AdminWitness<MEMEZ>,
     _: &mut TxContext,
 ) {
-    self.add_to_set<Witness, _>(MigratorWitnessKey<T>());
+    self.add_to_set<Quote, _>(QuoteListKey<ConfigWitness>());
 }
 
-public fun remove_migrator_witness<T, Witness>(
+public fun remove_quote_coin<ConfigWitness, Quote>(
     self: &mut MemezConfig,
     _: &AdminWitness<MEMEZ>,
     _: &mut TxContext,
 ) {
-    self.remove_from_set<Witness, _>(MigratorWitnessKey<T>());
+    self.remove_from_set<Quote, _>(QuoteListKey<ConfigWitness>());
+}
+
+public fun add_migrator_witness<ConfigWitness, MigratorWitness>(
+    self: &mut MemezConfig,
+    _: &AdminWitness<MEMEZ>,
+    _: &mut TxContext,
+) {
+    self.add_to_set<MigratorWitness, _>(MigratorWitnessKey<ConfigWitness>());
+}
+
+public fun remove_migrator_witness<ConfigWitness, MigratorWitness>(
+    self: &mut MemezConfig,
+    _: &AdminWitness<MEMEZ>,
+    _: &mut TxContext,
+) {
+    self.remove_from_set<MigratorWitness, _>(MigratorWitnessKey<ConfigWitness>());
 }
 
 // === Public Package Functions ===
 
-public(package) fun fees<T>(self: &MemezConfig): MemezFees {
-    let key = type_name::get<FeesKey<T>>();
+public(package) fun fees<ConfigWitness>(self: &MemezConfig): MemezFees {
+    let key = type_name::get<FeesKey<ConfigWitness>>();
 
     assert!(df::exists_(&self.id, key), memez_errors::model_key_not_supported!());
 
     *df::borrow(&self.id, key)
 }
 
-public(package) fun assert_quote_coin<T, Quote>(self: &MemezConfig) {
-    let key = QuoteListKey<T>();
+public(package) fun assert_quote_coin<ConfigWitness, Quote>(self: &MemezConfig) {
+    let key = QuoteListKey<ConfigWitness>();
 
     assert!(df::exists_(&self.id, key), memez_errors::model_key_not_supported!());
 
@@ -98,15 +106,15 @@ public(package) fun assert_quote_coin<T, Quote>(self: &MemezConfig) {
     );
 }
 
-public(package) fun assert_migrator_witness<T, Witness>(self: &MemezConfig) {
-    let key = MigratorWitnessKey<T>();
+public(package) fun assert_migrator_witness<ConfigWitness, MigratorWitness>(self: &MemezConfig) {
+    let key = MigratorWitnessKey<ConfigWitness>();
 
     assert!(df::exists_(&self.id, key), memez_errors::model_key_not_supported!());
 
     let migrator_witness_list = df::borrow<_, VecSet<TypeName>>(&self.id, key);
 
     assert!(
-        migrator_witness_list.contains(&type_name::get<Witness>()),
+        migrator_witness_list.contains(&type_name::get<MigratorWitness>()),
         memez_errors::migrator_witness_not_supported!(),
     );
 }

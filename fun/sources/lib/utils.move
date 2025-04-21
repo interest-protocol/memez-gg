@@ -48,7 +48,7 @@ public(package) macro fun destroy_or_return<$Meme>($coin: Coin<$Meme>, $ctx: &Tx
 public(package) macro fun validate_bps($percentages: vector<u64>) {
     let percentages = $percentages;
     assert!(
-        percentages.fold!(0, |acc, bps| acc + bps) == bps::max_bps(),
+        percentages.fold!(0, |acc, bps| acc + bps) == bps::max_value!(),
         memez_fun::memez_errors::invalid_percentages!(),
     );
 }

@@ -1,7 +1,8 @@
 #[test_only]
 module memez_fun::version_tests;
 
-use memez_acl::acl;
+use interest_access_control::access_control;
+use memez::memez::MEMEZ;
 use memez_fun::{memez_errors, memez_allowed_versions::{Self, MemezAV}};
 use sui::{test_scenario::{Self as ts, Scenario}, test_utils::{assert_eq, destroy}};
 
@@ -25,7 +26,7 @@ fun test_init() {
 fun test_admin_functions() {
     let mut world = start();
 
-    let witness = acl::sign_in_for_testing();
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
     assert_eq(world.av.allowed_versions(), vector[1]);
 
@@ -48,7 +49,7 @@ fun test_assert_pkg_version() {
 
     world.av.get_allowed_versions().assert_pkg_version();
 
-    let witness = acl::sign_in_for_testing();
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
     world.av.add(&witness, 2);
 
@@ -73,7 +74,7 @@ fun test_outdated_package_version() {
 
     world.av.remove_for_testing(1);
 
-    let witness = acl::sign_in_for_testing();
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
     world.av.add(&witness, 2);
 
@@ -94,7 +95,7 @@ fun test_outdated_package_version() {
 fun test_remove_current_version_not_allowed() {
     let mut world = start();
 
-    let witness = acl::sign_in_for_testing();
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
     world.av.remove(&witness, 1);
 

@@ -2,7 +2,8 @@
 module memez_fun::memez_stable_tests;
 
 use interest_bps::bps;
-use memez_acl::acl;
+use interest_access_control::access_control;
+use memez::memez::MEMEZ;
 use memez_fun::{
     memez_allowed_versions,
     memez_config::{Self, MemezConfig},
@@ -447,7 +448,7 @@ fun test_token_end_to_end() {
 
     let target_sui_liquidity = 10_000 * POW_9;
 
-    let witness = acl::sign_in_for_testing();
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0          );
 
     world
         .config
@@ -607,7 +608,7 @@ fun test_distribute_stake_holders_allocation() {
 
     let target_sui_liquidity = 10_000 * POW_9;
 
-    let witness = acl::sign_in_for_testing();
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
     world
         .config
@@ -919,7 +920,7 @@ fun pump_use_token_instead() {
 fun pump_is_not_bonding() {
     let mut world = start();
 
-    let witness = acl::sign_in_for_testing();
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
     world
         .config
@@ -1056,7 +1057,7 @@ fun dump_use_token_instead() {
 fun dump_is_not_bonding() {
     let mut world = start();
 
-    let witness = acl::sign_in_for_testing();
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
     world
         .config
@@ -1148,7 +1149,7 @@ fun migrate_invalid_version() {
 fun migrate_is_not_migrating() {
     let mut world = start();
 
-    let witness = acl::sign_in_for_testing();
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
     world
         .config
@@ -1201,7 +1202,7 @@ fun migrate_is_not_migrating() {
 fun dev_claim_invalid_version() {
     let mut world = start();
 
-    let witness = acl::sign_in_for_testing();
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
     world
         .config
@@ -1312,7 +1313,7 @@ fun dev_claim_has_not_migrated() {
 fun dev_claim_is_not_dev() {
     let mut world = start();
 
-    let witness = acl::sign_in_for_testing();
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
     world
         .config
@@ -1452,7 +1453,7 @@ fun pump_use_coin_instead() {
 fun pump_token_is_not_bonding() {
     let mut world = start();
 
-    let witness = acl::sign_in_for_testing();
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
     world
         .config
@@ -1599,7 +1600,7 @@ fun dump_use_coin_instead() {
 fun dump_token_is_not_bonding() {
     let mut world = start();
 
-    let witness = acl::sign_in_for_testing();
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
     world
         .config
@@ -1691,7 +1692,7 @@ fun start(): World {
 
     let mut config = scenario.take_shared<MemezConfig>();
 
-    let witness = acl::sign_in_for_testing();
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
     config.add_migrator_witness<DefaultKey, MigrationWitness>(&witness, scenario.ctx());
 

@@ -1,7 +1,8 @@
 #[test_only]
 module memez_fun::memez_config_tests;
 
-use memez_acl::acl;
+use interest_access_control::access_control;
+use memez::memez::MEMEZ;
 use memez_fun::{memez_config::{Self, MemezConfig, FeesKey}, memez_fees::MemezFees};
 use std::unit_test::assert_eq;
 use sui::{test_scenario::{Self as ts, Scenario}, test_utils::destroy};
@@ -27,7 +28,7 @@ fun test_set_fees() {
 
     assert_eq!(memez_config::exists_for_testing<FeesKey<DefaultKey>>(&world.config), false);
 
-    let witness = acl::sign_in_for_testing();
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
     world
         .config
@@ -76,7 +77,7 @@ fun test_set_fees() {
 fun test_assert_quote_coin() {
     let mut world = start();
 
-    let witness = acl::sign_in_for_testing();
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
     world.config.add_quote_coin<DefaultKey, Quote>(&witness, world.scenario.ctx());
 
@@ -95,7 +96,7 @@ fun test_assert_quote_coin() {
 fun test_coin_not_supported() {
     let mut world = start();
 
-    let witness = acl::sign_in_for_testing();
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
     world.config.add_quote_coin<DefaultKey, Quote>(&witness, world.scenario.ctx());
 

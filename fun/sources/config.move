@@ -3,7 +3,8 @@
 
 module memez_fun::memez_config;
 
-use memez_acl::acl::AuthWitness;
+use interest_access_control::access_control::AdminWitness;
+use memez::memez::MEMEZ;
 use memez_fun::{memez_errors, memez_fees::{Self, MemezFees}};
 use std::type_name::{Self, TypeName};
 use sui::{dynamic_field as df, vec_set::{Self, VecSet}};
@@ -34,7 +35,7 @@ fun init(ctx: &mut TxContext) {
 
 public fun set_fees<T>(
     self: &mut MemezConfig,
-    _: &AuthWitness,
+    _: &AdminWitness<MEMEZ>,
     values: vector<vector<u64>>,
     recipients: vector<vector<address>>,
     _ctx: &mut TxContext,
@@ -44,23 +45,23 @@ public fun set_fees<T>(
 
 public fun remove<T, Model: drop + store>(
     self: &mut MemezConfig,
-    _: &AuthWitness,
+    _: &AdminWitness<MEMEZ>,
     _ctx: &mut TxContext,
 ) {
     df::remove_if_exists<_, Model>(&mut self.id, type_name::get<T>());
 }
 
-public fun add_quote_coin<T, Quote>(self: &mut MemezConfig, _: &AuthWitness, _: &mut TxContext) {
+public fun add_quote_coin<T, Quote>(self: &mut MemezConfig, _: &AdminWitness<MEMEZ>, _: &mut TxContext) {
     self.add_to_set<Quote, _>(QuoteListKey<T>());
 }
 
-public fun remove_quote_coin<T, Quote>(self: &mut MemezConfig, _: &AuthWitness, _: &mut TxContext) {
+public fun remove_quote_coin<T, Quote>(self: &mut MemezConfig, _: &AdminWitness<MEMEZ>, _: &mut TxContext) {
     self.remove_from_set<Quote, _>(QuoteListKey<T>());
 }
 
 public fun add_migrator_witness<T, Witness>(
     self: &mut MemezConfig,
-    _: &AuthWitness,
+    _: &AdminWitness<MEMEZ>,
     _: &mut TxContext,
 ) {
     self.add_to_set<Witness, _>(MigratorWitnessKey<T>());
@@ -68,7 +69,7 @@ public fun add_migrator_witness<T, Witness>(
 
 public fun remove_migrator_witness<T, Witness>(
     self: &mut MemezConfig,
-    _: &AuthWitness,
+    _: &AdminWitness<MEMEZ>,
     _: &mut TxContext,
 ) {
     self.remove_from_set<Witness, _>(MigratorWitnessKey<T>());

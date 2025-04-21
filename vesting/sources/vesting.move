@@ -1,11 +1,6 @@
 module memez_vesting::memez_vesting;
-// === Imports === 
 
-use sui::{
-    coin::Coin,
-    clock::Clock,
-    balance::Balance,
-};
+use sui::{balance::Balance, clock::Clock, coin::Coin};
 
 // === Errors ===
 
@@ -25,7 +20,7 @@ public struct MemezVesting<phantom T> has key, store {
     balance: Balance<T>,
     start: u64,
     released: u64,
-    duration: u64
+    duration: u64,
 }
 
 // === Public Mutative Functions ===
@@ -60,7 +55,7 @@ public fun claim<T>(self: &mut MemezVesting<T>, clock: &Clock, ctx: &mut TxConte
 
 public fun destroy_zero<T>(self: MemezVesting<T>) {
     let MemezVesting { id, balance, .. } = self;
-    
+
     id.delete();
 
     balance.destroy_zero()
@@ -81,23 +76,18 @@ public fun vesting_status<T>(self: &MemezVesting<T>, clock: &Clock): u64 {
 
 // === Private Functions ===
 
-fun linear_vesting_amount(
-    start: u64,
-    duration: u64,
-    total_allocation: u64,
-    timestamp: u64,
-): u64 {
+fun linear_vesting_amount(start: u64, duration: u64, total_allocation: u64, timestamp: u64): u64 {
     if (timestamp < start) return 0;
     if (timestamp > start + duration) return total_allocation;
     (total_allocation * (timestamp - start)) / duration
 }
 
-// === Tests === 
+// === Tests ===
 
 #[test_only]
 public fun balance<T>(self: &MemezVesting<T>): u64 {
     self.balance.value()
-} 
+}
 
 #[test_only]
 public fun start<T>(self: &MemezVesting<T>): u64 {

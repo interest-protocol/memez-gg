@@ -10,8 +10,12 @@ InterestMath = { local = "../dependencies/interest-math" }
 IPXCoinStandard = { local = "../dependencies/ipx-coin-standard" }
 ConstantProduct = { local = "../dependencies/constant-product" }
 
-MemezACL = { local = "../acl" }
+Memez = { local = "../memez" }
 MemezVesting = { local = "../vesting" }
+interest_access_control = { r.mvr = "@interest/acl" }
 
 [addresses]
 memez_fun = "0x0"
+
+[r.mvr]
+network = "testnet"

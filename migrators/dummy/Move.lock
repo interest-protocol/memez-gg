@@ -24,18 +24,6 @@ dependencies = [
 ]
 
 [[move.package]]
-id = "ConstantProduct"
-source = { local = "../../dependencies/constant-product" }
-
-dependencies = [
-  { id = "Bridge", name = "Bridge" },
-  { id = "DeepBook", name = "DeepBook" },
-  { id = "MoveStdlib", name = "MoveStdlib" },
-  { id = "Sui", name = "Sui" },
-  { id = "SuiSystem", name = "SuiSystem" },
-]
-
-[[move.package]]
 id = "DeepBook"
 source = { git = "https://github.com/MystenLabs/sui.git", rev = "9c04e1840eb5", subdir = "crates/sui-framework/packages/deepbook" }
 
@@ -57,8 +45,32 @@ dependencies = [
 ]
 
 [[move.package]]
+id = "InterestAccessControl"
+source = { git = "https://github.com/interest-protocol/interest-mvr", rev = "937409aa6920904b6d16bf5cafff0f9f32904ba4", subdir = "access-control/contracts" }
+
+dependencies = [
+  { id = "Bridge", name = "Bridge" },
+  { id = "DeepBook", name = "DeepBook" },
+  { id = "MoveStdlib", name = "MoveStdlib" },
+  { id = "Sui", name = "Sui" },
+  { id = "SuiSystem", name = "SuiSystem" },
+]
+
+[[move.package]]
 id = "InterestBPS"
-source = { local = "../../dependencies/bps" }
+source = { git = "https://github.com/interest-protocol/interest-mvr", rev = "76ee442e9d6daa128a4e9f755f0b9d95137c239a", subdir = "bps" }
+
+dependencies = [
+  { id = "Bridge", name = "Bridge" },
+  { id = "DeepBook", name = "DeepBook" },
+  { id = "MoveStdlib", name = "MoveStdlib" },
+  { id = "Sui", name = "Sui" },
+  { id = "SuiSystem", name = "SuiSystem" },
+]
+
+[[move.package]]
+id = "InterestConstantProduct"
+source = { git = "https://github.com/interest-protocol/interest-mvr", rev = "d5e4ee79dfdc0445a1b66960cbe109d102990ada", subdir = "constant-product" }
 
 dependencies = [
   { id = "Bridge", name = "Bridge" },
@@ -70,7 +82,7 @@ dependencies = [
 
 [[move.package]]
 id = "InterestMath"
-source = { local = "../../dependencies/interest-math" }
+source = { git = "https://github.com/interest-protocol/interest-mvr", rev = "650c5078ce8b8dfb1bda963b393cd698c81537e6", subdir = "math" }
 
 dependencies = [
   { id = "Bridge", name = "Bridge" },
@@ -81,11 +93,16 @@ dependencies = [
 ]
 
 [[move.package]]
-id = "MemezACL"
-source = { local = "../../acl" }
+id = "Memez"
+source = { local = "../../memez" }
 
 dependencies = [
+  { id = "Bridge", name = "Bridge" },
+  { id = "DeepBook", name = "DeepBook" },
+  { id = "InterestAccessControl", name = "InterestAccessControl" },
+  { id = "MoveStdlib", name = "MoveStdlib" },
   { id = "Sui", name = "Sui" },
+  { id = "SuiSystem", name = "SuiSystem" },
 ]
 
 [[move.package]]
@@ -94,12 +111,13 @@ source = { local = "../../fun" }
 
 dependencies = [
   { id = "Bridge", name = "Bridge" },
-  { id = "ConstantProduct", name = "ConstantProduct" },
   { id = "DeepBook", name = "DeepBook" },
   { id = "IPXCoinStandard", name = "IPXCoinStandard" },
+  { id = "InterestAccessControl", name = "InterestAccessControl" },
   { id = "InterestBPS", name = "InterestBPS" },
+  { id = "InterestConstantProduct", name = "InterestConstantProduct" },
   { id = "InterestMath", name = "InterestMath" },
-  { id = "MemezACL", name = "MemezACL" },
+  { id = "Memez", name = "Memez" },
   { id = "MemezVesting", name = "MemezVesting" },
   { id = "MoveStdlib", name = "MoveStdlib" },
   { id = "Sui", name = "Sui" },
@@ -111,7 +129,11 @@ id = "MemezVesting"
 source = { local = "../../vesting" }
 
 dependencies = [
+  { id = "Bridge", name = "Bridge" },
+  { id = "DeepBook", name = "DeepBook" },
+  { id = "MoveStdlib", name = "MoveStdlib" },
   { id = "Sui", name = "Sui" },
+  { id = "SuiSystem", name = "SuiSystem" },
 ]
 
 [[move.package]]
@@ -144,6 +166,6 @@ flavor = "sui"
 
 [env.testnet]
 chain-id = "4c78adac"
-original-published-id = "0xf66e73ad11ab61164ebc5b581ba05a1ac1be01b8d64e19acabfb0f0572e3251e"
-latest-published-id = "0xf66e73ad11ab61164ebc5b581ba05a1ac1be01b8d64e19acabfb0f0572e3251e"
+original-published-id = "0x343ef1c5e36c63903b0a36ee8920476d0151ce22b33ae4f2ebe001535ace48bb"
+latest-published-id = "0x343ef1c5e36c63903b0a36ee8920476d0151ce22b33ae4f2ebe001535ace48bb"
 published-version = "1"

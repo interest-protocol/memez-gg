@@ -3,7 +3,7 @@
 
 module memez_fun::memez_burner;
 
-use interest_bps::bps::{Self, max_bps, BPS};
+use interest_bps::bps::{Self, BPS};
 use interest_math::u64;
 
 // === Structs ===
@@ -36,7 +36,7 @@ public(package) fun calculate(self: MemezBurner, liquidity: u64): BPS {
 
     if (liquidity >= self.target_liquidity) return bps::new(fee_value);
 
-    let max_bps = max_bps();
+    let max_bps = bps::max_value!();
 
     let progress_percentage = u64::mul_div_up(liquidity, max_bps, self.target_liquidity);
 

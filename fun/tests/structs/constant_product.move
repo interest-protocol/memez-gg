@@ -1,7 +1,7 @@
 #[test_only]
 module memez_fun::memez_constant_product_tests;
 
-use constant_product::constant_product::get_amount_out;
+use interest_constant_product::constant_product::get_amount_out;
 use ipx_coin_standard::ipx_coin_standard;
 use memez_fun::{memez_burner, memez_constant_product, memez_distributor, memez_errors, memez_fees};
 use sui::{balance, coin::{Self, mint_for_testing}, sui::SUI, test_utils::{assert_eq, destroy}};

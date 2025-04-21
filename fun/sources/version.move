@@ -4,7 +4,8 @@
 #[allow(implicit_const_copy)]
 module memez_fun::memez_allowed_versions;
 
-use memez_acl::acl::AuthWitness;
+use interest_access_control::access_control::AdminWitness;
+use memez::memez::MEMEZ;
 use sui::vec_set::{Self, VecSet};
 
 // === Constants ===
@@ -39,11 +40,11 @@ public fun get_allowed_versions(self: &MemezAV): AllowedVersions {
 
 // === Admin Functions ===
 
-public fun add(self: &mut MemezAV, _: &AuthWitness, version: u64) {
+public fun add(self: &mut MemezAV, _: &AdminWitness<MEMEZ>, version: u64) {
     self.allowed_versions.insert(version);
 }
 
-public fun remove(self: &mut MemezAV, _: &AuthWitness, version: u64) {
+public fun remove(self: &mut MemezAV, _: &AdminWitness<MEMEZ>, version: u64) {
     assert!(version != VERSION, memez_fun::memez_errors::remove_current_version_not_allowed!());
     self.allowed_versions.remove(&version);
 }

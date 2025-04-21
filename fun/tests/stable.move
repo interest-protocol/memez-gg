@@ -1,8 +1,9 @@
 #[test_only]
 module memez_fun::memez_stable_tests;
 
+use interest_access_control::access_control;
 use interest_bps::bps;
-use memez_acl::acl;
+use memez::memez::MEMEZ;
 use memez_fun::{
     memez_allowed_versions,
     memez_config::{Self, MemezConfig},
@@ -70,15 +71,12 @@ fun test_new_coin() {
 
     let dev_allocation = POW_9 / 10;
 
-    let target_sui_liquidity = 10_000 * POW_9;
-
     let stable_config = stable_default_config(total_supply);
 
     let mut memez_fun = set_up_pool(
         &mut world,
         stable_config,
         false,
-        target_sui_liquidity,
         vector[dev_allocation, DAY],
     );
 
@@ -94,7 +92,7 @@ fun test_new_coin() {
     let fr = memez_stable::fixed_rate(&mut memez_fun);
 
     assert_eq(fr.memez_fun(), object::id_address(&memez_fun));
-    assert_eq(fr.quote_raise_amount(), target_sui_liquidity);
+    assert_eq(fr.quote_raise_amount(), MAX_TARGET_SUI_LIQUIDITY);
     assert_eq(fr.meme_sale_amount(), stable_config.meme_sale_amount());
     assert_eq(fr.quote_balance().value(), 0);
     assert_eq(fr.meme_balance().value(), stable_config.meme_sale_amount());
@@ -116,15 +114,12 @@ fun test_new_token() {
 
     let dev_allocation = POW_9 / 10;
 
-    let target_sui_liquidity = 10_000 * POW_9;
-
     let stable_config = stable_default_config(total_supply);
 
     let mut memez_fun = set_up_pool(
         &mut world,
         stable_config,
         true,
-        target_sui_liquidity,
         vector[dev_allocation, DAY],
     );
 
@@ -140,7 +135,7 @@ fun test_new_token() {
     let fr = memez_stable::fixed_rate(&mut memez_fun);
 
     assert_eq(fr.memez_fun(), object::id_address(&memez_fun));
-    assert_eq(fr.quote_raise_amount(), target_sui_liquidity);
+    assert_eq(fr.quote_raise_amount(), MAX_TARGET_SUI_LIQUIDITY);
     assert_eq(fr.meme_sale_amount(), stable_config.meme_sale_amount());
     assert_eq(fr.quote_balance().value(), 0);
     assert_eq(fr.meme_balance().value(), stable_config.meme_sale_amount());
@@ -149,32 +144,6 @@ fun test_new_token() {
         memez_stable::meme_reserve(&mut memez_fun).value(),
         total_supply - dev_allocation - stable_config.meme_sale_amount() - stable_config.liquidity_provision(),
     );
-
-    destroy(memez_fun);
-    world.end();
-}
-
-#[test]
-fun test_new_max_target_sui_liquidity() {
-    let mut world = start();
-
-    let total_supply = POW_9 * POW_9;
-
-    let dev_allocation = POW_9 / 10;
-
-    let stable_config = stable_default_config(total_supply);
-
-    let mut memez_fun = set_up_pool(
-        &mut world,
-        stable_config,
-        false,
-        POW_9 * POW_9,
-        vector[dev_allocation, DAY],
-    );
-
-    let fr = memez_stable::fixed_rate(&mut memez_fun);
-
-    assert_eq(stable_config.target_quote_liquidity(), fr.quote_raise_amount());
 
     destroy(memez_fun);
     world.end();
@@ -199,7 +168,6 @@ fun test_new_invalid_migrator_witness() {
         create_treasury_cap_for_testing(world.scenario.ctx()),
         mint_for_testing(2_000_000_000, world.scenario.ctx()),
         stable_default_config(total_supply),
-        10_000 * POW_9,
         false,
         memez_metadata::new_for_test(world.scenario.ctx()),
         vector[dev_allocation, DAY],
@@ -233,7 +201,6 @@ fun test_new_invalid_dynamic_stake_holders() {
         create_treasury_cap_for_testing(world.scenario.ctx()),
         mint_for_testing(2_000_000_000, world.scenario.ctx()),
         stable_default_config(total_supply),
-        10_000 * POW_9,
         false,
         memez_metadata::new_for_test(world.scenario.ctx()),
         vector[dev_allocation, DAY],
@@ -267,7 +234,6 @@ fun test_new_invalid_version() {
         create_treasury_cap_for_testing(world.scenario.ctx()),
         mint_for_testing(2_000_000_000, world.scenario.ctx()),
         stable_default_config(total_supply),
-        10_000 * POW_9,
         false,
         memez_metadata::new_for_test(world.scenario.ctx()),
         vector[dev_allocation, DAY],
@@ -306,7 +272,6 @@ fun test_new_invalid_quote_type() {
         create_treasury_cap_for_testing(world.scenario.ctx()),
         mint_for_testing(2_000_000_000, world.scenario.ctx()),
         stable_default_config(total_supply),
-        10_000 * POW_9,
         false,
         memez_metadata::new_for_test(world.scenario.ctx()),
         vector[dev_allocation, DAY],
@@ -329,15 +294,12 @@ fun test_coin_end_to_end() {
 
     let dev_allocation = POW_9 / 10;
 
-    let target_sui_liquidity = 10_000 * POW_9;
-
     let stable_config = stable_default_config(total_supply);
 
     let mut memez_fun = set_up_pool(
         &mut world,
         stable_config,
         false,
-        target_sui_liquidity,
         vector[dev_allocation, DAY],
     );
 
@@ -348,7 +310,7 @@ fun test_coin_end_to_end() {
     assert_eq(creation_fee.burn_for_testing(), 2 * POW_9);
 
     let mut fr = memez_fixed_rate::new<Meme, SUI>(
-        target_sui_liquidity,
+        MAX_TARGET_SUI_LIQUIDITY,
         balance::create_for_testing(stable_config.meme_sale_amount()),
         world.config.fees<DefaultKey>().swap(vector[STAKE_HOLDER]),
     );
@@ -395,7 +357,7 @@ fun test_coin_end_to_end() {
 
     let (excess_sui_coin, meme_coin) = memez_stable::pump(
         &mut memez_fun,
-        coin::mint_for_testing(1000 * POW_9 + target_sui_liquidity, world.scenario.ctx()),
+        coin::mint_for_testing(1000 * POW_9 + MAX_TARGET_SUI_LIQUIDITY, world.scenario.ctx()),
         memez_allowed_versions::get_allowed_versions_for_testing(1),
         world.scenario.ctx(),
     );
@@ -417,7 +379,7 @@ fun test_coin_end_to_end() {
 
     assert_eq(
         sui_balance_after.destroy_for_testing(),
-        target_sui_liquidity - migration_fee_value,
+        MAX_TARGET_SUI_LIQUIDITY - migration_fee_value,
     );
     assert_eq(
         meme_balance_after.destroy_for_testing(),
@@ -447,7 +409,7 @@ fun test_token_end_to_end() {
 
     let target_sui_liquidity = 10_000 * POW_9;
 
-    let witness = acl::sign_in_for_testing();
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
     world
         .config
@@ -470,7 +432,6 @@ fun test_token_end_to_end() {
         &mut world,
         stable_config,
         true,
-        target_sui_liquidity,
         vector[dev_allocation, DAY],
     );
 
@@ -607,7 +568,7 @@ fun test_distribute_stake_holders_allocation() {
 
     let target_sui_liquidity = 10_000 * POW_9;
 
-    let witness = acl::sign_in_for_testing();
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
     world
         .config
@@ -630,12 +591,11 @@ fun test_distribute_stake_holders_allocation() {
         &mut world,
         stable_config,
         false,
-        target_sui_liquidity,
         vector[dev_allocation, DAY],
     );
 
     let mut fr = memez_fixed_rate::new<Meme, SUI>(
-        target_sui_liquidity,
+        MAX_TARGET_SUI_LIQUIDITY,
         balance::create_for_testing(stable_config.liquidity_provision()),
         world.config.fees<DefaultKey>().swap(vector[STAKE_HOLDER]),
     );
@@ -753,8 +713,6 @@ fun test_distribute_stake_holders_allocation_invalid_version() {
 
     let dev_allocation = POW_9 / 10;
 
-    let target_sui_liquidity = 10_000 * POW_9;
-
     let total_supply = 1_000_000_000_000_000_000;
 
     let stable_config = stable_default_config(total_supply);
@@ -763,7 +721,6 @@ fun test_distribute_stake_holders_allocation_invalid_version() {
         &mut world,
         stable_config,
         false,
-        target_sui_liquidity,
         vector[dev_allocation, DAY],
     );
 
@@ -788,8 +745,6 @@ fun test_distribute_stake_holders_allocation_not_migrated() {
 
     let dev_allocation = POW_9 / 10;
 
-    let target_sui_liquidity = 10_000 * POW_9;
-
     let total_supply = 1_000_000_000_000_000_000;
 
     let stable_config = stable_default_config(total_supply);
@@ -798,7 +753,6 @@ fun test_distribute_stake_holders_allocation_not_migrated() {
         &mut world,
         stable_config,
         false,
-        target_sui_liquidity,
         vector[dev_allocation, DAY],
     );
 
@@ -830,7 +784,6 @@ fun test_new_invalid_creation_fee() {
         create_treasury_cap_for_testing(world.scenario.ctx()),
         mint_for_testing(2_000_000_000 - 1, world.scenario.ctx()),
         stable_default_config(total_supply),
-        10_000 * POW_9,
         false,
         memez_metadata::new_for_test(world.scenario.ctx()),
         vector[dev_allocation, DAY],
@@ -865,7 +818,6 @@ fun pump_invalid_version() {
         &mut world,
         stable_config,
         false,
-        POW_9 * POW_9,
         vector[dev_allocation, DAY],
     );
 
@@ -897,7 +849,6 @@ fun pump_use_token_instead() {
         &mut world,
         stable_config,
         true,
-        POW_9 * POW_9,
         vector[dev_allocation, DAY],
     );
 
@@ -919,7 +870,7 @@ fun pump_use_token_instead() {
 fun pump_is_not_bonding() {
     let mut world = start();
 
-    let witness = acl::sign_in_for_testing();
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
     world
         .config
@@ -946,7 +897,6 @@ fun pump_is_not_bonding() {
         &mut world,
         stable_config,
         false,
-        10_000 * POW_9,
         vector[dev_allocation, DAY],
     );
 
@@ -994,7 +944,6 @@ fun dump_invalid_version() {
         &mut world,
         stable_config,
         false,
-        10_000 * POW_9,
         vector[dev_allocation, DAY],
     );
 
@@ -1035,7 +984,6 @@ fun dump_use_token_instead() {
         &mut world,
         stable_config,
         true,
-        10_000 * POW_9,
         vector[dev_allocation, DAY],
     );
 
@@ -1056,7 +1004,7 @@ fun dump_use_token_instead() {
 fun dump_is_not_bonding() {
     let mut world = start();
 
-    let witness = acl::sign_in_for_testing();
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
     world
         .config
@@ -1083,7 +1031,6 @@ fun dump_is_not_bonding() {
         &mut world,
         stable_config,
         false,
-        10_000 * POW_9,
         vector[dev_allocation, DAY],
     );
 
@@ -1128,7 +1075,6 @@ fun migrate_invalid_version() {
         &mut world,
         stable_config,
         false,
-        10_000 * POW_9,
         vector[dev_allocation, DAY],
     );
 
@@ -1148,7 +1094,7 @@ fun migrate_invalid_version() {
 fun migrate_is_not_migrating() {
     let mut world = start();
 
-    let witness = acl::sign_in_for_testing();
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
     world
         .config
@@ -1175,7 +1121,6 @@ fun migrate_is_not_migrating() {
         &mut world,
         stable_config,
         false,
-        10_000 * POW_9,
         vector[dev_allocation, DAY],
     );
 
@@ -1201,7 +1146,7 @@ fun migrate_is_not_migrating() {
 fun dev_claim_invalid_version() {
     let mut world = start();
 
-    let witness = acl::sign_in_for_testing();
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
     world
         .config
@@ -1228,7 +1173,6 @@ fun dev_claim_invalid_version() {
         &mut world,
         stable_config,
         false,
-        10_000 * POW_9,
         vector[dev_allocation, DAY],
     );
 
@@ -1279,7 +1223,6 @@ fun dev_claim_has_not_migrated() {
         &mut world,
         stable_config,
         false,
-        10_000 * POW_9,
         vector[dev_allocation, DAY],
     );
 
@@ -1312,7 +1255,7 @@ fun dev_claim_has_not_migrated() {
 fun dev_claim_is_not_dev() {
     let mut world = start();
 
-    let witness = acl::sign_in_for_testing();
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
     world
         .config
@@ -1339,7 +1282,6 @@ fun dev_claim_is_not_dev() {
         &mut world,
         stable_config,
         false,
-        10_000 * POW_9,
         vector[dev_allocation, DAY],
     );
 
@@ -1398,7 +1340,6 @@ fun pump_token_invalid_version() {
         &mut world,
         stable_config,
         true,
-        POW_9 * POW_9,
         vector[dev_allocation, DAY],
     );
 
@@ -1430,7 +1371,6 @@ fun pump_use_coin_instead() {
         &mut world,
         stable_config,
         false,
-        POW_9 * POW_9,
         vector[dev_allocation, DAY],
     );
 
@@ -1452,7 +1392,7 @@ fun pump_use_coin_instead() {
 fun pump_token_is_not_bonding() {
     let mut world = start();
 
-    let witness = acl::sign_in_for_testing();
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
     world
         .config
@@ -1479,13 +1419,12 @@ fun pump_token_is_not_bonding() {
         &mut world,
         stable_config,
         true,
-        1000 * POW_9,
         vector[dev_allocation, DAY],
     );
 
     let (x, y) = memez_stable::pump_token(
         &mut memez_fun,
-        coin::mint_for_testing(1000 * POW_9, world.scenario.ctx()),
+        coin::mint_for_testing(MAX_TARGET_SUI_LIQUIDITY + 1, world.scenario.ctx()),
         memez_allowed_versions::get_allowed_versions_for_testing(1),
         world.scenario.ctx(),
     );
@@ -1527,7 +1466,6 @@ fun dump_token_invalid_version() {
         &mut world,
         stable_config,
         true,
-        10_000 * POW_9,
         vector[dev_allocation, DAY],
     );
 
@@ -1568,7 +1506,6 @@ fun dump_use_coin_instead() {
         &mut world,
         stable_config,
         false,
-        10_000 * POW_9,
         vector[dev_allocation, DAY],
     );
 
@@ -1599,7 +1536,7 @@ fun dump_use_coin_instead() {
 fun dump_token_is_not_bonding() {
     let mut world = start();
 
-    let witness = acl::sign_in_for_testing();
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
     world
         .config
@@ -1626,7 +1563,6 @@ fun dump_token_is_not_bonding() {
         &mut world,
         stable_config,
         true,
-        10_000 * POW_9,
         vector[dev_allocation, DAY],
     );
 
@@ -1657,7 +1593,6 @@ fun set_up_pool(
     world: &mut World,
     stable_config: StableConfig,
     is_token: bool,
-    target_sui_liquidity: u64,
     dev_payload: vector<u64>,
 ): MemezFun<Stable, Meme, SUI> {
     let ctx = world.scenario.ctx();
@@ -1667,7 +1602,6 @@ fun set_up_pool(
         create_treasury_cap_for_testing(ctx),
         mint_for_testing(2_000_000_000, ctx),
         stable_config,
-        target_sui_liquidity,
         is_token,
         memez_metadata::new_for_test(ctx),
         dev_payload,
@@ -1691,7 +1625,7 @@ fun start(): World {
 
     let mut config = scenario.take_shared<MemezConfig>();
 
-    let witness = acl::sign_in_for_testing();
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
     config.add_migrator_witness<DefaultKey, MigrationWitness>(&witness, scenario.ctx());
 

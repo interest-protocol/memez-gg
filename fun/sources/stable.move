@@ -65,7 +65,6 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
     meme_treasury_cap: TreasuryCap<Meme>,
     mut creation_fee: Coin<SUI>,
     stable_config: StableConfig,
-    target_quote_liquidity: u64,
     is_token: bool,
     metadata: MemezMetadata,
     dev_payload: vector<u64>,
@@ -103,7 +102,7 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
     let liquidity_provision = meme_reserve.split(stable_config.liquidity_provision());
 
     let fixed_rate = memez_fixed_rate::new<Meme, Quote>(
-        target_quote_liquidity.min(stable_config.target_quote_liquidity()),
+        stable_config.target_quote_liquidity(),
         meme_reserve.split(stable_config.meme_sale_amount()),
         fees.swap(stake_holders),
     );
@@ -131,7 +130,7 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
         metadata,
         ipx_meme_coin_treasury,
         0,
-        target_quote_liquidity.min(stable_config.target_quote_liquidity()),
+        stable_config.target_quote_liquidity(),
         meme_balance_value,
         stable_config.total_supply(),
         dev,

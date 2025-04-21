@@ -1,0 +1,14 @@
+[package]
+name = "Memez"
+edition = "2024.beta" 
+license = "MIT"           
+authors = ["Jose Cerqueira (jose@interestprotocol.com)"]     
+
+[dependencies]
+interest_access_control = { r.mvr = "@interest/acl" }
+
+[addresses]
+memez = "0x0"
+
+[r.mvr]
+network = "testnet"

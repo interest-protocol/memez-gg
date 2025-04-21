@@ -218,7 +218,7 @@ public(package) fun meme_sale_amount<Meme, Quote>(self: &FixedRate<Meme, Quote>)
 // === Private Functions ===
 
 fun amount_before_fee(amount_in: u64, fee: u64): u64 {
-    let max_bps = bps::max_bps();
+    let max_bps = bps::max_value!();
     u64::mul_div_up(amount_in, max_bps, max_bps - fee)
 }
 

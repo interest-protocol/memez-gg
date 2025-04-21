@@ -3,7 +3,8 @@ module memez_fun::memez_auction_tests;
 
 use interest_bps::bps;
 use interest_math::u64;
-use memez_acl::acl;
+use interest_access_control::access_control;
+use memez::memez::MEMEZ;
 use memez_fun::{
     memez_allowed_versions,
     memez_auction::{Self, Auction},
@@ -558,7 +559,7 @@ fun test_token_end_to_end() {
 fun test_coin_end_to_end_with_stake_holders() {
     let mut world = start();
 
-    let witness = acl::sign_in_for_testing();
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
     world
         .config
@@ -1365,7 +1366,7 @@ fun start(): World {
 
     let mut config = scenario.take_shared<MemezConfig>();
 
-    let witness = acl::sign_in_for_testing();
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
     config.add_quote_coin<DefaultKey, SUI>(&witness, scenario.ctx());
 

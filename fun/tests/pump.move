@@ -1,11 +1,12 @@
 #[test_only]
 module memez_fun::memez_pump_tests;
 
-use constant_product::constant_product::get_amount_out;
+use interest_access_control::access_control;
 use interest_bps::bps;
+use interest_constant_product::constant_product::get_amount_out;
 use interest_math::u64;
 use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
-use memez_acl::acl;
+use memez::memez::MEMEZ;
 use memez_fun::{
     memez_allowed_versions,
     memez_config::{Self, MemezConfig},
@@ -76,7 +77,7 @@ fun test_new_coin() {
 
     let first_purchase = mint_for_testing(first_purchase_value, world.scenario.ctx());
 
-    let witness = acl::sign_in_for_testing();
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
     world.config.add_quote_coin<ConfigurableWitness, SUI>(&witness, world.scenario.ctx());
     world
@@ -1335,7 +1336,7 @@ fun dump_token_is_not_bonding() {
 fun test_distribute_stake_holders_allocation() {
     let mut world = start();
 
-    let witness = acl::sign_in_for_testing();
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
     world
         .config
@@ -1422,7 +1423,7 @@ fun test_distribute_stake_holders_allocation() {
 fun test_migrate_full_liquidity() {
     let mut world = start();
 
-    let witness = acl::sign_in_for_testing();
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
     world
         .config
@@ -1497,7 +1498,7 @@ fun test_bonding_curve_math() {
 
     world.scenario.next_tx(DEV);
 
-    let witness = acl::sign_in_for_testing();
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
     world
         .config
@@ -1818,7 +1819,7 @@ fun start(): World {
 
     let mut config = scenario.take_shared<MemezConfig>();
 
-    let witness = acl::sign_in_for_testing();
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
     config.add_quote_coin<DefaultKey, SUI>(&witness, scenario.ctx());
 

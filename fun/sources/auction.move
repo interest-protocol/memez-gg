@@ -23,7 +23,7 @@ G:::::G        G::::GG:::::G        G::::G
 #[allow(lint(share_owned, self_transfer), unused_function, unused_mut_parameter)]
 module memez_fun::memez_auction;
 
-use interest_bps::bps::{Self, max_bps};
+use interest_bps::bps;
 use interest_math::u64;
 use ipx_coin_standard::ipx_coin_standard::MetadataCap;
 use memez_fun::{
@@ -282,7 +282,7 @@ fun expected_drip_amount<Meme, Quote>(self: &AuctionState<Meme, Quote>, clock: &
 
     let progress = current_time - self.start_time;
 
-    let max_bps = max_bps();
+    let max_bps = bps::max_value!();
 
     let percentage = bps::new(u64::mul_div_up(progress, max_bps, self.auction_duration).min(
         max_bps,

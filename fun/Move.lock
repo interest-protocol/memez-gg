@@ -2,16 +2,17 @@
 
 [move]
 version = 3
-manifest_digest = "C50B492CA26117A3FD141020B77EB9A97C3ACB852D3D9034CEEAEF724CD7A17D"
-deps_digest = "D7FB1F2E1A893B9A0E80A392473710373DE5791D3AC8F6D898803754B2ADAE6B"
+manifest_digest = "CA742B66608A0AE691B021EAA0B7EB9B325E204B3F1F8F216DBA1638661C6742"
+deps_digest = "8D8E72BAA06E63572166CA7E7F6E159CA2D11E27ADE3961B15E29922A04B0D32"
 dependencies = [
   { id = "Bridge", name = "Bridge" },
-  { id = "ConstantProduct", name = "ConstantProduct" },
   { id = "DeepBook", name = "DeepBook" },
   { id = "IPXCoinStandard", name = "IPXCoinStandard" },
+  { id = "InterestAccessControl", name = "InterestAccessControl" },
   { id = "InterestBPS", name = "InterestBPS" },
+  { id = "InterestConstantProduct", name = "InterestConstantProduct" },
   { id = "InterestMath", name = "InterestMath" },
-  { id = "MemezACL", name = "MemezACL" },
+  { id = "Memez", name = "Memez" },
   { id = "MemezVesting", name = "MemezVesting" },
   { id = "MoveStdlib", name = "MoveStdlib" },
   { id = "Sui", name = "Sui" },
@@ -23,18 +24,6 @@ id = "Bridge"
 source = { git = "https://github.com/MystenLabs/sui.git", rev = "9c04e1840eb5", subdir = "crates/sui-framework/packages/bridge" }
 
 dependencies = [
-  { id = "MoveStdlib", name = "MoveStdlib" },
-  { id = "Sui", name = "Sui" },
-  { id = "SuiSystem", name = "SuiSystem" },
-]
-
-[[move.package]]
-id = "ConstantProduct"
-source = { local = "../dependencies/constant-product" }
-
-dependencies = [
-  { id = "Bridge", name = "Bridge" },
-  { id = "DeepBook", name = "DeepBook" },
   { id = "MoveStdlib", name = "MoveStdlib" },
   { id = "Sui", name = "Sui" },
   { id = "SuiSystem", name = "SuiSystem" },
@@ -62,8 +51,32 @@ dependencies = [
 ]
 
 [[move.package]]
+id = "InterestAccessControl"
+source = { git = "https://github.com/interest-protocol/interest-mvr", rev = "937409aa6920904b6d16bf5cafff0f9f32904ba4", subdir = "access-control/contracts" }
+
+dependencies = [
+  { id = "Bridge", name = "Bridge" },
+  { id = "DeepBook", name = "DeepBook" },
+  { id = "MoveStdlib", name = "MoveStdlib" },
+  { id = "Sui", name = "Sui" },
+  { id = "SuiSystem", name = "SuiSystem" },
+]
+
+[[move.package]]
 id = "InterestBPS"
-source = { local = "../dependencies/bps" }
+source = { git = "https://github.com/interest-protocol/interest-mvr", rev = "76ee442e9d6daa128a4e9f755f0b9d95137c239a", subdir = "bps" }
+
+dependencies = [
+  { id = "Bridge", name = "Bridge" },
+  { id = "DeepBook", name = "DeepBook" },
+  { id = "MoveStdlib", name = "MoveStdlib" },
+  { id = "Sui", name = "Sui" },
+  { id = "SuiSystem", name = "SuiSystem" },
+]
+
+[[move.package]]
+id = "InterestConstantProduct"
+source = { git = "https://github.com/interest-protocol/interest-mvr", rev = "d5e4ee79dfdc0445a1b66960cbe109d102990ada", subdir = "constant-product" }
 
 dependencies = [
   { id = "Bridge", name = "Bridge" },
@@ -75,7 +88,7 @@ dependencies = [
 
 [[move.package]]
 id = "InterestMath"
-source = { local = "../dependencies/interest-math" }
+source = { git = "https://github.com/interest-protocol/interest-mvr", rev = "650c5078ce8b8dfb1bda963b393cd698c81537e6", subdir = "math" }
 
 dependencies = [
   { id = "Bridge", name = "Bridge" },
@@ -86,11 +99,16 @@ dependencies = [
 ]
 
 [[move.package]]
-id = "MemezACL"
-source = { local = "../acl" }
+id = "Memez"
+source = { local = "../memez" }
 
 dependencies = [
+  { id = "Bridge", name = "Bridge" },
+  { id = "DeepBook", name = "DeepBook" },
+  { id = "InterestAccessControl", name = "InterestAccessControl" },
+  { id = "MoveStdlib", name = "MoveStdlib" },
   { id = "Sui", name = "Sui" },
+  { id = "SuiSystem", name = "SuiSystem" },
 ]
 
 [[move.package]]
@@ -98,7 +116,11 @@ id = "MemezVesting"
 source = { local = "../vesting" }
 
 dependencies = [
+  { id = "Bridge", name = "Bridge" },
+  { id = "DeepBook", name = "DeepBook" },
+  { id = "MoveStdlib", name = "MoveStdlib" },
   { id = "Sui", name = "Sui" },
+  { id = "SuiSystem", name = "SuiSystem" },
 ]
 
 [[move.package]]
@@ -131,7 +153,6 @@ flavor = "sui"
 
 [env.testnet]
 chain-id = "4c78adac"
-original-published-id = "0x0d2de7abb5af102967b8bdd0d550fd571da19e563ece6806ebd25692b21b2f8a"
-latest-published-id = "0x0d2de7abb5af102967b8bdd0d550fd571da19e563ece6806ebd25692b21b2f8a"
+original-published-id = "0x646e2bc436448a03b457dc48f6276586dd70838d0adce8f9515d50f64328dea6"
+latest-published-id = "0x646e2bc436448a03b457dc48f6276586dd70838d0adce8f9515d50f64328dea6"
 published-version = "1"
-

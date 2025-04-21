@@ -3,7 +3,7 @@
 
 module memez_fun::memez_constant_product;
 
-use constant_product::constant_product::get_amount_out;
+use interest_constant_product::constant_product::get_amount_out;
 use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
 use memez_fun::{memez_burner::{Self, MemezBurner}, memez_events, memez_fees::Fee};
 use sui::{balance::{Self, Balance}, coin::Coin};

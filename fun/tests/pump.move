@@ -1,11 +1,11 @@
 #[test_only]
 module memez_fun::memez_pump_tests;
 
-use constant_product::constant_product::get_amount_out;
+use interest_access_control::access_control;
 use interest_bps::bps;
+use interest_constant_product::constant_product::get_amount_out;
 use interest_math::u64;
 use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
-use interest_access_control::access_control;
 use memez::memez::MEMEZ;
 use memez_fun::{
     memez_allowed_versions,

@@ -8,11 +8,12 @@ authors = ["Jose Cerqueira (jose@interestprotocol.com)"]
 InterestBPS = { local = "../dependencies/bps" }
 InterestMath = { local = "../dependencies/interest-math" }
 IPXCoinStandard = { local = "../dependencies/ipx-coin-standard" }
-ConstantProduct = { local = "../dependencies/constant-product" }
 
 Memez = { local = "../memez" }
 MemezVesting = { local = "../vesting" }
+
 interest_access_control = { r.mvr = "@interest/acl" }
+interest_constant_product = { r.mvr = "@interest/constant-product" }
 
 [addresses]
 memez_fun = "0x0"

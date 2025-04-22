@@ -91,6 +91,14 @@ public fun destroy<Meme, Quote, Witness: drop>(
     (meme_balance, quote_balance)
 }
 
+// === Public View Functions ===
+
+public fun metadata<Curve, Meme, Quote>(
+    self: &MemezFun<Curve, Meme, Quote>,
+): VecMap<String, String> {
+    *self.metadata.borrow()
+}
+
 // === Public Package Functions ===
 
 public(package) fun new<Curve, Meme, Quote, ConfigKey, MigrationWitness>(
@@ -621,12 +629,6 @@ public(package) fun migrate<Curve, Meme, Quote>(
         quote_balance,
         meme_balance,
     }
-}
-
-// === Private Functions for Frontend ===
-
-fun metadata<Curve, Meme, Quote>(self: &MemezFun<Curve, Meme, Quote>): VecMap<String, String> {
-    *self.metadata.borrow()
 }
 
 // === Aliases ===

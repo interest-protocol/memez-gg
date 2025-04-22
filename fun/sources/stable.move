@@ -234,16 +234,16 @@ public fun to_coin<Meme, Quote>(
     self.to_coin!(|self| self.state_mut<Meme, Quote>(), meme_token, ctx)
 }
 
-// === View Functions for FE ===
+// === Public View Functions ===
 
-fun pump_amount<Meme, Quote>(
+public fun quote_pump<Meme, Quote>(
     self: &mut MemezFun<Stable, Meme, Quote>,
     amount_in: u64,
 ): vector<u64> {
     self.fr_pump_amount!(|self| (self.state<Meme, Quote>(), 0), amount_in)
 }
 
-fun dump_amount<Meme, Quote>(
+public fun quote_dump<Meme, Quote>(
     self: &mut MemezFun<Stable, Meme, Quote>,
     amount_in: u64,
 ): vector<u64> {

@@ -241,9 +241,9 @@ public fun to_coin<Meme, Quote>(
     self.to_coin!(|self| self.state_mut<Meme, Quote>(), meme_token, ctx)
 }
 
-// === View Functions for FE ===
+// === Public View Functions ===
 
-fun pump_amount<Meme, Quote>(
+public fun quote_pump<Meme, Quote>(
     self: &mut MemezFun<Auction, Meme, Quote>,
     amount_in: u64,
     clock: &Clock,
@@ -255,7 +255,7 @@ fun pump_amount<Meme, Quote>(
     }, amount_in)
 }
 
-fun dump_amount<Meme, Quote>(
+public fun quote_dump<Meme, Quote>(
     self: &mut MemezFun<Auction, Meme, Quote>,
     amount_in: u64,
     clock: &Clock,
@@ -267,7 +267,10 @@ fun dump_amount<Meme, Quote>(
     }, amount_in)
 }
 
-fun meme_balance<Meme, Quote>(self: &mut MemezFun<Auction, Meme, Quote>, clock: &Clock): u64 {
+public fun meme_balance<Meme, Quote>(
+    self: &mut MemezFun<Auction, Meme, Quote>,
+    clock: &Clock,
+): u64 {
     let state = self.state<Meme, Quote>();
 
     let amount = state.expected_drip_amount(clock);
@@ -389,7 +392,7 @@ public fun market_cap<Meme, Quote>(
         .fixed_rate
         .quote_balance_mut()
         .join(balance::create_for_testing(10u64.pow(decimals)));
-    let amounts = dump_amount<Meme, Quote>(self, 10u64.pow(decimals), clock);
+    let amounts = quote_dump<Meme, Quote>(self, 10u64.pow(decimals), clock);
     self
         .state_mut<Meme, Quote>()
         .fixed_rate

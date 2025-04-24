@@ -1,151 +1,170 @@
-// #[test_only]
-// module memez_fun::memez_constant_product_tests;
+#[test_only]
+module memez_fun::memez_constant_product_tests;
 
-// use interest_constant_product::constant_product::get_amount_out;
-// use ipx_coin_standard::ipx_coin_standard;
-// use memez_fun::{memez_burner, memez_constant_product, memez_distributor, memez_errors, memez_fees};
-// use sui::{balance, coin::{Self, mint_for_testing}, sui::SUI, test_utils::{assert_eq, destroy}};
+use interest_constant_product::constant_product::get_amount_out;
+use ipx_coin_standard::ipx_coin_standard;
+use memez_fun::{memez_burner, memez_constant_product, memez_distributor, memez_errors, memez_fees};
+use sui::{balance, coin::{Self, mint_for_testing}, sui::SUI, test_utils::{assert_eq, destroy}};
 
-// public struct Meme()
+public struct Meme()
 
-// public struct Quote()
+public struct Quote()
 
-// const BURN_TAX: u64 = 2_000;
+const BURN_TAX: u64 = 2_000;
 
-// const BPS_MAX: u64 = 10_000;
+const BPS_MAX: u64 = 10_000;
 
-// #[test]
-// fun test_new() {
-//     let virtual_liquidity = 100;
-//     let target_quote_liquidity = 1100;
-//     let meme_balance_value = 5000;
+#[test]
+fun test_new() {
+    let virtual_liquidity = 100;
+    let target_quote_liquidity = 1100;
+    let meme_balance_value = 5000;
 
-//     let cp = memez_constant_product::new<Meme, Quote>(
-//         virtual_liquidity,
-//         target_quote_liquidity,
-//         balance::create_for_testing<Meme>(meme_balance_value),
-//         memez_fees::new_percentage_fee(
-//             30,
-//             memez_distributor::new(
-//                 vector[@0x0],
-//                 vector[BPS_MAX],
-//             ),
-//         ),
-//         BURN_TAX,
-//     );
+    let meme_swap_fee = 40;
+    let quote_swap_fee = 30;
+    let cp = memez_constant_product::new<Meme, Quote>(
+        virtual_liquidity,
+        target_quote_liquidity,
+        balance::create_for_testing<Meme>(meme_balance_value),
+        memez_fees::new_percentage_fee(
+            meme_swap_fee,
+            memez_distributor::new(
+                vector[@0x0],
+                vector[BPS_MAX],
+            ),
+        ),
+        memez_fees::new_percentage_fee(
+            quote_swap_fee,
+            memez_distributor::new(
+                vector[@0x0],
+                vector[BPS_MAX],
+            ),
+        ),
+        BURN_TAX,
+    );
 
-//     assert_eq(cp.virtual_liquidity(), virtual_liquidity);
-//     assert_eq(cp.target_quote_liquidity(), target_quote_liquidity);
-//     assert_eq(cp.meme_balance().value(), meme_balance_value);
-//     assert_eq(cp.burner().fee().value(), BURN_TAX);
-//     assert_eq(cp.burner().target_liquidity(), target_quote_liquidity);
+    assert_eq(cp.virtual_liquidity(), virtual_liquidity);
+    assert_eq(cp.target_quote_liquidity(), target_quote_liquidity);
+    assert_eq(cp.meme_balance().value(), meme_balance_value);
+    assert_eq(cp.burner().fee().value(), BURN_TAX);
+    assert_eq(cp.burner().target_liquidity(), target_quote_liquidity);
+    assert_eq(cp.meme_swap_fee().value(), meme_swap_fee);
+    assert_eq(cp.quote_swap_fee().value(), quote_swap_fee);
 
-//     destroy(cp);
-// }
+    destroy(cp);
+}
 
-// #[test]
-// fun test_set_memez_fun() {
-//     let mut cp = memez_constant_product::new<Meme, Quote>(
-//         100,
-//         1100,
-//         balance::create_for_testing<Meme>(5000),
-//         memez_fees::new_percentage_fee(
-//             30,
-//             memez_distributor::new(
-//                 vector[@0x0],
-//                 vector[BPS_MAX],
-//             ),
-//         ),
-//         BURN_TAX,
-//     );
+#[test]
+fun test_set_memez_fun() {
+    let mut cp = memez_constant_product::new<Meme, Quote>(
+        100,
+        1100,
+        balance::create_for_testing<Meme>(5000),
+        memez_fees::new_percentage_fee(
+            30,
+            memez_distributor::new(
+                vector[@0x0],
+                vector[BPS_MAX],
+            ),
+        ),
+        memez_fees::new_percentage_fee(
+            0,
+            memez_distributor::new(
+                vector[@0x0],
+                vector[BPS_MAX],
+            ),
+        ),
+        BURN_TAX,
+    );
 
-//     assert_eq(cp.memez_fun(), @0x0);
+    assert_eq(cp.memez_fun(), @0x0);
 
-//     cp.set_memez_fun(@0x1);
+    cp.set_memez_fun(@0x1);
 
-//     assert_eq(cp.memez_fun(), @0x1);
+    assert_eq(cp.memez_fun(), @0x1);
 
-//     destroy(cp);
-// }
+    destroy(cp);
+}
 
-// #[test]
-// fun test_pump() {
-//     let mut ctx = tx_context::dummy();
+#[test]
+fun test_pump() {
+    let mut ctx = tx_context::dummy();
 
-//     let virtual_liquidity = 100;
-//     let target_sui_liquidity = 1100;
-//     let meme_balance_value = 5000;
+    let virtual_liquidity = 100;
+    let target_sui_liquidity = 1100;
+    let meme_balance_value = 5000;
 
-//     let swap_fee = memez_fees::new_percentage_fee(
-//         0,
-//         memez_distributor::new(
-//             vector[@0x0],
-//             vector[BPS_MAX],
-//         ),
-//     );
+    let swap_fee = memez_fees::new_percentage_fee(
+        0,
+        memez_distributor::new(
+            vector[@0x0],
+            vector[BPS_MAX],
+        ),
+    );
 
-//     let mut cp = memez_constant_product::new(
-//         virtual_liquidity,
-//         target_sui_liquidity,
-//         balance::create_for_testing<Meme>(meme_balance_value),
-//         swap_fee,
-//         BURN_TAX,
-//     );
+    let mut cp = memez_constant_product::new(
+        virtual_liquidity,
+        target_sui_liquidity,
+        balance::create_for_testing<Meme>(meme_balance_value),
+        swap_fee,
+        swap_fee,
+        BURN_TAX,
+    );
 
-//     let amount_in = 250;
+    let amount_in = 250;
 
-//     let amount_out = get_amount_out(
-//         amount_in,
-//         virtual_liquidity,
-//         meme_balance_value,
-//     );
+    let amount_out = get_amount_out(
+        amount_in,
+        virtual_liquidity,
+        meme_balance_value,
+    );
 
-//     let amounts = cp.pump_amount(amount_in);
+    let amounts = cp.pump_amount(amount_in);
 
-//     let (can_migrate, coin_meme_out) = cp.pump(
-//         mint_for_testing<SUI>(amount_in, &mut ctx),
-//         0,
-//         &mut ctx,
-//     );
+    let (can_migrate, coin_meme_out) = cp.pump(
+        mint_for_testing<SUI>(amount_in, &mut ctx),
+        0,
+        &mut ctx,
+    );
 
-//     assert_eq(can_migrate, false);
-//     assert_eq(coin_meme_out.value(), amounts[0]);
-//     assert_eq(amounts[1], swap_fee.calculate(amount_in));
-//     assert_eq(coin_meme_out.burn_for_testing(), amount_out);
-//     assert_eq(cp.quote_balance().value(), amount_in);
-//     assert_eq(cp.virtual_liquidity(), virtual_liquidity);
-//     assert_eq(cp.meme_balance().value(), meme_balance_value - amount_out);
+    assert_eq(can_migrate, false);
+    assert_eq(coin_meme_out.value(), amounts[0]);
+    assert_eq(amounts[1], swap_fee.calculate(amount_in));
+    assert_eq(coin_meme_out.burn_for_testing(), amount_out);
+    assert_eq(cp.quote_balance().value(), amount_in);
+    assert_eq(cp.virtual_liquidity(), virtual_liquidity);
+    assert_eq(cp.meme_balance().value(), meme_balance_value - amount_out);
 
-//     let meme_balance_value = cp.meme_balance().value();
+    let meme_balance_value = cp.meme_balance().value();
 
-//     let new_sui_balance = amount_in;
+    let new_sui_balance = amount_in;
 
-//     let amount_in = target_sui_liquidity - amount_in;
+    let amount_in = target_sui_liquidity - amount_in;
 
-//     let amount_out = get_amount_out(
-//         amount_in,
-//         virtual_liquidity + new_sui_balance,
-//         meme_balance_value,
-//     );
+    let amount_out = get_amount_out(
+        amount_in,
+        virtual_liquidity + new_sui_balance,
+        meme_balance_value,
+    );
 
-//     let amounts = cp.pump_amount(amount_in);
+    let amounts = cp.pump_amount(amount_in);
 
-//     let (can_migrate, coin_meme_out) = cp.pump(
-//         mint_for_testing<SUI>(amount_in, &mut ctx),
-//         0,
-//         &mut ctx,
-//     );
+    let (can_migrate, coin_meme_out) = cp.pump(
+        mint_for_testing<SUI>(amount_in, &mut ctx),
+        0,
+        &mut ctx,
+    );
 
-//     assert_eq(can_migrate, true);
-//     assert_eq(coin_meme_out.value(), amounts[0]);
-//     assert_eq(amounts[1], swap_fee.calculate(amount_in));
-//     assert_eq(coin_meme_out.burn_for_testing(), amount_out);
-//     assert_eq(cp.quote_balance().value(), amount_in + new_sui_balance);
-//     assert_eq(cp.virtual_liquidity(), virtual_liquidity);
-//     assert_eq(cp.meme_balance().value(), meme_balance_value - amount_out);
+    assert_eq(can_migrate, true);
+    assert_eq(coin_meme_out.value(), amounts[0]);
+    assert_eq(amounts[1], swap_fee.calculate(amount_in));
+    assert_eq(coin_meme_out.burn_for_testing(), amount_out);
+    assert_eq(cp.quote_balance().value(), amount_in + new_sui_balance);
+    assert_eq(cp.virtual_liquidity(), virtual_liquidity);
+    assert_eq(cp.meme_balance().value(), meme_balance_value - amount_out);
 
-//     destroy(cp);
-// }
+    destroy(cp);
+}
 
 // #[test]
 // fun test_pump_with_fee() {
@@ -230,115 +249,117 @@
 //     destroy(cp);
 // }
 
-// #[test]
-// fun test_dump() {
-//     let mut ctx = tx_context::dummy();
+#[test]
+fun test_dump() {
+    let mut ctx = tx_context::dummy();
 
-//     let virtual_liquidity = 100;
-//     let target_sui_liquidity = 1100;
-//     let meme_balance_value = 5000;
+    let virtual_liquidity = 100;
+    let target_sui_liquidity = 1100;
+    let meme_balance_value = 5000;
 
-//     let swap_fee = memez_fees::new_percentage_fee(
-//         0,
-//         memez_distributor::new(
-//             vector[@0x0],
-//             vector[BPS_MAX],
-//         ),
-//     );
+    let swap_fee = memez_fees::new_percentage_fee(
+        0,
+        memez_distributor::new(
+            vector[@0x0],
+            vector[BPS_MAX],
+        ),
+    );
 
-//     let mut meme_treasury_cap = coin::create_treasury_cap_for_testing<Meme>(&mut ctx);
+    let mut meme_treasury_cap = coin::create_treasury_cap_for_testing<Meme>(&mut ctx);
 
-//     let mut cp = memez_constant_product::new(
-//         virtual_liquidity,
-//         target_sui_liquidity,
-//         meme_treasury_cap.mint(meme_balance_value, &mut ctx).into_balance(),
-//         swap_fee,
-//         0,
-//     );
+    let mut cp = memez_constant_product::new(
+        virtual_liquidity,
+        target_sui_liquidity,
+        meme_treasury_cap.mint(meme_balance_value, &mut ctx).into_balance(),
+        swap_fee,
+        swap_fee,
+        0,
+    );
 
-//     let (mut ipx_treasury, mut witness) = ipx_coin_standard::new(meme_treasury_cap, &mut ctx);
+    let (mut ipx_treasury, mut witness) = ipx_coin_standard::new(meme_treasury_cap, &mut ctx);
 
-//     witness.allow_public_burn(
-//         &mut ipx_treasury,
-//     );
+    witness.allow_public_burn(
+        &mut ipx_treasury,
+    );
 
-//     let sui_amount_in = 500;
+    let sui_amount_in = 500;
 
-//     let (_, coin_meme_out) = cp.pump(
-//         mint_for_testing<SUI>(sui_amount_in, &mut ctx),
-//         0,
-//         &mut ctx,
-//     );
+    let (_, coin_meme_out) = cp.pump(
+        mint_for_testing<SUI>(sui_amount_in, &mut ctx),
+        0,
+        &mut ctx,
+    );
 
-//     let meme_coin_out_value = coin_meme_out.value();
+    let meme_coin_out_value = coin_meme_out.value();
 
-//     let amounts = cp.dump_amount(meme_coin_out_value);
+    let amounts = cp.dump_amount(meme_coin_out_value);
 
-//     let amount_out = get_amount_out(
-//         meme_coin_out_value,
-//         cp.meme_balance().value(),
-//         cp.quote_balance().value() + virtual_liquidity,
-//     );
+    let amount_out = get_amount_out(
+        meme_coin_out_value,
+        cp.meme_balance().value(),
+        cp.quote_balance().value() + virtual_liquidity,
+    );
 
-//     let sui_coin_out = cp.dump(
-//         &mut ipx_treasury,
-//         coin_meme_out,
-//         amounts[0],
-//         &mut ctx,
-//     );
+    let sui_coin_out = cp.dump(
+        &mut ipx_treasury,
+        coin_meme_out,
+        amounts[0],
+        &mut ctx,
+    );
 
-//     assert_eq(0, amounts[1]);
-//     assert_eq(0, amounts[2]);
-//     assert_eq(ipx_treasury.total_supply<Meme>(), meme_balance_value);
-//     assert_eq(amount_out, amounts[0]);
+    assert_eq(amount_out, amounts[0]);
+    assert_eq(0, amounts[1]);
+    assert_eq(0, amounts[2]);
+    assert_eq(0, amounts[3]);
+    assert_eq(ipx_treasury.total_supply<Meme>(), meme_balance_value);
 
-//     assert_eq(cp.quote_balance().value(), sui_amount_in - amounts[0]);
-//     assert_eq(cp.meme_balance().value(), meme_balance_value);
-//     assert_eq(amounts[2], 0);
+    assert_eq(cp.quote_balance().value(), sui_amount_in - amounts[0]);
+    assert_eq(cp.meme_balance().value(), meme_balance_value);
 
-//     sui_coin_out.burn_for_testing();
+    sui_coin_out.burn_for_testing();
 
-//     let amount_out = get_amount_out(
-//         meme_coin_out_value,
-//         cp.meme_balance().value(),
-//         cp.quote_balance().value() + virtual_liquidity,
-//     );
+    let amount_out = get_amount_out(
+        meme_coin_out_value,
+        cp.meme_balance().value(),
+        cp.quote_balance().value() + virtual_liquidity,
+    );
 
-//     cp
-//         .dump(
-//             &mut ipx_treasury,
-//             coin::mint_for_testing<Meme>(meme_coin_out_value, &mut ctx),
-//             0,
-//             &mut ctx,
-//         )
-//         .burn_for_testing();
+    cp
+        .dump(
+            &mut ipx_treasury,
+            coin::mint_for_testing<Meme>(meme_coin_out_value, &mut ctx),
+            0,
+            &mut ctx,
+        )
+        .burn_for_testing();
 
-//     assert_eq(amount_out != 0, true);
+    assert_eq(amount_out != 0, true);
 
-//     let amounts = cp.dump_amount(meme_coin_out_value);
+    let amounts = cp.dump_amount(meme_coin_out_value);
 
-//     let amount_out = get_amount_out(
-//         meme_coin_out_value,
-//         cp.meme_balance().value(),
-//         cp.quote_balance().value() + virtual_liquidity,
-//     );
+    let amount_out = get_amount_out(
+        meme_coin_out_value,
+        cp.meme_balance().value(),
+        cp.quote_balance().value() + virtual_liquidity,
+    );
 
-//     assert_eq(amounts[0], amount_out);
-//     assert_eq(amount_out != 0, true);
+    assert_eq(amounts[0], amount_out.min(cp.quote_balance().value()));
+    assert_eq(amount_out != 0, true);
+    assert_eq(cp.quote_balance().value(), 0);
 
-//     cp
-//         .dump(
-//             &mut ipx_treasury,
-//             coin::mint_for_testing<Meme>(meme_coin_out_value, &mut ctx),
-//             0,
-//             &mut ctx,
-//         )
-//         .destroy_zero();
+    cp
+        .dump(
+            &mut ipx_treasury,
+            coin::mint_for_testing<Meme>(meme_coin_out_value, &mut ctx),
+            0,
+            &mut ctx,
+        )
+        .destroy_zero();
 
-//     destroy(witness);
-//     destroy(ipx_treasury);
-//     destroy(cp);
-// }
+    destroy(witness);
+    destroy(ipx_treasury);
+    destroy(cp);
+}
 
 // #[test]
 // fun test_dump_with_fee() {
@@ -603,194 +624,198 @@
 //     destroy(cp);
 // }
 
-// #[
-//     test,
-//     expected_failure(
-//         abort_code = memez_errors::EZeroCoin,
-//         location = memez_fun::memez_constant_product,
-//     ),
-// ]
-// fun test_pump_zero_coin() {
-//     let mut ctx = tx_context::dummy();
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EZeroCoin,
+        location = memez_fun::memez_constant_product,
+    ),
+]
+fun test_pump_zero_coin() {
+    let mut ctx = tx_context::dummy();
 
-//     let virtual_liquidity = 100;
-//     let target_sui_liquidity = 1100;
-//     let meme_balance_value = 5000;
+    let virtual_liquidity = 100;
+    let target_sui_liquidity = 1100;
+    let meme_balance_value = 5000;
 
-//     let swap_fee = memez_fees::new_percentage_fee(
-//         0,
-//         memez_distributor::new(
-//             vector[@0x0],
-//             vector[BPS_MAX],
-//         ),
-//     );
+    let swap_fee = memez_fees::new_percentage_fee(
+        0,
+        memez_distributor::new(
+            vector[@0x0],
+            vector[BPS_MAX],
+        ),
+    );
 
-//     let mut cp = memez_constant_product::new<Meme, Quote>(
-//         virtual_liquidity,
-//         target_sui_liquidity,
-//         balance::create_for_testing<Meme>(meme_balance_value),
-//         swap_fee,
-//         0,
-//     );
+    let mut cp = memez_constant_product::new<Meme, Quote>(
+        virtual_liquidity,
+        target_sui_liquidity,
+        balance::create_for_testing<Meme>(meme_balance_value),
+        swap_fee,
+        swap_fee,
+        0,
+    );
 
-//     let (_can_migrate, _coin_meme_out) = cp.pump(
-//         coin::zero(&mut ctx),
-//         0,
-//         &mut ctx,
-//     );
+    let (_can_migrate, _coin_meme_out) = cp.pump(
+        coin::zero(&mut ctx),
+        0,
+        &mut ctx,
+    );
 
-//     abort
-// }
+    abort
+}
 
-// #[
-//     test,
-//     expected_failure(
-//         abort_code = memez_errors::ESlippage,
-//         location = memez_fun::memez_constant_product,
-//     ),
-// ]
-// fun test_pump_slippage() {
-//     let mut ctx = tx_context::dummy();
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::ESlippage,
+        location = memez_fun::memez_constant_product,
+    ),
+]
+fun test_pump_slippage() {
+    let mut ctx = tx_context::dummy();
 
-//     let virtual_liquidity = 100;
-//     let target_sui_liquidity = 1100;
-//     let meme_balance_value = 5000;
+    let virtual_liquidity = 100;
+    let target_sui_liquidity = 1100;
+    let meme_balance_value = 5000;
 
-//     let swap_fee = memez_fees::new_percentage_fee(
-//         0,
-//         memez_distributor::new(
-//             vector[@0x0],
-//             vector[BPS_MAX],
-//         ),
-//     );
+    let swap_fee = memez_fees::new_percentage_fee(
+        0,
+        memez_distributor::new(
+            vector[@0x0],
+            vector[BPS_MAX],
+        ),
+    );
 
-//     let mut cp = memez_constant_product::new<Meme, SUI>(
-//         virtual_liquidity,
-//         target_sui_liquidity,
-//         balance::create_for_testing<Meme>(meme_balance_value),
-//         swap_fee,
-//         0,
-//     );
+    let mut cp = memez_constant_product::new<Meme, SUI>(
+        virtual_liquidity,
+        target_sui_liquidity,
+        balance::create_for_testing<Meme>(meme_balance_value),
+        swap_fee,
+        swap_fee,
+        0,
+    );
 
-//     let amount_in = 250;
+    let amount_in = 250;
 
-//     let expected_amount_out = cp.pump_amount(amount_in);
+    let expected_amount_out = cp.pump_amount(amount_in);
 
-//     let (_can_migrate, _coin_meme_out) = cp.pump(
-//         mint_for_testing<SUI>(amount_in, &mut ctx),
-//         expected_amount_out[0] + 1,
-//         &mut ctx,
-//     );
+    let (_can_migrate, _coin_meme_out) = cp.pump(
+        mint_for_testing<SUI>(amount_in, &mut ctx),
+        expected_amount_out[0] + 1,
+        &mut ctx,
+    );
 
-//     abort
-// }
+    abort
+}
 
-// #[
-//     test,
-//     expected_failure(
-//         abort_code = memez_errors::EZeroCoin,
-//         location = memez_fun::memez_constant_product,
-//     ),
-// ]
-// fun test_dump_zero_coin() {
-//     let mut ctx = tx_context::dummy();
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EZeroCoin,
+        location = memez_fun::memez_constant_product,
+    ),
+]
+fun test_dump_zero_coin() {
+    let mut ctx = tx_context::dummy();
 
-//     let virtual_liquidity = 100;
-//     let target_sui_liquidity = 1100;
-//     let meme_balance_value = 5000;
-//     let swap_fee = memez_fees::new_percentage_fee(
-//         0,
-//         memez_distributor::new(
-//             vector[@0x0],
-//             vector[BPS_MAX],
-//         ),
-//     );
+    let virtual_liquidity = 100;
+    let target_sui_liquidity = 1100;
+    let meme_balance_value = 5000;
+    let swap_fee = memez_fees::new_percentage_fee(
+        0,
+        memez_distributor::new(
+            vector[@0x0],
+            vector[BPS_MAX],
+        ),
+    );
 
-//     let meme_treasury_cap = coin::create_treasury_cap_for_testing<Meme>(&mut ctx);
+    let meme_treasury_cap = coin::create_treasury_cap_for_testing<Meme>(&mut ctx);
 
-//     let (mut ipx_treasury, witness) = ipx_coin_standard::new(meme_treasury_cap, &mut ctx);
+    let (mut ipx_treasury, witness) = ipx_coin_standard::new(meme_treasury_cap, &mut ctx);
 
-//     destroy(witness);
+    destroy(witness);
 
-//     let mut cp = memez_constant_product::new<Meme, SUI>(
-//         virtual_liquidity,
-//         target_sui_liquidity,
-//         balance::create_for_testing<Meme>(meme_balance_value),
-//         swap_fee,
-//         0,
-//     );
+    let mut cp = memez_constant_product::new<Meme, SUI>(
+        virtual_liquidity,
+        target_sui_liquidity,
+        balance::create_for_testing<Meme>(meme_balance_value),
+        swap_fee,
+        swap_fee,
+        0,
+    );
 
-//     cp
-//         .dump(
-//             &mut ipx_treasury,
-//             coin::zero(&mut ctx),
-//             0,
-//             &mut ctx,
-//         )
-//         .burn_for_testing();
+    cp
+        .dump(
+            &mut ipx_treasury,
+            coin::zero(&mut ctx),
+            0,
+            &mut ctx,
+        )
+        .burn_for_testing();
 
-//     abort
-// }
+    abort
+}
 
-// #[
-//     test,
-//     expected_failure(
-//         abort_code = memez_errors::ESlippage,
-//         location = memez_fun::memez_constant_product,
-//     ),
-// ]
-// fun test_dump_slippage() {
-//     let mut ctx = tx_context::dummy();
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::ESlippage,
+        location = memez_fun::memez_constant_product,
+    ),
+]
+fun test_dump_slippage() {
+    let mut ctx = tx_context::dummy();
 
-//     let virtual_liquidity = 100;
-//     let target_sui_liquidity = 1100;
-//     let meme_balance_value = 5000;
-//     let swap_fee = memez_fees::new_percentage_fee(
-//         0,
-//         memez_distributor::new(
-//             vector[@0x0],
-//             vector[BPS_MAX],
-//         ),
-//     );
+    let virtual_liquidity = 100;
+    let target_sui_liquidity = 1100;
+    let meme_balance_value = 5000;
+    let swap_fee = memez_fees::new_percentage_fee(
+        0,
+        memez_distributor::new(
+            vector[@0x0],
+            vector[BPS_MAX],
+        ),
+    );
 
-//     let mut meme_treasury_cap = coin::create_treasury_cap_for_testing<Meme>(&mut ctx);
+    let mut meme_treasury_cap = coin::create_treasury_cap_for_testing<Meme>(&mut ctx);
 
-//     let mut cp = memez_constant_product::new(
-//         virtual_liquidity,
-//         target_sui_liquidity,
-//         meme_treasury_cap.mint(meme_balance_value, &mut ctx).into_balance(),
-//         swap_fee,
-//         0,
-//     );
+    let mut cp = memez_constant_product::new(
+        virtual_liquidity,
+        target_sui_liquidity,
+        meme_treasury_cap.mint(meme_balance_value, &mut ctx).into_balance(),
+        swap_fee,
+        swap_fee,
+        0,
+    );
 
-//     let (mut ipx_treasury, mut witness) = ipx_coin_standard::new(meme_treasury_cap, &mut ctx);
+    let (mut ipx_treasury, mut witness) = ipx_coin_standard::new(meme_treasury_cap, &mut ctx);
 
-//     witness.allow_public_burn(
-//         &mut ipx_treasury,
-//     );
+    witness.allow_public_burn(
+        &mut ipx_treasury,
+    );
 
-//     let sui_amount_in = 500;
+    let sui_amount_in = 500;
 
-//     let (_, coin_meme_out) = cp.pump(
-//         mint_for_testing<SUI>(sui_amount_in, &mut ctx),
-//         0,
-//         &mut ctx,
-//     );
+    let (_, coin_meme_out) = cp.pump(
+        mint_for_testing<SUI>(sui_amount_in, &mut ctx),
+        0,
+        &mut ctx,
+    );
 
-//     let meme_coin_out_value = coin_meme_out.value();
+    let meme_coin_out_value = coin_meme_out.value();
 
-//     let amounts = cp.dump_amount(meme_coin_out_value);
+    let amounts = cp.dump_amount(meme_coin_out_value);
 
-//     cp
-//         .dump(
-//             &mut ipx_treasury,
-//             coin_meme_out,
-//             amounts[0] + 1,
-//             &mut ctx,
-//         )
-//         .burn_for_testing();
+    cp
+        .dump(
+            &mut ipx_treasury,
+            coin_meme_out,
+            amounts[0] + 1,
+            &mut ctx,
+        )
+        .burn_for_testing();
 
-//     destroy(witness);
-//     destroy(ipx_treasury);
-//     destroy(cp);
-// }
+    destroy(witness);
+    destroy(ipx_treasury);
+    destroy(cp);
+}

@@ -188,141 +188,159 @@ fun test_calculate() {
     destroy(allocation_balance);
 }
 
-// #[test]
-// fun test_take() {
-//     let fees = default_fees();
+#[test]
+fun test_take() {
+    let fees = default_fees();
 
-//     let mut scenario = ts::begin(@0x9);
+    let mut scenario = ts::begin(@0x9);
 
-//     let mut asset = mint_for_testing<Meme>(5 * POW_9, scenario.ctx());
+    let mut asset = mint_for_testing<Meme>(5 * POW_9, scenario.ctx());
 
-//     fees.creation().take(&mut asset, scenario.ctx());
+    fees.creation().take(&mut asset, scenario.ctx());
 
-//     assert_eq(asset.burn_for_testing(), 3 * POW_9);
+    assert_eq(asset.burn_for_testing(), 3 * POW_9);
 
-//     scenario.next_tx(@0x0);
+    scenario.next_tx(@0x0);
 
-//     let integrator_creation_coin = scenario.take_from_address<Coin<Meme>>(INTEGRATOR);
-//     let interest_creation_coin = scenario.take_from_address<Coin<Meme>>(INTEREST);
+    let integrator_creation_coin = scenario.take_from_address<Coin<Meme>>(INTEGRATOR);
+    let interest_creation_coin = scenario.take_from_address<Coin<Meme>>(INTEREST);
 
-//     assert_eq(integrator_creation_coin.burn_for_testing(), 2 * POW_9 * 7_000 / 10_000);
-//     assert_eq(interest_creation_coin.burn_for_testing(), 2 * POW_9 * 3_000 / 10_000);
+    assert_eq(integrator_creation_coin.burn_for_testing(), 2 * POW_9 * 7_000 / 10_000);
+    assert_eq(interest_creation_coin.burn_for_testing(), 2 * POW_9 * 3_000 / 10_000);
 
-//     let mut asset = mint_for_testing<Meme>(10_000, scenario.ctx());
+    let mut asset = mint_for_testing<Meme>(10_000, scenario.ctx());
 
-//     fees.swap(vector[STAKE_HOLDER_1, STAKE_HOLDER_2]).take(&mut asset, scenario.ctx());
+    fees.meme_swap(vector[STAKE_HOLDER_1, STAKE_HOLDER_2]).take(&mut asset, scenario.ctx());
 
-//     assert_eq(asset.burn_for_testing(), 9_900);
+    assert_eq(asset.burn_for_testing(), 9_800);
 
-//     scenario.next_tx(@0x0);
+    scenario.next_tx(@0x0);
 
-//     let integrator_swap_coin = scenario.take_from_address<Coin<Meme>>(INTEGRATOR);
-//     let stake_holder_1_swap_coin = scenario.take_from_address<Coin<Meme>>(STAKE_HOLDER_1);
-//     let stake_holder_2_swap_coin = scenario.take_from_address<Coin<Meme>>(STAKE_HOLDER_2);
+    let integrator_swap_coin = scenario.take_from_address<Coin<Meme>>(INTEGRATOR);
+    let stake_holder_1_swap_coin = scenario.take_from_address<Coin<Meme>>(STAKE_HOLDER_1);
+    let stake_holder_2_swap_coin = scenario.take_from_address<Coin<Meme>>(STAKE_HOLDER_2);
 
-//     assert_eq(integrator_swap_coin.burn_for_testing(), 100 * 5_000 / 10_000);
-//     assert_eq(stake_holder_1_swap_coin.burn_for_testing(), 100 * 2_500 / 10_000);
-//     assert_eq(stake_holder_2_swap_coin.burn_for_testing(), 100 * 2_500 / 10_000);
+    assert_eq(integrator_swap_coin.burn_for_testing(), 200 * 5_000 / 10_000);
+    assert_eq(stake_holder_1_swap_coin.burn_for_testing(), 200 * 2_500 / 10_000);
+    assert_eq(stake_holder_2_swap_coin.burn_for_testing(), 200 * 2_500 / 10_000);
 
-//     let mut asset = mint_for_testing<Meme>(200 * POW_9, scenario.ctx());
+    let mut asset = mint_for_testing<Meme>(10_000, scenario.ctx());
 
-//     fees.migration(vector[STAKE_HOLDER_1, STAKE_HOLDER_2]).take(&mut asset, scenario.ctx());
+    fees.quote_swap(vector[STAKE_HOLDER_1, STAKE_HOLDER_2]).take(&mut asset, scenario.ctx());
 
-//     // Takes 10% of 200 * POW_9
-//     assert_eq(asset.burn_for_testing(), 180 * POW_9);
+    assert_eq(asset.burn_for_testing(), 9_900);
 
-//     scenario.next_tx(@0x0);
+    scenario.next_tx(@0x0);
 
-//     let integrator_migration_coin = scenario.take_from_address<Coin<Meme>>(INTEGRATOR);
-//     let interest_migration_coin = scenario.take_from_address<Coin<Meme>>(INTEREST);
-//     let stake_holder_1_migration_coin = scenario.take_from_address<Coin<Meme>>(STAKE_HOLDER_1);
-//     let stake_holder_2_migration_coin = scenario.take_from_address<Coin<Meme>>(STAKE_HOLDER_2);
+    let integrator_swap_coin = scenario.take_from_address<Coin<Meme>>(INTEGRATOR);
+    let stake_holder_1_swap_coin = scenario.take_from_address<Coin<Meme>>(STAKE_HOLDER_1);
+    let stake_holder_2_swap_coin = scenario.take_from_address<Coin<Meme>>(STAKE_HOLDER_2);
 
-//     assert_eq(integrator_migration_coin.burn_for_testing(), 20 * POW_9 * 4_000 / 10_000);
-//     assert_eq(interest_migration_coin.burn_for_testing(), 20 * POW_9 * 1_000 / 10_000);
-//     assert_eq(stake_holder_1_migration_coin.burn_for_testing(), 20 * POW_9 * 2_500 / 10_000);
-//     assert_eq(stake_holder_2_migration_coin.burn_for_testing(), 20 * POW_9 * 2_500 / 10_000);
+    assert_eq(integrator_swap_coin.burn_for_testing(), 100 * 2_500 / 10_000);
+    assert_eq(stake_holder_1_swap_coin.burn_for_testing(), 100 * 2_500 / 10_000);
+    assert_eq(stake_holder_2_swap_coin.burn_for_testing(), 100 * 5_000 / 10_000);
 
-//     scenario.next_tx(@0x0);
+    let mut asset = mint_for_testing<Meme>(200 * POW_9, scenario.ctx());
 
-//     let mut allocation_balance = mint_for_testing<Meme>(200 * POW_9, scenario.ctx()).into_balance();
+    fees.migration(vector[STAKE_HOLDER_1, STAKE_HOLDER_2]).take(&mut asset, scenario.ctx());
 
-//     let clock = clock::create_for_testing(scenario.ctx());
+    // Takes 10% of 200 * POW_9
+    assert_eq(asset.burn_for_testing(), 180 * POW_9);
 
-//     let mut allocation_fee = fees.allocation(
-//         &mut allocation_balance,
-//         vector[STAKE_HOLDER_1, STAKE_HOLDER_2],
-//     );
+    scenario.next_tx(@0x0);
 
-//     allocation_fee.take(&clock, scenario.ctx());
+    let integrator_migration_coin = scenario.take_from_address<Coin<Meme>>(INTEGRATOR);
+    let interest_migration_coin = scenario.take_from_address<Coin<Meme>>(INTEREST);
+    let stake_holder_1_migration_coin = scenario.take_from_address<Coin<Meme>>(STAKE_HOLDER_1);
+    let stake_holder_2_migration_coin = scenario.take_from_address<Coin<Meme>>(STAKE_HOLDER_2);
 
-//     destroy(allocation_fee);
+    assert_eq(integrator_migration_coin.burn_for_testing(), 20 * POW_9 * 4_000 / 10_000);
+    assert_eq(interest_migration_coin.burn_for_testing(), 20 * POW_9 * 1_000 / 10_000);
+    assert_eq(stake_holder_1_migration_coin.burn_for_testing(), 20 * POW_9 * 2_500 / 10_000);
+    assert_eq(stake_holder_2_migration_coin.burn_for_testing(), 20 * POW_9 * 2_500 / 10_000);
 
-//     destroy(allocation_balance);
+    scenario.next_tx(@0x0);
 
-//     scenario.next_tx(@0x0);
+    let mut allocation_balance = mint_for_testing<Meme>(200 * POW_9, scenario.ctx()).into_balance();
 
-//     let integrator_allocation_vesting = scenario.take_from_address<MemezVesting<Meme>>(INTEGRATOR);
+    let clock = clock::create_for_testing(scenario.ctx());
 
-//     let stake_holder_1_allocation_vesting = scenario.take_from_address<MemezVesting<Meme>>(
-//         STAKE_HOLDER_1,
-//     );
-//     let stake_holder_2_allocation_vesting = scenario.take_from_address<MemezVesting<Meme>>(
-//         STAKE_HOLDER_2,
-//     );
+    let mut allocation_fee = fees.allocation(
+        &mut allocation_balance,
+        vector[STAKE_HOLDER_1, STAKE_HOLDER_2],
+    );
 
-//     let vesting_period = VESTING_PERIODS;
+    allocation_fee.take(&clock, scenario.ctx());
 
-//     assert_eq(integrator_allocation_vesting.duration(), vesting_period[0]);
-//     assert_eq(stake_holder_1_allocation_vesting.duration(), vesting_period[1]);
-//     assert_eq(stake_holder_2_allocation_vesting.duration(), vesting_period[2]);
+    destroy(allocation_fee);
 
-//     assert_eq(integrator_allocation_vesting.balance(), 40 * POW_9 * 3_000 / 10_000);
-//     assert_eq(stake_holder_1_allocation_vesting.balance(), 40 * POW_9 * 3_500 / 10_000);
-//     assert_eq(stake_holder_2_allocation_vesting.balance(), 40 * POW_9 * 3_500 / 10_000);
+    destroy(allocation_balance);
 
-//     destroy(integrator_allocation_vesting);
-//     destroy(stake_holder_1_allocation_vesting);
-//     destroy(stake_holder_2_allocation_vesting);
+    scenario.next_tx(@0x0);
 
-//     let fees = memez_fees::new(
-//         vector[
-//             vector[7_000, 3_000, 0],
-//             vector[5_000, 2_000, 3_000, 0],
-//             vector[2_500, 2_500, 2_500, 2_500, 0],
-//             vector[5_000, 5_000, 0],
-//             vector[100, 101],
-//         ],
-//         vector[
-//             vector[INTEGRATOR, INTEREST],
-//             vector[INTEGRATOR, STAKE_HOLDER_1, STAKE_HOLDER_2],
-//             vector[INTEGRATOR, INTEREST, STAKE_HOLDER_1, STAKE_HOLDER_2],
-//             vector[STAKE_HOLDER_1, STAKE_HOLDER_2],
-//         ],
-//     );
+    let integrator_allocation_vesting = scenario.take_from_address<MemezVesting<Meme>>(INTEGRATOR);
 
-//     let mut asset = mint_for_testing<Meme>(1000, scenario.ctx());
+    let stake_holder_1_allocation_vesting = scenario.take_from_address<MemezVesting<Meme>>(
+        STAKE_HOLDER_1,
+    );
+    let stake_holder_2_allocation_vesting = scenario.take_from_address<MemezVesting<Meme>>(
+        STAKE_HOLDER_2,
+    );
 
-//     fees.creation().take(&mut asset, scenario.ctx());
-//     fees.swap(vector[]).take(&mut asset, scenario.ctx());
-//     fees.migration(vector[]).take(&mut asset, scenario.ctx());
+    let vesting_period = VESTING_PERIODS;
 
-//     let mut allocation_balance = mint_for_testing<Meme>(200 * POW_9, scenario.ctx()).into_balance();
+    assert_eq(integrator_allocation_vesting.duration(), vesting_period[0]);
+    assert_eq(stake_holder_1_allocation_vesting.duration(), vesting_period[1]);
+    assert_eq(stake_holder_2_allocation_vesting.duration(), vesting_period[2]);
 
-//     let mut allocation_fee = fees.allocation(&mut allocation_balance, vector[]);
+    assert_eq(integrator_allocation_vesting.balance(), 40 * POW_9 * 3_000 / 10_000);
+    assert_eq(stake_holder_1_allocation_vesting.balance(), 40 * POW_9 * 3_500 / 10_000);
+    assert_eq(stake_holder_2_allocation_vesting.balance(), 40 * POW_9 * 3_500 / 10_000);
 
-//     allocation_fee.take(&clock, scenario.ctx());
+    destroy(integrator_allocation_vesting);
+    destroy(stake_holder_1_allocation_vesting);
+    destroy(stake_holder_2_allocation_vesting);
 
-//     assert_eq(asset.burn_for_testing(), 1000);
-//     assert_eq(allocation_balance.value(), 200 * POW_9);
+    let fees = memez_fees::new(
+        vector[
+            vector[7_000, 3_000, 0],
+            vector[5_000, 2_000, 3_000, 0],
+            vector[5_000, 2_000, 3_000, 0],
+            vector[2_500, 2_500, 2_500, 2_500, 0],
+            vector[5_000, 5_000, 0],
+            vector[100, 101],
+        ],
+        vector[
+            vector[INTEGRATOR, INTEREST],
+            vector[INTEGRATOR, STAKE_HOLDER_1, STAKE_HOLDER_2],
+            vector[INTEGRATOR, INTEREST, STAKE_HOLDER_1, STAKE_HOLDER_2],
+            vector[STAKE_HOLDER_1, STAKE_HOLDER_2],
+        ],
+    );
 
-//     destroy(allocation_fee);
-//     destroy(allocation_balance);
+    let mut asset = mint_for_testing<Meme>(1000, scenario.ctx());
 
-//     destroy(clock);
+    fees.creation().take(&mut asset, scenario.ctx());
+    fees.quote_swap(vector[]).take(&mut asset, scenario.ctx());
+    fees.meme_swap(vector[]).take(&mut asset, scenario.ctx());
+    fees.migration(vector[]).take(&mut asset, scenario.ctx());
 
-//     scenario.end();
-// }
+    let mut allocation_balance = mint_for_testing<Meme>(200 * POW_9, scenario.ctx()).into_balance();
+
+    let mut allocation_fee = fees.allocation(&mut allocation_balance, vector[]);
+
+    allocation_fee.take(&clock, scenario.ctx());
+
+    assert_eq(asset.burn_for_testing(), 1000);
+    assert_eq(allocation_balance.value(), 200 * POW_9);
+
+    destroy(allocation_fee);
+    destroy(allocation_balance);
+
+    destroy(clock);
+
+    scenario.end();
+}
 
 #[
     test,

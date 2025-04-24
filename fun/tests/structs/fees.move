@@ -1,55 +1,58 @@
-// #[test_only]
-// module memez_fun::memez_fees_tests;
+#[test_only]
+module memez_fun::memez_fees_tests;
 
-// use memez_fun::{memez_errors, memez_fees::{Self, MemezFees}, memez_test_helpers};
-// use memez_vesting::memez_vesting::MemezVesting;
-// use sui::{
-//     clock,
-//     coin::{mint_for_testing, Coin},
-//     test_scenario as ts,
-//     test_utils::{assert_eq, destroy}
-// };
+use memez_fun::{memez_errors, memez_fees::{Self, MemezFees}, memez_test_helpers};
+use memez_vesting::memez_vesting::MemezVesting;
+use sui::{
+    clock,
+    coin::{mint_for_testing, Coin},
+    test_scenario as ts,
+    test_utils::{assert_eq, destroy}
+};
 
-// use fun memez_test_helpers::do as vector.do;
+use fun memez_test_helpers::do as vector.do;
 
-// const POW_9: u64 = 1_000_000_000;
+const POW_9: u64 = 1_000_000_000;
 
-// const INTEREST: address = @0x5;
+const INTEREST: address = @0x5;
 
-// const INTEGRATOR: address = @0x6;
+const INTEGRATOR: address = @0x6;
 
-// const STAKE_HOLDER_1: address = @0x7;
+const STAKE_HOLDER_1: address = @0x7;
 
-// const STAKE_HOLDER_2: address = @0x8;
+const STAKE_HOLDER_2: address = @0x8;
 
-// const VESTING_PERIODS: vector<u64> = vector[100, 101, 102];
+const VESTING_PERIODS: vector<u64> = vector[100, 101, 102];
 
-// const TEN_PERCENT: u64 = 1_000;
+const TEN_PERCENT: u64 = 1_000;
 
-// public struct Meme()
+public struct Meme()
 
-// #[test]
-// fun test_new() {
-//     let payloads = default_fees().payloads();
+#[test]
+fun test_new() {
+    let payloads = default_fees().payloads();
 
-//     assert_eq(payloads[0].payload_value(), 2 * POW_9);
-//     assert_eq(payloads[1].payload_value(), 100);
-//     assert_eq(payloads[2].payload_value(), TEN_PERCENT);
-//     assert_eq(payloads[3].payload_value(), 2000);
+    assert_eq(payloads[0].payload_value(), 2 * POW_9);
+    assert_eq(payloads[1].payload_value(), 100);
+    assert_eq(payloads[2].payload_value(), 200);
+    assert_eq(payloads[3].payload_value(), TEN_PERCENT);
+    assert_eq(payloads[4].payload_value(), 2000);
 
-//     assert_eq(payloads[0].payload_percentages(), vector[7_000, 3_000]);
-//     assert_eq(payloads[1].payload_percentages(), vector[5_000, 2_500, 2_500]);
-//     assert_eq(payloads[2].payload_percentages(), vector[4_000, 1_000, 2_500, 2_500]);
-//     assert_eq(payloads[3].payload_percentages(), vector[3_000, 3_500, 3_500]);
+    assert_eq(payloads[0].payload_percentages(), vector[7_000, 3_000]);
+    assert_eq(payloads[1].payload_percentages(), vector[5_000, 2_500, 2_500]);
+    assert_eq(payloads[2].payload_percentages(), vector[2_500, 2_500, 5_000]);
+    assert_eq(payloads[3].payload_percentages(), vector[4_000, 1_000, 2_500, 2_500]);
+    assert_eq(payloads[4].payload_percentages(), vector[3_000, 3_500, 3_500]);
 
-//     assert_eq(payloads[0].payload_recipients(), vector[INTEGRATOR, INTEREST]);
-//     assert_eq(payloads[1].payload_recipients(), vector[INTEGRATOR]);
-//     assert_eq(payloads[2].payload_recipients(), vector[INTEGRATOR, INTEREST]);
-//     assert_eq(payloads[3].payload_recipients(), vector[INTEGRATOR]);
+    assert_eq(payloads[0].payload_recipients(), vector[INTEGRATOR, INTEREST]);
+    assert_eq(payloads[1].payload_recipients(), vector[INTEGRATOR]);
+    assert_eq(payloads[2].payload_recipients(), vector[INTEGRATOR]);
+    assert_eq(payloads[3].payload_recipients(), vector[INTEGRATOR, INTEREST]);
+    assert_eq(payloads[4].payload_recipients(), vector[INTEGRATOR]);
 
-//     assert_eq(default_fees().dynamic_stake_holders(), 2);
-//     assert_eq(default_fees().vesting_periods(), VESTING_PERIODS);
-// }
+    assert_eq(default_fees().dynamic_stake_holders(), 2);
+    assert_eq(default_fees().vesting_periods(), VESTING_PERIODS);
+}
 
 // #[test]
 // fun test_calculate() {
@@ -299,123 +302,129 @@
 //     scenario.end();
 // }
 
-// #[
-//     test,
-//     expected_failure(
-//         abort_code = memez_errors::EInvalidDynamicStakeHolders,
-//         location = memez_fees,
-//     ),
-// ]
-// fun test_assert_dynamic_stake_holders() {
-//     default_fees().assert_dynamic_stake_holders(vector[@0x0, @0x1, @0x2]);
-// }
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EInvalidDynamicStakeHolders,
+        location = memez_fees,
+    ),
+]
+fun test_assert_dynamic_stake_holders() {
+    default_fees().assert_dynamic_stake_holders(vector[@0x0, @0x1, @0x2]);
+}
 
-// #[test, expected_failure(abort_code = memez_errors::EInvalidConfig, location = memez_fees)]
-// fun test_new_invalid_config() {
-//     memez_fees::new(
-//         vector[
-//             vector[7_000, 3_000, 2],
-//             vector[5_000, 5_000, 30],
-//             vector[10_000, 0, 6],
-//             vector[10_000, 0, 6],
-//             VESTING_PERIODS,
-//         ],
-//         vector[vector[@0x0, @0x1], vector[@0x1], vector[@0x2]],
-//     );
-// }
+#[test, expected_failure(abort_code = memez_errors::EInvalidConfig, location = memez_fees)]
+fun test_new_invalid_config() {
+    memez_fees::new(
+        vector[
+            vector[7_000, 3_000, 2],
+            vector[5_000, 5_000, 30],
+            vector[10_000, 0, 6],
+            vector[10_000, 0, 6],
+            VESTING_PERIODS,
+        ],
+        vector[vector[@0x0, @0x1], vector[@0x1], vector[@0x2]],
+    );
+}
 
-// #[test, expected_failure(abort_code = memez_errors::EInvalidPercentages, location = memez_fees)]
-// fun test_new_invalid_creation_percentages() {
-//     memez_fees::new(
-//         vector[
-//             vector[7_000, 3_000 - 1, 2],
-//             vector[5_000, 5_000, 30],
-//             vector[10_000, 0, 6],
-//             vector[10_000, 0, 6],
-//             VESTING_PERIODS,
-//         ],
-//         vector[vector[@0x0, @0x1], vector[@0x1], vector[@0x2], vector[@0x3]],
-//     );
-// }
+#[test, expected_failure(abort_code = memez_errors::EInvalidPercentages, location = memez_fees)]
+fun test_new_invalid_creation_percentages() {
+    memez_fees::new(
+        vector[
+            vector[7_000, 3_000 - 1, 2],
+            vector[5_000, 5_000, 30],
+            vector[5_000, 5_000, 30],
+            vector[10_000, 0, 6],
+            vector[10_000, 0, 6],
+            VESTING_PERIODS,
+        ],
+        vector[vector[@0x0, @0x1], vector[@0x1], vector[@0x2], vector[@0x3]],
+    );
+}
 
-// #[test, expected_failure(abort_code = memez_errors::EInvalidPercentages, location = memez_fees)]
-// fun test_new_invalid_swap_percentages() {
-//     memez_fees::new(
-//         vector[
-//             vector[7_000, 3_000, 2],
-//             vector[5_000 - 1, 5_000, 30],
-//             vector[10_000, 0, 6],
-//             vector[10_000, 0, 6],
-//             VESTING_PERIODS,
-//         ],
-//         vector[vector[@0x0, @0x1], vector[@0x1], vector[@0x2], vector[@0x3]],
-//     );
-// }
+#[test, expected_failure(abort_code = memez_errors::EInvalidPercentages, location = memez_fees)]
+fun test_new_invalid_swap_percentages() {
+    memez_fees::new(
+        vector[
+            vector[7_000, 3_000, 2],
+            vector[5_000 - 1, 5_000, 30],
+            vector[5_000, 5_000, 30],
+            vector[10_000, 0, 6],
+            vector[10_000, 0, 6],
+            VESTING_PERIODS,
+        ],
+        vector[vector[@0x0, @0x1], vector[@0x1], vector[@0x2], vector[@0x3]],
+    );
+}
 
-// #[test, expected_failure(abort_code = memez_errors::EInvalidPercentages, location = memez_fees)]
-// fun test_new_invalid_migration_percentages() {
-//     memez_fees::new(
-//         vector[
-//             vector[7_000, 3_000, 2],
-//             vector[5_000, 5_000, 30],
-//             vector[10_000, 1, 6],
-//             vector[10_000, 0, 6],
-//             VESTING_PERIODS,
-//         ],
-//         vector[vector[@0x0, @0x1], vector[@0x1], vector[@0x2], vector[@0x3]],
-//     );
-// }
+#[test, expected_failure(abort_code = memez_errors::EInvalidPercentages, location = memez_fees)]
+fun test_new_invalid_migration_percentages() {
+    memez_fees::new(
+        vector[
+            vector[7_000, 3_000, 2],
+            vector[5_000, 5_000, 30],
+            vector[5_000, 5_000, 30],
+            vector[10_000, 1, 6],
+            vector[10_000, 0, 6],
+            VESTING_PERIODS,
+        ],
+        vector[vector[@0x0, @0x1], vector[@0x1], vector[@0x2], vector[@0x3]],
+    );
+}
 
-// #[test, expected_failure(abort_code = memez_errors::EInvalidPercentages, location = memez_fees)]
-// fun test_new_invalid_allocation_percentages() {
-//     memez_fees::new(
-//         vector[
-//             vector[7_000, 3_000, 2],
-//             vector[5_000, 5_000, 30],
-//             vector[10_000, 0, 6],
-//             vector[10_000, 1, 1, 6],
-//             VESTING_PERIODS,
-//         ],
-//         vector[vector[@0x0, @0x1], vector[@0x1], vector[@0x2], vector[@0x3]],
-//     );
-// }
+#[test, expected_failure(abort_code = memez_errors::EInvalidPercentages, location = memez_fees)]
+fun test_new_invalid_allocation_percentages() {
+    memez_fees::new(
+        vector[
+            vector[7_000, 3_000, 2],
+            vector[5_000, 5_000, 30],
+            vector[5_000, 5_000, 30],
+            vector[10_000, 0, 6],
+            vector[10_000, 1, 1, 6],
+            VESTING_PERIODS,
+        ],
+        vector[vector[@0x0, @0x1], vector[@0x1], vector[@0x2], vector[@0x3]],
+    );
+}
 
-// #[
-//     test,
-//     expected_failure(
-//         abort_code = memez_errors::EInvalidCreationFeeConfig,
-//         location = memez_fees,
-//     ),
-// ]
-// fun test_new_wrong_creation_recipients() {
-//     memez_fees::new(
-//         vector[
-//             vector[7_000, 3_000, 2],
-//             vector[5_000, 5_000, 0, 30],
-//             vector[10_000, 0, 6],
-//             vector[10_000, 0, 6],
-//             VESTING_PERIODS,
-//         ],
-//         vector[vector[@0x0], vector[@0x1], vector[@0x2], vector[@0x3]],
-//     );
-// }
+#[
+    test,
+    expected_failure(
+        abort_code = memez_errors::EInvalidCreationFeeConfig,
+        location = memez_fees,
+    ),
+]
+fun test_new_wrong_creation_recipients() {
+    memez_fees::new(
+        vector[
+            vector[7_000, 3_000, 2],
+            vector[5_000, 5_000, 0, 30],
+            vector[5_000, 5_000, 0, 30],
+            vector[10_000, 0, 6],
+            vector[10_000, 0, 6],
+            VESTING_PERIODS,
+        ],
+        vector[vector[@0x0], vector[@0x1], vector[@0x2], vector[@0x3]],
+    );
+}
 
-// fun default_fees(): MemezFees {
-//     let fees = memez_fees::new(
-//         vector[
-//             vector[7_000, 3_000, 2 * POW_9],
-//             vector[5_000, 2_500, 2_500, 100],
-//             vector[4_000, 1_000, 2_500, 2_500, TEN_PERCENT],
-//             vector[3_000, 3_500, 3_500, 2000],
-//             VESTING_PERIODS,
-//         ],
-//         vector[
-//             vector[INTEGRATOR, INTEREST],
-//             vector[INTEGRATOR],
-//             vector[INTEGRATOR, INTEREST],
-//             vector[INTEGRATOR],
-//         ],
-//     );
+fun default_fees(): MemezFees {
+    let fees = memez_fees::new(
+        vector[
+            vector[7_000, 3_000, 2 * POW_9],
+            vector[5_000, 2_500, 2_500, 100],
+            vector[2_500, 2_500, 5_000, 200],
+            vector[4_000, 1_000, 2_500, 2_500, TEN_PERCENT],
+            vector[3_000, 3_500, 3_500, 2000],
+            VESTING_PERIODS,
+        ],
+        vector[
+            vector[INTEGRATOR, INTEREST],
+            vector[INTEGRATOR],
+            vector[INTEGRATOR, INTEREST],
+            vector[INTEGRATOR],
+        ],
+    );
 
-//     fees
-// }
+    fees
+}

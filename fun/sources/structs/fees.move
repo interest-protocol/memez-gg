@@ -9,7 +9,7 @@ use sui::{balance::{Self, Balance}, clock::Clock, coin::Coin};
 
 // === Constants ===
 
-const VALUES_LENGTH: u64 = 5;
+const VALUES_LENGTH: u64 = 6;
 
 // === Structs ===
 
@@ -47,7 +47,7 @@ public(package) fun new(
     recipients: vector<vector<address>>,
 ): MemezFees {
     assert!(
-        values.length() == VALUES_LENGTH && recipients.length() == VALUES_LENGTH - 1,
+        values.length() == VALUES_LENGTH && recipients.length() == VALUES_LENGTH - 2,
         memez_fun::memez_errors::invalid_config!(),
     );
 
@@ -91,7 +91,7 @@ public(package) fun new(
         quote_swap: FeePayload {
             value: quote_swap_value,
             percentages: quote_swap_percentages,
-            recipients: recipients[2],
+            recipients: recipients[1],
         },
         migration: FeePayload {
             value: migration_value,

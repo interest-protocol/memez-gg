@@ -17,7 +17,8 @@ public struct MemezConstantProduct<phantom Meme, phantom Quote> has store {
     quote_balance: Balance<Quote>,
     meme_balance: Balance<Meme>,
     burner: MemezBurner,
-    swap_fee: Fee,
+    meme_swap_fee: Fee,
+    quote_swap_fee: Fee,
 }
 
 // === Public Package Functions ===
@@ -26,7 +27,8 @@ public(package) fun new<Meme, Quote>(
     virtual_liquidity: u64,
     target_quote_liquidity: u64,
     meme_balance: Balance<Meme>,
-    swap_fee: Fee,
+    meme_swap_fee: Fee,
+    quote_swap_fee: Fee,
     burn_tax: u64,
 ): MemezConstantProduct<Meme, Quote> {
     MemezConstantProduct {
@@ -36,7 +38,8 @@ public(package) fun new<Meme, Quote>(
         quote_balance: balance::zero(),
         meme_balance,
         burner: memez_burner::new(burn_tax, target_quote_liquidity),
-        swap_fee,
+        meme_swap_fee,
+        quote_swap_fee,
     }
 }
 
@@ -53,7 +56,7 @@ public(package) fun pump<Meme, Quote>(
     min_amount_out: u64,
     ctx: &mut TxContext,
 ): (bool, Coin<Meme>) {
-    let swap_fee = self.swap_fee.take(&mut quote_coin, ctx);
+    let quote_swap_fee = self.quote_swap_fee.take(&mut quote_coin, ctx);
 
     let quote_coin_value = quote_coin.assert_has_value!();
 
@@ -65,17 +68,21 @@ public(package) fun pump<Meme, Quote>(
         meme_balance_value,
     );
 
-    meme_coin_value_out.assert_slippage!(min_amount_out);
+    let meme_coin_value_out_minus_swap_fee =
+        meme_coin_value_out - self.meme_swap_fee.calculate(meme_coin_value_out);
 
-    let meme_coin = self.meme_balance.split(meme_coin_value_out).into_coin(ctx);
+    meme_coin_value_out_minus_swap_fee.assert_slippage!(min_amount_out);
+
+    let mut meme_coin = self.meme_balance.split(meme_coin_value_out).into_coin(ctx);
 
     let total_quote_balance = self.quote_balance.join(quote_coin.into_balance());
 
     memez_events::pump<Meme, Quote>(
         self.memez_fun,
-        quote_coin_value,
-        meme_coin_value_out,
-        swap_fee,
+        quote_coin_value + quote_swap_fee,
+        meme_coin_value_out_minus_swap_fee,
+        self.meme_swap_fee.take(&mut meme_coin, ctx),
+        quote_swap_fee,
         total_quote_balance,
         self.meme_balance.value(),
         self.virtual_liquidity,
@@ -91,7 +98,7 @@ public(package) fun dump<Meme, Quote>(
     min_amount_out: u64,
     ctx: &mut TxContext,
 ): Coin<Quote> {
-    let swap_fee = self.swap_fee.take(&mut meme_coin, ctx);
+    let meme_swap_fee = self.meme_swap_fee.take(&mut meme_coin, ctx);
 
     let meme_coin_value = meme_coin.assert_has_value!();
 
@@ -116,15 +123,19 @@ public(package) fun dump<Meme, Quote>(
 
     let quote_coin_amount_out = quote_value_out.min(quote_balance_value);
 
-    quote_coin_amount_out.assert_slippage!(min_amount_out);
+    let quote_coin_value_out_minus_swap_fee =
+        quote_coin_amount_out - self.quote_swap_fee.calculate(quote_coin_amount_out);
 
-    let quote_coin = self.quote_balance.split(quote_coin_amount_out).into_coin(ctx);
+    quote_coin_value_out_minus_swap_fee.assert_slippage!(min_amount_out);
+
+    let mut quote_coin = self.quote_balance.split(quote_coin_amount_out).into_coin(ctx);
 
     memez_events::dump<Meme, Quote>(
         self.memez_fun,
-        meme_coin_value,
-        quote_coin_amount_out,
-        swap_fee,
+        meme_coin_value + meme_swap_fee,
+        quote_coin_value_out_minus_swap_fee,
+        meme_swap_fee,
+        self.quote_swap_fee.take(&mut quote_coin, ctx),
         meme_burn_fee_value,
         self.quote_balance.value(),
         self.meme_balance.value(),
@@ -140,15 +151,17 @@ public(package) fun pump_amount<Meme, Quote>(
 ): vector<u64> {
     if (amount_in == 0) return vector[0, 0];
 
-    let swap_fee = self.swap_fee.calculate(amount_in);
+    let quote_swap_fee = self.quote_swap_fee.calculate(amount_in);
 
     let amount_out = get_amount_out(
-        amount_in - swap_fee,
+        amount_in - quote_swap_fee,
         self.virtual_liquidity + self.quote_balance.value(),
         self.meme_balance.value(),
     );
 
-    vector[amount_out, swap_fee]
+    let meme_swap_fee = self.meme_swap_fee.calculate(amount_out);
+
+    vector[amount_out - meme_swap_fee, quote_swap_fee, meme_swap_fee]
 }
 
 public(package) fun dump_amount<Meme, Quote>(
@@ -161,9 +174,9 @@ public(package) fun dump_amount<Meme, Quote>(
 
     let quote_balance_value = self.quote_balance.value();
 
-    let swap_fee = self.swap_fee.calculate(amount_in);
+    let meme_swap_fee = self.meme_swap_fee.calculate(amount_in);
 
-    let amount_in_minus_swap_fee = amount_in - swap_fee;
+    let amount_in_minus_swap_fee = amount_in - meme_swap_fee;
 
     let dynamic_burn_tax = self.burner.calculate(quote_balance_value);
 
@@ -175,7 +188,11 @@ public(package) fun dump_amount<Meme, Quote>(
         self.virtual_liquidity + quote_balance_value,
     );
 
-    vector[quote_value_out, swap_fee, meme_burn_fee_value]
+    let safe_value_out = quote_value_out.min(quote_balance_value);
+
+    let quote_swap_fee = self.quote_swap_fee.calculate(safe_value_out);
+
+    vector[safe_value_out - quote_swap_fee, meme_swap_fee, meme_burn_fee_value, quote_swap_fee]
 }
 
 public(package) fun virtual_liquidity<Meme, Quote>(self: &MemezConstantProduct<Meme, Quote>): u64 {
@@ -229,6 +246,11 @@ public fun memez_fun<Meme, Quote>(self: &MemezConstantProduct<Meme, Quote>): add
 }
 
 #[test_only]
-public fun swap_fee<Meme, Quote>(self: &MemezConstantProduct<Meme, Quote>): Fee {
-    self.swap_fee
+public fun meme_swap_fee<Meme, Quote>(self: &MemezConstantProduct<Meme, Quote>): Fee {
+    self.meme_swap_fee
+}
+
+#[test_only]
+public fun quote_swap_fee<Meme, Quote>(self: &MemezConstantProduct<Meme, Quote>): Fee {
+    self.quote_swap_fee
 }

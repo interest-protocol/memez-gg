@@ -104,7 +104,8 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
     let fixed_rate = memez_fixed_rate::new<Meme, Quote>(
         stable_config.target_quote_liquidity(),
         meme_reserve.split(stable_config.meme_sale_amount()),
-        fees.swap(stake_holders),
+        fees.meme_swap(stake_holders),
+        fees.quote_swap(stake_holders),
     );
 
     let stable_state = StableState<Meme, Quote> {

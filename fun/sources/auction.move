@@ -111,7 +111,8 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
     let fixed_rate = memez_fixed_rate::new<Meme, Quote>(
         auction_config.target_quote_liquidity(),
         meme_balance,
-        fees.swap(stake_holders),
+        fees.meme_swap(stake_holders),
+        fees.quote_swap(stake_holders),
     );
 
     let auction_state = AuctionState<Meme, Quote> {

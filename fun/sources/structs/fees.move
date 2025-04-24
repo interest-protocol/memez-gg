@@ -32,7 +32,8 @@ public struct Allocation<phantom T> has store {
 
 public struct MemezFees has copy, drop, store {
     creation: FeePayload,
-    swap: FeePayload,
+    meme_swap: FeePayload,
+    quote_swap: FeePayload,
     migration: FeePayload,
     allocation: FeePayload,
     vesting_periods: vector<u64>,
@@ -51,18 +52,22 @@ public(package) fun new(
     );
 
     let mut creation_percentages = values[0];
-    let mut swap_percentages = values[1];
-    let mut migration_percentages = values[2];
-    let mut allocation_percentages = values[3];
+    let mut meme_swap_percentages = values[1];
+    let mut quote_swap_percentages = values[2];
+    let mut migration_percentages = values[3];
+    let mut allocation_percentages = values[4];
 
     let creation_value = creation_percentages.pop_back();
-    let swap_value = swap_percentages.pop_back();
+    let meme_swap_value = meme_swap_percentages.pop_back();
+    let quote_swap_value = quote_swap_percentages.pop_back();
     let migration_value = migration_percentages.pop_back();
     let allocation_value = allocation_percentages.pop_back();
-    let vesting_periods = values[4];
+
+    let vesting_periods = values[5];
 
     creation_percentages.validate!();
-    swap_percentages.validate!();
+    meme_swap_percentages.validate!();
+    quote_swap_percentages.validate!();
     migration_percentages.validate!();
     allocation_percentages.validate!();
 
@@ -78,10 +83,15 @@ public(package) fun new(
             percentages: creation_percentages,
             recipients: recipients[0],
         },
-        swap: FeePayload {
-            value: swap_value,
-            percentages: swap_percentages,
+        meme_swap: FeePayload {
+            value: meme_swap_value,
+            percentages: meme_swap_percentages,
             recipients: recipients[1],
+        },
+        quote_swap: FeePayload {
+            value: quote_swap_value,
+            percentages: quote_swap_percentages,
+            recipients: recipients[2],
         },
         migration: FeePayload {
             value: migration_value,
@@ -166,14 +176,25 @@ public(package) fun creation(self: MemezFees): Fee {
     )
 }
 
-public(package) fun swap(self: MemezFees, stake_holders: vector<address>): Fee {
-    let mut recipients = self.swap.recipients;
+public(package) fun meme_swap(self: MemezFees, stake_holders: vector<address>): Fee {
+    let mut recipients = self.meme_swap.recipients;
 
     recipients.append(stake_holders);
 
     Fee::Percentage(
-        bps::new(self.swap.value),
-        memez_distributor::new(recipients, self.swap.percentages),
+        bps::new(self.meme_swap.value),
+        memez_distributor::new(recipients, self.meme_swap.percentages),
+    )
+}
+
+public(package) fun quote_swap(self: MemezFees, stake_holders: vector<address>): Fee {
+    let mut recipients = self.quote_swap.recipients;
+
+    recipients.append(stake_holders);
+
+    Fee::Percentage(
+        bps::new(self.quote_swap.value),
+        memez_distributor::new(recipients, self.quote_swap.percentages),
     )
 }
 
@@ -249,7 +270,7 @@ public fun vesting_periods(fees: MemezFees): vector<u64> {
 
 #[test_only]
 public fun payloads(fees: MemezFees): vector<FeePayload> {
-    vector[fees.creation, fees.swap, fees.migration, fees.allocation]
+    vector[fees.creation, fees.meme_swap, fees.quote_swap, fees.migration, fees.allocation]
 }
 
 #[test_only]

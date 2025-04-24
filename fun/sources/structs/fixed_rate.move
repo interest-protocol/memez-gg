@@ -139,9 +139,9 @@ public(package) fun pump_amount<Meme, Quote>(
     quote_amount: u64,
     extra_meme_sale_amount: u64,
 ): vector<u64> {
-    if (quote_amount == 0) return vector[0, 0, 0];
+    if (quote_amount == 0) return vector[0, 0, 0, 0];
 
-    if (self.quote_balance.value() >= self.quote_raise_amount) return vector[quote_amount, 0, 0];
+    if (self.quote_balance.value() >= self.quote_raise_amount) return vector[quote_amount, 0, 0, 0];
 
     let quote_amount_left = self.quote_raise_amount - self.quote_balance.value();
 
@@ -177,7 +177,7 @@ public(package) fun dump_amount<Meme, Quote>(
     meme_amount: u64,
     extra_meme_sale_amount: u64,
 ): vector<u64> {
-    if (meme_amount == 0) return vector[0, 0];
+    if (meme_amount == 0) return vector[0, 0, 0];
 
     let meme_swap_fee = self.meme_swap_fee.calculate(meme_amount);
 

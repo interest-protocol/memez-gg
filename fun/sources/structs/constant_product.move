@@ -149,7 +149,7 @@ public(package) fun pump_amount<Meme, Quote>(
     self: &MemezConstantProduct<Meme, Quote>,
     amount_in: u64,
 ): vector<u64> {
-    if (amount_in == 0) return vector[0, 0];
+    if (amount_in == 0) return vector[0, 0, 0];
 
     let quote_swap_fee = self.quote_swap_fee.calculate(amount_in);
 
@@ -168,7 +168,7 @@ public(package) fun dump_amount<Meme, Quote>(
     self: &MemezConstantProduct<Meme, Quote>,
     amount_in: u64,
 ): vector<u64> {
-    if (amount_in == 0) return vector[0, 0, 0];
+    if (amount_in == 0) return vector[0, 0, 0, 0];
 
     let meme_balance_value = self.meme_balance.value();
 

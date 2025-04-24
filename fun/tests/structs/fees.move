@@ -33,8 +33,8 @@ fun test_new() {
     let payloads = default_fees().payloads();
 
     assert_eq(payloads[0].payload_value(), 2 * POW_9);
-    assert_eq(payloads[1].payload_value(), 100);
-    assert_eq(payloads[2].payload_value(), 200);
+    assert_eq(payloads[1].payload_value(), 200);
+    assert_eq(payloads[2].payload_value(), 100);
     assert_eq(payloads[3].payload_value(), TEN_PERCENT);
     assert_eq(payloads[4].payload_value(), 2000);
 
@@ -54,117 +54,139 @@ fun test_new() {
     assert_eq(default_fees().vesting_periods(), VESTING_PERIODS);
 }
 
-// #[test]
-// fun test_calculate() {
-//     let fees = default_fees();
+#[test]
+fun test_calculate() {
+    let fees = default_fees();
 
-//     let mut ctx = tx_context::dummy();
+    let mut ctx = tx_context::dummy();
 
-//     let mut allocation_balance = mint_for_testing<Meme>(1000, &mut ctx).into_balance();
+    let mut allocation_balance = mint_for_testing<Meme>(1000, &mut ctx).into_balance();
 
-//     let creation_fee = fees.creation();
-//     let swap_fee = fees.swap(vector[STAKE_HOLDER_1, STAKE_HOLDER_2]);
-//     let migration_fee = fees.migration(vector[STAKE_HOLDER_1, STAKE_HOLDER_2]);
-//     let allocation_fee = fees.allocation(
-//         &mut allocation_balance,
-//         vector[STAKE_HOLDER_1, STAKE_HOLDER_2],
-//     );
+    let creation_fee = fees.creation();
+    let quote_swap_fee = fees.quote_swap(vector[STAKE_HOLDER_1, STAKE_HOLDER_2]);
+    let meme_swap_fee = fees.meme_swap(vector[STAKE_HOLDER_1, STAKE_HOLDER_2]);
 
-//     let creation_fee_recipients = creation_fee.distributor().recipient_addresses();
-//     let swap_fee_recipients = swap_fee.distributor().recipient_addresses();
-//     let migration_fee_recipients = migration_fee.distributor().recipient_addresses();
-//     let allocation_fee_recipients = allocation_fee.distributor().recipient_addresses();
+    let migration_fee = fees.migration(vector[STAKE_HOLDER_1, STAKE_HOLDER_2]);
+    let allocation_fee = fees.allocation(
+        &mut allocation_balance,
+        vector[STAKE_HOLDER_1, STAKE_HOLDER_2],
+    );
 
-//     assert_eq(creation_fee_recipients.length(), 2);
-//     assert_eq(swap_fee_recipients.length(), 3);
-//     assert_eq(migration_fee_recipients.length(), 4);
-//     assert_eq(allocation_fee_recipients.length(), 3);
+    let creation_fee_recipients = creation_fee.distributor().recipient_addresses();
+    let quote_swap_fee_recipients = quote_swap_fee.distributor().recipient_addresses();
+    let meme_swap_fee_recipients = meme_swap_fee.distributor().recipient_addresses();
+    let migration_fee_recipients = migration_fee.distributor().recipient_addresses();
+    let allocation_fee_recipients = allocation_fee.distributor().recipient_addresses();
 
-//     // Test Values
+    assert_eq(creation_fee_recipients.length(), 2);
+    assert_eq(quote_swap_fee_recipients.length(), 3);
+    assert_eq(meme_swap_fee_recipients.length(), 3);
+    assert_eq(migration_fee_recipients.length(), 4);
+    assert_eq(allocation_fee_recipients.length(), 3);
 
-//     assert_eq(creation_fee.value(), 2 * POW_9);
-//     assert_eq(swap_fee.value(), 100);
-//     assert_eq(migration_fee.value(), TEN_PERCENT);
-//     assert_eq(allocation_fee.value(), 200);
+    // Test Values
 
-//     // Test Recipient Percentages
+    assert_eq(creation_fee.value(), 2 * POW_9);
+    assert_eq(quote_swap_fee.value(), 100);
+    assert_eq(meme_swap_fee.value(), 200);
+    assert_eq(migration_fee.value(), TEN_PERCENT);
+    assert_eq(allocation_fee.value(), 200);
 
-//     let expected_creation_recipients = vector[INTEGRATOR, INTEREST];
-//     let expected_creation_percentages = vector[7_000, 3_000];
-//     let expected_creation_values = vector[2 * POW_9 * 7_000 / 10_000, 2 * POW_9 * 3_000 / 10_000];
+    // Test Recipient Percentages
 
-//     let creation_fee_values = creation_fee.distributor().recipient_percentages();
-//     let swap_fee_values = swap_fee.distributor().recipient_percentages();
-//     let migration_fee_values = migration_fee.distributor().recipient_percentages();
-//     let allocation_fee_values = allocation_fee.distributor().recipient_percentages();
+    let expected_creation_recipients = vector[INTEGRATOR, INTEREST];
+    let expected_creation_percentages = vector[7_000, 3_000];
+    let expected_creation_values = vector[2 * POW_9 * 7_000 / 10_000, 2 * POW_9 * 3_000 / 10_000];
 
-//     creation_fee_recipients.do!(|recipient_address, i| {
-//         let recipient_bps = creation_fee_values[i];
+    let creation_fee_values = creation_fee.distributor().recipient_percentages();
+    let quote_swap_fee_values = quote_swap_fee.distributor().recipient_percentages();
+    let meme_swap_fee_values = meme_swap_fee.distributor().recipient_percentages();
+    let migration_fee_values = migration_fee.distributor().recipient_percentages();
+    let allocation_fee_values = allocation_fee.distributor().recipient_percentages();
 
-//         assert_eq(recipient_address, expected_creation_recipients[i]);
-//         assert_eq(recipient_bps.value(), expected_creation_percentages[i]);
-//         assert_eq(recipient_bps.calc(2 * POW_9), expected_creation_values[i]);
-//     });
+    creation_fee_recipients.do!(|recipient_address, i| {
+        let recipient_bps = creation_fee_values[i];
 
-//     let expected_swap_recipients = vector[INTEGRATOR, STAKE_HOLDER_1, STAKE_HOLDER_2];
-//     let expected_swap_percentages = vector[5_000, 2_500, 2_500];
-//     let expected_swap_values = vector[
-//         100 * 5_000 / 10_000,
-//         100 * 2_500 / 10_000,
-//         100 * 2_500 / 10_000,
-//     ];
+        assert_eq(recipient_address, expected_creation_recipients[i]);
+        assert_eq(recipient_bps.value(), expected_creation_percentages[i]);
+        assert_eq(recipient_bps.calc(2 * POW_9), expected_creation_values[i]);
+    });
 
-//     swap_fee_recipients.do!(|recipient_address, i| {
-//         let recipient_bps = swap_fee_values[i];
+    let expected_quote_swap_recipients = vector[INTEGRATOR, STAKE_HOLDER_1, STAKE_HOLDER_2];
+    let expected_quote_swap_percentages = vector[2_500, 2_500, 5_000];
+    let expected_quote_swap_values = vector[
+        100 * 2_500 / 10_000,
+        100 * 2_500 / 10_000,
+        100 * 5_000 / 10_000,
+    ];
 
-//         assert_eq(recipient_address, expected_swap_recipients[i]);
-//         assert_eq(recipient_bps.value(), expected_swap_percentages[i]);
-//         assert_eq(recipient_bps.calc(100), expected_swap_values[i]);
-//     });
+    quote_swap_fee_recipients.do!(|recipient_address, i| {
+        let recipient_bps = quote_swap_fee_values[i];
 
-//     let expected_migration_recipients = vector[
-//         INTEGRATOR,
-//         INTEREST,
-//         STAKE_HOLDER_1,
-//         STAKE_HOLDER_2,
-//     ];
-//     let expected_migration_percentages = vector[4_000, 1_000, 2_500, 2_500];
-//     let expected_migration_values = vector[
-//         TEN_PERCENT * 4_000 / 10_000,
-//         TEN_PERCENT * 1_000 / 10_000,
-//         TEN_PERCENT * 2_500 / 10_000,
-//         TEN_PERCENT * 2_500 / 10_000,
-//     ];
+        assert_eq(recipient_address, expected_quote_swap_recipients[i]);
+        assert_eq(recipient_bps.value(), expected_quote_swap_percentages[i]);
+        assert_eq(recipient_bps.calc(100), expected_quote_swap_values[i]);
+    });
 
-//     migration_fee_recipients.do!(|recipient_address, i| {
-//         let recipient_bps = migration_fee_values[i];
+    let expected_meme_swap_recipients = vector[INTEGRATOR, STAKE_HOLDER_1, STAKE_HOLDER_2];
+    let expected_meme_swap_percentages = vector[5_000, 2_500, 2_500];
+    let expected_meme_swap_values = vector[
+        200 * 5_000 / 10_000,
+        200 * 2_500 / 10_000,
+        200 * 2_500 / 10_000,
+    ];
 
-//         assert_eq(recipient_address, expected_migration_recipients[i]);
-//         assert_eq(recipient_bps.value(), expected_migration_percentages[i]);
-//         assert_eq(recipient_bps.calc(TEN_PERCENT), expected_migration_values[i]);
-//     });
+    meme_swap_fee_recipients.do!(|recipient_address, i| {
+        let recipient_bps = meme_swap_fee_values[i];
 
-//     let expected_allocation_recipients = vector[INTEGRATOR, STAKE_HOLDER_1, STAKE_HOLDER_2];
-//     let expected_allocation_percentages = vector[3_000, 3_500, 3_500];
-//     let expected_allocation_values = vector[
-//         100 * 3_000 / 10_000,
-//         100 * 3_500 / 10_000,
-//         100 * 3_500 / 10_000,
-//     ];
+        assert_eq(recipient_address, expected_meme_swap_recipients[i]);
+        assert_eq(recipient_bps.value(), expected_meme_swap_percentages[i]);
+        assert_eq(recipient_bps.calc(200), expected_meme_swap_values[i]);
+    });
 
-//     allocation_fee_recipients.do!(|recipient_address, i| {
-//         let recipient_bps = allocation_fee_values[i];
+    let expected_migration_recipients = vector[
+        INTEGRATOR,
+        INTEREST,
+        STAKE_HOLDER_1,
+        STAKE_HOLDER_2,
+    ];
+    let expected_migration_percentages = vector[4_000, 1_000, 2_500, 2_500];
+    let expected_migration_values = vector[
+        TEN_PERCENT * 4_000 / 10_000,
+        TEN_PERCENT * 1_000 / 10_000,
+        TEN_PERCENT * 2_500 / 10_000,
+        TEN_PERCENT * 2_500 / 10_000,
+    ];
 
-//         assert_eq(recipient_address, expected_allocation_recipients[i]);
-//         assert_eq(recipient_bps.value(), expected_allocation_percentages[i]);
-//         assert_eq(recipient_bps.calc(100), expected_allocation_values[i]);
-//     });
+    migration_fee_recipients.do!(|recipient_address, i| {
+        let recipient_bps = migration_fee_values[i];
 
-//     assert_eq(allocation_fee.vesting_periods(), VESTING_PERIODS);
+        assert_eq(recipient_address, expected_migration_recipients[i]);
+        assert_eq(recipient_bps.value(), expected_migration_percentages[i]);
+        assert_eq(recipient_bps.calc(TEN_PERCENT), expected_migration_values[i]);
+    });
 
-//     destroy(allocation_fee);
-//     destroy(allocation_balance);
-// }
+    let expected_allocation_recipients = vector[INTEGRATOR, STAKE_HOLDER_1, STAKE_HOLDER_2];
+    let expected_allocation_percentages = vector[3_000, 3_500, 3_500];
+    let expected_allocation_values = vector[
+        100 * 3_000 / 10_000,
+        100 * 3_500 / 10_000,
+        100 * 3_500 / 10_000,
+    ];
+
+    allocation_fee_recipients.do!(|recipient_address, i| {
+        let recipient_bps = allocation_fee_values[i];
+
+        assert_eq(recipient_address, expected_allocation_recipients[i]);
+        assert_eq(recipient_bps.value(), expected_allocation_percentages[i]);
+        assert_eq(recipient_bps.calc(100), expected_allocation_values[i]);
+    });
+
+    assert_eq(allocation_fee.vesting_periods(), VESTING_PERIODS);
+
+    destroy(allocation_fee);
+    destroy(allocation_balance);
+}
 
 // #[test]
 // fun test_take() {
@@ -412,8 +434,8 @@ fun default_fees(): MemezFees {
     let fees = memez_fees::new(
         vector[
             vector[7_000, 3_000, 2 * POW_9],
-            vector[5_000, 2_500, 2_500, 100],
-            vector[2_500, 2_500, 5_000, 200],
+            vector[5_000, 2_500, 2_500, 200],
+            vector[2_500, 2_500, 5_000, 100],
             vector[4_000, 1_000, 2_500, 2_500, TEN_PERCENT],
             vector[3_000, 3_500, 3_500, 2000],
             VESTING_PERIODS,

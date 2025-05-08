@@ -113,7 +113,7 @@ fun test_pump() {
 
     let amount_in = 250;
 
-    let amount_out = get_amount_out(
+    let amount_out = get_amount_out!(
         amount_in,
         virtual_liquidity,
         meme_balance_value,
@@ -141,7 +141,7 @@ fun test_pump() {
 
     let amount_in = target_sui_liquidity - amount_in;
 
-    let amount_out = get_amount_out(
+    let amount_out = get_amount_out!(
         amount_in,
         virtual_liquidity + new_sui_balance,
         meme_balance_value,
@@ -203,7 +203,7 @@ fun test_pump_with_fee() {
 
     let quote_swap_fee_amount = quote_swap_fee.calculate(amount_in);
 
-    let amount_out = get_amount_out(
+    let amount_out = get_amount_out!(
         amount_in - quote_swap_fee_amount,
         virtual_liquidity,
         meme_balance_value,
@@ -236,7 +236,7 @@ fun test_pump_with_fee() {
 
     let quote_swap_fee_amount = quote_swap_fee.calculate(amount_in);
 
-    let amount_out = get_amount_out(
+    let amount_out = get_amount_out!(
         amount_in - quote_swap_fee_amount,
         virtual_liquidity + new_sui_balance,
         meme_balance_value,
@@ -309,7 +309,7 @@ fun test_dump() {
 
     let amounts = cp.dump_amount(meme_coin_out_value);
 
-    let amount_out = get_amount_out(
+    let amount_out = get_amount_out!(
         meme_coin_out_value,
         cp.meme_balance().value(),
         cp.quote_balance().value() + virtual_liquidity,
@@ -333,7 +333,7 @@ fun test_dump() {
 
     sui_coin_out.burn_for_testing();
 
-    let amount_out = get_amount_out(
+    let amount_out = get_amount_out!(
         meme_coin_out_value,
         cp.meme_balance().value(),
         cp.quote_balance().value() + virtual_liquidity,
@@ -352,7 +352,7 @@ fun test_dump() {
 
     let amounts = cp.dump_amount(meme_coin_out_value);
 
-    let amount_out = get_amount_out(
+    let amount_out = get_amount_out!(
         meme_coin_out_value,
         cp.meme_balance().value(),
         cp.quote_balance().value() + virtual_liquidity,
@@ -439,7 +439,7 @@ fun test_dump_with_fee() {
 
     let meme_burn_fee_value = fee_rate.calc_up(meme_coin_out_value - meme_swap_fee_amount_out);
 
-    let amount_out = get_amount_out(
+    let amount_out = get_amount_out!(
         meme_coin_out_value - meme_swap_fee_amount_out - meme_burn_fee_value,
         cp.meme_balance().value(),
         cp.quote_balance().value() + virtual_liquidity,
@@ -511,7 +511,7 @@ fun test_pump_amount() {
 
     let quote_swap_fee_amount = quote_swap_fee.calculate(amount_in);
 
-    let amount_out = get_amount_out(
+    let amount_out = get_amount_out!(
         amount_in - quote_swap_fee_amount,
         virtual_liquidity,
         meme_balance_value,
@@ -575,7 +575,7 @@ fun test_dump_amount() {
 
     let meme_burn_fee_value = dynamic_burn_tax.calc_up(amount_in - meme_swap_fee_amount_out);
 
-    let amount_out = get_amount_out(
+    let amount_out = get_amount_out!(
         amount_in - meme_swap_fee_amount_out - meme_burn_fee_value,
         meme_balance_value,
         virtual_liquidity,
@@ -596,7 +596,7 @@ fun test_dump_amount() {
 
     let meme_burn_fee_value = dynamic_burn_tax.calc_up(amount_in - meme_swap_fee_amount_out);
 
-    let amount_out = get_amount_out(
+    let amount_out = get_amount_out!(
         amount_in - meme_swap_fee_amount_out - meme_burn_fee_value,
         meme_balance_value,
         virtual_liquidity + 600,
@@ -647,7 +647,7 @@ fun test_dump_amount_no_fees() {
 
     let amount_in = 1000;
 
-    let amount_out = get_amount_out(
+    let amount_out = get_amount_out!(
         amount_in,
         meme_balance_value,
         virtual_liquidity,
@@ -663,7 +663,7 @@ fun test_dump_amount_no_fees() {
 
     cp.quote_balance_mut().join(balance::create_for_testing<Quote>(600));
 
-    let amount_out = get_amount_out(
+    let amount_out = get_amount_out!(
         amount_in,
         meme_balance_value,
         virtual_liquidity + 600,

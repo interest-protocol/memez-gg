@@ -62,7 +62,7 @@ public(package) fun pump<Meme, Quote>(
 
     let meme_balance_value = self.meme_balance.value();
 
-    let meme_coin_value_out = get_amount_out(
+    let meme_coin_value_out = get_amount_out!(
         quote_coin_value,
         self.virtual_liquidity + self.quote_balance.value(),
         meme_balance_value,
@@ -113,7 +113,7 @@ public(package) fun dump<Meme, Quote>(
 
     let meme_coin_value = meme_coin.assert_has_value!();
 
-    let quote_value_out = get_amount_out(
+    let quote_value_out = get_amount_out!(
         meme_coin_value,
         meme_balance_value,
         self.virtual_liquidity + quote_balance_value,
@@ -153,7 +153,7 @@ public(package) fun pump_amount<Meme, Quote>(
 
     let quote_swap_fee = self.quote_swap_fee.calculate(amount_in);
 
-    let amount_out = get_amount_out(
+    let amount_out = get_amount_out!(
         amount_in - quote_swap_fee,
         self.virtual_liquidity + self.quote_balance.value(),
         self.meme_balance.value(),
@@ -182,7 +182,7 @@ public(package) fun dump_amount<Meme, Quote>(
 
     let meme_burn_fee_value = dynamic_burn_tax.calc_up(amount_in_minus_swap_fee);
 
-    let quote_value_out = get_amount_out(
+    let quote_value_out = get_amount_out!(
         amount_in_minus_swap_fee - meme_burn_fee_value,
         meme_balance_value,
         self.virtual_liquidity + quote_balance_value,

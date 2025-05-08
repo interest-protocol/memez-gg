@@ -5,7 +5,6 @@ license = "Apache-2.0"
 authors = ["Jose Cerqueira (jose@interestprotocol.com)"]   
 
 [dependencies]
-IPXCoinStandard = { local = "../dependencies/ipx-coin-standard" }
 
 Memez = { local = "../memez" }
 MemezVesting = { local = "../vesting" }
@@ -14,6 +13,7 @@ interest_bps = { r.mvr = "@interest/bps" }
 interest_math = { r.mvr = "@interest/math" }
 interest_access_control = { r.mvr = "@interest/acl" }
 interest_constant_product = { r.mvr = "@interest/constant-product" }
+ipx_coin_standard = { r.mvr = "@interest/coin-standard" }
 
 [addresses]
 memez_fun = "0x0"

@@ -149,7 +149,7 @@ fun test_new_coin() {
 
     let swap_fee = cp.quote_swap_fee().calculate(first_purchase_value);
 
-    let expected_dev_purchase = get_amount_out(
+    let expected_dev_purchase = get_amount_out!(
         first_purchase_value - swap_fee,
         pump_config.virtual_liquidity(),
         total_supply - pump_config.liquidity_provision(),
@@ -256,7 +256,7 @@ fun test_coin_end_to_end() {
 
     let swap_fee = cp.quote_swap_fee().calculate(purchase_sui_value);
 
-    let expected_meme_value = get_amount_out(
+    let expected_meme_value = get_amount_out!(
         purchase_sui_value - swap_fee,
         cp.virtual_liquidity() + cp.quote_balance().value(),
         cp.meme_balance().value(),
@@ -313,7 +313,7 @@ fun test_coin_end_to_end() {
 
     let cp = memez_pump::constant_product_mut(&mut memez_fun);
 
-    let expected_meme_value = get_amount_out(
+    let expected_meme_value = get_amount_out!(
         purchase_sui_value - swap_fee,
         cp.virtual_liquidity() + cp.quote_balance().value(),
         cp.meme_balance().value(),
@@ -416,7 +416,7 @@ fun test_token_end_to_end() {
 
     let swap_fee = cp.quote_swap_fee().calculate(purchase_sui_value);
 
-    let expected_meme_value = get_amount_out(
+    let expected_meme_value = get_amount_out!(
         purchase_sui_value - swap_fee,
         cp.virtual_liquidity() + cp.quote_balance().value(),
         cp.meme_balance().value(),
@@ -465,7 +465,7 @@ fun test_token_end_to_end() {
 
     let swap_fee = cp.quote_swap_fee().calculate(purchase_sui_value);
 
-    let expected_meme_value = get_amount_out(
+    let expected_meme_value = get_amount_out!(
         purchase_sui_value - swap_fee,
         cp.virtual_liquidity() + cp.quote_balance().value(),
         cp.meme_balance().value(),
@@ -742,7 +742,7 @@ fun dump_invalid_version() {
 
     let swap_fee = cp.quote_swap_fee().calculate(purchase_sui_value);
 
-    let expected_meme_value = get_amount_out(
+    let expected_meme_value = get_amount_out!(
         purchase_sui_value - swap_fee,
         cp.virtual_liquidity() + cp.quote_balance().value(),
         cp.meme_balance().value(),
@@ -1204,7 +1204,7 @@ fun dump_token_invalid_version() {
 
     let swap_fee = cp.quote_swap_fee().calculate(purchase_sui_value);
 
-    let expected_meme_value = get_amount_out(
+    let expected_meme_value = get_amount_out!(
         purchase_sui_value - swap_fee,
         cp.virtual_liquidity() + cp.quote_balance().value(),
         cp.meme_balance().value(),

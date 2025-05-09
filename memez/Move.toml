@@ -11,4 +11,4 @@ interest_access_control = { r.mvr = "@interest/acl" }
 memez = "0x0"
 
 [r.mvr]
-network = "testnet"
+network = "mainnet"

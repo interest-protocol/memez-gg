@@ -2,7 +2,7 @@
 
 [move]
 version = 3
-manifest_digest = "94A785D22C64F32124B0638EE989D87F07BA7F5003A54C48B0AC3636CB53F19C"
+manifest_digest = "C0B8D585BFF5851D1B671BE63FFF20B97DC3E30132A49238DED919A9992DFB03"
 deps_digest = "D7FB1F2E1A893B9A0E80A392473710373DE5791D3AC8F6D898803754B2ADAE6B"
 dependencies = [
   { id = "Bridge", name = "Bridge" },
@@ -50,7 +50,7 @@ dependencies = [
 
 [[move.package]]
 id = "InterestAccessControl"
-source = { git = "https://github.com/interest-protocol/interest-mvr", rev = "937409aa6920904b6d16bf5cafff0f9f32904ba4", subdir = "access-control/contracts" }
+source = { git = "https://github.com/interest-protocol/interest-mvr", rev = "91e2f4f83626c1cb924bac246932574501c21bf8", subdir = "access-control/contracts" }
 
 dependencies = [
   { id = "Bridge", name = "Bridge" },
@@ -150,4 +150,10 @@ flavor = "sui"
 chain-id = "4c78adac"
 original-published-id = "0xcad2e05e9771c6b1aad35d4f3df42094d5d49effc2a839e34f37ae31dc373fe7"
 latest-published-id = "0xcad2e05e9771c6b1aad35d4f3df42094d5d49effc2a839e34f37ae31dc373fe7"
+published-version = "1"
+
+[env.mainnet]
+chain-id = "35834a8a"
+original-published-id = "0x22804e0f2d5fd6aa41847469c05dec3abfc3a3482483a02db795e951e2396872"
+latest-published-id = "0x22804e0f2d5fd6aa41847469c05dec3abfc3a3482483a02db795e951e2396872"
 published-version = "1"

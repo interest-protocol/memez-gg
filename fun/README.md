@@ -69,24 +69,19 @@ mvr add @interest/memez-fun --network testnet
 mvr add @interest/memez-fun --network mainnet
 ```
 
-### Manual
+## TS SDK
 
-To add this library to your project, add this to your `Move.toml`.
+### [@interest-protocol/memez-fun-sdk on NPM](https://www.npmjs.com/package/@interest-protocol/memez-fun-sdk)
 
-```toml
-# goes into [dependencies] section
-memez_fun = { r.mvr = "@interest/memez-fun" }
-
-# add this section to your Move.toml
-[r.mvr]
-network = "mainnet"
+```bash
+npm i @interest-protocol/memez-fun-sdk
 ```
 
 ### Package Ids
 
-MemezFun is deployed on Sui Network mainnet at: [0x...] (pending deployment)
+MemezFun is deployed on Sui Network mainnet at: [0x22804e0f2d5fd6aa41847469c05dec3abfc3a3482483a02db795e951e2396872](https://suiscan.xyz/mainnet/object/0x22804e0f2d5fd6aa41847469c05dec3abfc3a3482483a02db795e951e2396872/contracts)
 
-It is deployed on Sui Network testnet at: [0xcad2e05e9771c6b1aad35d4f3df42094d5d49effc2a839e34f37ae31dc373fe7](https://suiscan.xyz/testnet/object/0xcad2e05e9771c6b1aad35d4f3df42094d5d49effc2a839e34f37ae31dc373fe7/contractst)
+It is deployed on Sui Network testnet at: [0xcad2e05e9771c6b1aad35d4f3df42094d5d49effc2a839e34f37ae31dc373fe7](https://suiscan.xyz/testnet/object/0xcad2e05e9771c6b1aad35d4f3df42094d5d49effc2a839e34f37ae31dc373fe7/contracts)
 
 ### Testing
 

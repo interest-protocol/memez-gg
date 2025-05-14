@@ -2,12 +2,11 @@
 
 [move]
 version = 3
-manifest_digest = "27EFE16288F79A8D84140F20180A821D3D239FA91932E539DDF22D60367BCE4A"
-deps_digest = "04732BFEF428F74DE262001DC455D76B909EBC394B034A9A15CC095E4BDD9CEF"
+manifest_digest = "852745BA3716332C1E55F676FB2723F3A6B03882EF03FFF58B246989BF79B193"
+deps_digest = "CAFAD8A7CF51067FB4358215BECB86BD100DD64E57C2AC8A7AE7D74B688F5965"
 dependencies = [
   { id = "Bridge", name = "Bridge" },
   { id = "CetusClmm", name = "CetusClmm" },
-  { id = "DeepBook", name = "DeepBook" },
   { id = "IPXCoinStandard", name = "IPXCoinStandard" },
   { id = "MemezFun", name = "MemezFun" },
   { id = "MoveStdlib", name = "MoveStdlib" },
@@ -17,7 +16,7 @@ dependencies = [
 
 [[move.package]]
 id = "Bridge"
-source = { git = "https://github.com/MystenLabs/sui.git", rev = "9c04e1840eb5", subdir = "crates/sui-framework/packages/bridge" }
+source = { git = "https://github.com/MystenLabs/sui.git", rev = "fbb68879cbd1", subdir = "crates/sui-framework/packages/bridge" }
 
 dependencies = [
   { id = "MoveStdlib", name = "MoveStdlib" },
@@ -31,21 +30,8 @@ source = { local = "../../dependencies/cetus_clmm" }
 
 dependencies = [
   { id = "Bridge", name = "Bridge" },
-  { id = "DeepBook", name = "DeepBook" },
   { id = "IntegerMate", name = "IntegerMate" },
   { id = "MoveSTL", name = "MoveSTL" },
-  { id = "MoveStdlib", name = "MoveStdlib" },
-  { id = "Sui", name = "Sui" },
-  { id = "SuiSystem", name = "SuiSystem" },
-]
-
-[[move.package]]
-id = "ConstantProduct"
-source = { local = "../../dependencies/constant-product" }
-
-dependencies = [
-  { id = "Bridge", name = "Bridge" },
-  { id = "DeepBook", name = "DeepBook" },
   { id = "MoveStdlib", name = "MoveStdlib" },
   { id = "Sui", name = "Sui" },
   { id = "SuiSystem", name = "SuiSystem" },
@@ -62,10 +48,13 @@ dependencies = [
 
 [[move.package]]
 id = "IPXCoinStandard"
-source = { git = "https://github.com/interest-protocol/ipx-coin-standard.git", rev = "main", subdir = "" }
+source = { git = "https://github.com/interest-protocol/interest-mvr", rev = "1e11fda423abc6a291135d37ff9a0eb65d6509f8", subdir = "ipx-coin-standard" }
 
 dependencies = [
+  { id = "Bridge", name = "Bridge" },
+  { id = "MoveStdlib", name = "MoveStdlib" },
   { id = "Sui", name = "Sui" },
+  { id = "SuiSystem", name = "SuiSystem" },
 ]
 
 [[move.package]]
@@ -77,12 +66,35 @@ dependencies = [
 ]
 
 [[move.package]]
-id = "InterestBPS"
-source = { local = "../../dependencies/bps" }
+id = "InterestAccessControl"
+source = { git = "https://github.com/interest-protocol/interest-mvr", rev = "91e2f4f83626c1cb924bac246932574501c21bf8", subdir = "access-control/contracts" }
 
 dependencies = [
   { id = "Bridge", name = "Bridge" },
   { id = "DeepBook", name = "DeepBook" },
+  { id = "MoveStdlib", name = "MoveStdlib" },
+  { id = "Sui", name = "Sui" },
+  { id = "SuiSystem", name = "SuiSystem" },
+]
+
+[[move.package]]
+id = "InterestBPS"
+source = { git = "https://github.com/interest-protocol/interest-mvr", rev = "deploy/bps", subdir = "bps" }
+
+dependencies = [
+  { id = "Bridge", name = "Bridge" },
+  { id = "DeepBook", name = "DeepBook" },
+  { id = "MoveStdlib", name = "MoveStdlib" },
+  { id = "Sui", name = "Sui" },
+  { id = "SuiSystem", name = "SuiSystem" },
+]
+
+[[move.package]]
+id = "InterestConstantProduct"
+source = { git = "https://github.com/interest-protocol/interest-mvr", rev = "a2ed0e88d7b993a014c73061d7b369cc45c45624", subdir = "constant-product" }
+
+dependencies = [
+  { id = "Bridge", name = "Bridge" },
   { id = "MoveStdlib", name = "MoveStdlib" },
   { id = "Sui", name = "Sui" },
   { id = "SuiSystem", name = "SuiSystem" },
@@ -90,7 +102,7 @@ dependencies = [
 
 [[move.package]]
 id = "InterestMath"
-source = { local = "../../dependencies/interest-math" }
+source = { git = "https://github.com/interest-protocol/interest-mvr", rev = "d84dec3174acda3e34f0d672930041828d7eba42", subdir = "math" }
 
 dependencies = [
   { id = "Bridge", name = "Bridge" },
@@ -101,11 +113,15 @@ dependencies = [
 ]
 
 [[move.package]]
-id = "MemezACL"
-source = { local = "../../acl" }
+id = "Memez"
+source = { local = "../../memez" }
 
 dependencies = [
+  { id = "Bridge", name = "Bridge" },
+  { id = "InterestAccessControl", name = "InterestAccessControl" },
+  { id = "MoveStdlib", name = "MoveStdlib" },
   { id = "Sui", name = "Sui" },
+  { id = "SuiSystem", name = "SuiSystem" },
 ]
 
 [[move.package]]
@@ -114,12 +130,12 @@ source = { local = "../../fun" }
 
 dependencies = [
   { id = "Bridge", name = "Bridge" },
-  { id = "ConstantProduct", name = "ConstantProduct" },
-  { id = "DeepBook", name = "DeepBook" },
   { id = "IPXCoinStandard", name = "IPXCoinStandard" },
+  { id = "InterestAccessControl", name = "InterestAccessControl" },
   { id = "InterestBPS", name = "InterestBPS" },
+  { id = "InterestConstantProduct", name = "InterestConstantProduct" },
   { id = "InterestMath", name = "InterestMath" },
-  { id = "MemezACL", name = "MemezACL" },
+  { id = "Memez", name = "Memez" },
   { id = "MemezVesting", name = "MemezVesting" },
   { id = "MoveStdlib", name = "MoveStdlib" },
   { id = "Sui", name = "Sui" },
@@ -131,7 +147,10 @@ id = "MemezVesting"
 source = { local = "../../vesting" }
 
 dependencies = [
+  { id = "Bridge", name = "Bridge" },
+  { id = "MoveStdlib", name = "MoveStdlib" },
   { id = "Sui", name = "Sui" },
+  { id = "SuiSystem", name = "SuiSystem" },
 ]
 
 [[move.package]]
@@ -144,11 +163,11 @@ dependencies = [
 
 [[move.package]]
 id = "MoveStdlib"
-source = { git = "https://github.com/MystenLabs/sui.git", rev = "9c04e1840eb5", subdir = "crates/sui-framework/packages/move-stdlib" }
+source = { git = "https://github.com/MystenLabs/sui.git", rev = "fbb68879cbd1", subdir = "crates/sui-framework/packages/move-stdlib" }
 
 [[move.package]]
 id = "Sui"
-source = { git = "https://github.com/MystenLabs/sui.git", rev = "9c04e1840eb5", subdir = "crates/sui-framework/packages/sui-framework" }
+source = { git = "https://github.com/MystenLabs/sui.git", rev = "fbb68879cbd1", subdir = "crates/sui-framework/packages/sui-framework" }
 
 dependencies = [
   { id = "MoveStdlib", name = "MoveStdlib" },
@@ -156,7 +175,7 @@ dependencies = [
 
 [[move.package]]
 id = "SuiSystem"
-source = { git = "https://github.com/MystenLabs/sui.git", rev = "9c04e1840eb5", subdir = "crates/sui-framework/packages/sui-system" }
+source = { git = "https://github.com/MystenLabs/sui.git", rev = "fbb68879cbd1", subdir = "crates/sui-framework/packages/sui-system" }
 
 dependencies = [
   { id = "MoveStdlib", name = "MoveStdlib" },
@@ -164,6 +183,14 @@ dependencies = [
 ]
 
 [move.toolchain-version]
-compiler-version = "1.45.2"
+compiler-version = "1.48.0"
 edition = "2024.beta"
 flavor = "sui"
+
+[env]
+
+[env.mainnet]
+chain-id = "35834a8a"
+original-published-id = "0x682082068b8f1192f16a6074e107014d433e57ef839c7f9e3aea48f2d93a3ea2"
+latest-published-id = "0x682082068b8f1192f16a6074e107014d433e57ef839c7f9e3aea48f2d93a3ea2"
+published-version = "1"

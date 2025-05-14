@@ -32,6 +32,7 @@ jobs:
               with:
                   repo: MystenLabs/sui
                   platform: ubuntu
+                  version: testnet
                   cache: enable
             # # List all directories in the packages folder, and run sui move test on
             # # each of them

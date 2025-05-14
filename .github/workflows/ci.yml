@@ -1,7 +1,9 @@
 name: Memez CI
 
 on:
-    pull_request:
+    push:
+        branches:
+            - main
 
 env:
     MOVE_PACKAGES_PATH: .

@@ -1,13 +1,13 @@
 module xpump_migrator::xpump_migrator;
 
-use cetus_clmm::{
+use cetusclmm::{
     config::GlobalConfig,
     factory::{Self, Pools, PoolCreationCap},
     pool::Pool,
     pool_creator
 };
 use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
-use lp_burn::lp_burn::{CetusLPBurnProof, BurnManager};
+use lpburn::lp_burn::{CetusLPBurnProof, BurnManager};
 use memez_fun::memez_fun::MemezMigrator;
 use std::type_name::{Self, TypeName};
 use sui::{
@@ -72,6 +72,7 @@ public struct NewPool has copy, drop {
     meme: TypeName,
     sui_balance: u64,
     meme_balance: u64,
+    burn_proof: address
 }
 
 public struct SetTreasury(address, address) has copy, drop;
@@ -169,18 +170,21 @@ public fun migrate<Meme>(
         ctx,
     );
 
-    emit(NewPool {
-        pool: position.pool_id().to_address(),
-        tick_spacing: TICK_SPACING,
-        meme: type_name::get<Meme>(),
-        sui_balance: sui_balance_value - excess_sui.value(),
-        meme_balance: meme_balance_value - excess_meme.value(),
-    });
+    let pool_id = position.pool_id();
 
     let burn_proof = burn_manager.burn_lp_v2(
         position,
         ctx,
     );
+
+    emit(NewPool {
+        pool: pool_id.to_address(),
+        tick_spacing: TICK_SPACING,
+        meme: type_name::get<Meme>(),
+        sui_balance: sui_balance_value - excess_sui.value(),
+        meme_balance: meme_balance_value - excess_meme.value(),
+        burn_proof: object::id_address(&burn_proof),
+    });
 
     config.save_lp_burn_proof<Meme>(burn_proof);
 
@@ -188,6 +192,12 @@ public fun migrate<Meme>(
     transfer_or_burn(excess_sui, config.treasury);
 
     reward
+}
+
+// === View Functions ===
+
+public fun get_lp_burn_proof<Meme>(config: &XPumpConfig): &CetusLPBurnProof {
+    dof::borrow<_, CetusLPBurnProof>(&config.id, LpBurnConfigKey(type_name::get<Meme>()))
 }
 
 // === Admin Functions ===

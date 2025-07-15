@@ -2,12 +2,11 @@
 
 [move]
 version = 3
-manifest_digest = "BC63F29F74A82BC4E955A17E736869294959FD8B28C88C08EA05E3DA566A1DBD"
-deps_digest = "8227D341C0550A37580C10FA45FE148A465225149C69D179737E0FE454AD6AEC"
+manifest_digest = "2A29CEA094EE65388435BAEBE2EC7AD5ABCF8DA3B630C9B540E7215CCB582B91"
+deps_digest = "04732BFEF428F74DE262001DC455D76B909EBC394B034A9A15CC095E4BDD9CEF"
 dependencies = [
   { id = "Bridge", name = "Bridge" },
   { id = "CetusClmm", name = "CetusClmm" },
-  { id = "DeepBook", name = "DeepBook" },
   { id = "IPXCoinStandard", name = "IPXCoinStandard" },
   { id = "LpBurn", name = "LpBurn" },
   { id = "MemezFun", name = "MemezFun" },
@@ -18,7 +17,7 @@ dependencies = [
 
 [[move.package]]
 id = "Bridge"
-source = { git = "https://github.com/MystenLabs/sui.git", rev = "9c04e1840eb5", subdir = "crates/sui-framework/packages/bridge" }
+source = { git = "https://github.com/MystenLabs/sui.git", rev = "2c930c25f8d3", subdir = "crates/sui-framework/packages/bridge" }
 
 dependencies = [
   { id = "MoveStdlib", name = "MoveStdlib" },
@@ -28,25 +27,12 @@ dependencies = [
 
 [[move.package]]
 id = "CetusClmm"
-source = { local = "../../dependencies/cetus_clmm" }
+source = { git = "https://github.com/CetusProtocol/cetus-clmm-interface.git", rev = "mainnet-v1.49.0", subdir = "sui/cetus_clmm" }
 
 dependencies = [
   { id = "Bridge", name = "Bridge" },
-  { id = "DeepBook", name = "DeepBook" },
   { id = "IntegerMate", name = "IntegerMate" },
   { id = "MoveSTL", name = "MoveSTL" },
-  { id = "MoveStdlib", name = "MoveStdlib" },
-  { id = "Sui", name = "Sui" },
-  { id = "SuiSystem", name = "SuiSystem" },
-]
-
-[[move.package]]
-id = "ConstantProduct"
-source = { local = "../../dependencies/constant-product" }
-
-dependencies = [
-  { id = "Bridge", name = "Bridge" },
-  { id = "DeepBook", name = "DeepBook" },
   { id = "MoveStdlib", name = "MoveStdlib" },
   { id = "Sui", name = "Sui" },
   { id = "SuiSystem", name = "SuiSystem" },
@@ -71,15 +57,15 @@ dependencies = [
 
 [[move.package]]
 id = "IntegerMate"
-source = { git = "https://github.com/CetusProtocol/integer-mate.git", rev = "mainnet-v1.23.1", subdir = "sui" }
+source = { git = "https://github.com/CetusProtocol/integer-mate.git", rev = "sui-v1.2.0", subdir = "sui" }
 
 dependencies = [
   { id = "Sui", name = "Sui" },
 ]
 
 [[move.package]]
-id = "InterestBPS"
-source = { local = "../../dependencies/bps" }
+id = "InterestAccessControl"
+source = { git = "https://github.com/interest-protocol/interest-mvr", rev = "91e2f4f83626c1cb924bac246932574501c21bf8", subdir = "access-control/contracts" }
 
 dependencies = [
   { id = "Bridge", name = "Bridge" },
@@ -90,8 +76,31 @@ dependencies = [
 ]
 
 [[move.package]]
+id = "InterestBPS"
+source = { git = "https://github.com/interest-protocol/interest-mvr", rev = "deploy/bps", subdir = "bps" }
+
+dependencies = [
+  { id = "Bridge", name = "Bridge" },
+  { id = "DeepBook", name = "DeepBook" },
+  { id = "MoveStdlib", name = "MoveStdlib" },
+  { id = "Sui", name = "Sui" },
+  { id = "SuiSystem", name = "SuiSystem" },
+]
+
+[[move.package]]
+id = "InterestConstantProduct"
+source = { git = "https://github.com/interest-protocol/interest-mvr", rev = "a2ed0e88d7b993a014c73061d7b369cc45c45624", subdir = "constant-product" }
+
+dependencies = [
+  { id = "Bridge", name = "Bridge" },
+  { id = "MoveStdlib", name = "MoveStdlib" },
+  { id = "Sui", name = "Sui" },
+  { id = "SuiSystem", name = "SuiSystem" },
+]
+
+[[move.package]]
 id = "InterestMath"
-source = { local = "../../dependencies/interest-math" }
+source = { git = "https://github.com/interest-protocol/interest-mvr", rev = "d84dec3174acda3e34f0d672930041828d7eba42", subdir = "math" }
 
 dependencies = [
   { id = "Bridge", name = "Bridge" },
@@ -103,19 +112,26 @@ dependencies = [
 
 [[move.package]]
 id = "LpBurn"
-source = { git = "https://github.com/CetusProtocol/cetus-clmm-interface.git", rev = "mainnet-v1.26.0", subdir = "sui/lp_burn" }
+source = { git = "https://github.com/CetusProtocol/cetus-clmm-interface.git", rev = "mainnet-v1.49.0", subdir = "sui/lp_burn" }
 
 dependencies = [
+  { id = "Bridge", name = "Bridge" },
   { id = "CetusClmm", name = "CetusClmm" },
+  { id = "MoveStdlib", name = "MoveStdlib" },
   { id = "Sui", name = "Sui" },
+  { id = "SuiSystem", name = "SuiSystem" },
 ]
 
 [[move.package]]
-id = "MemezACL"
-source = { local = "../../acl" }
+id = "Memez"
+source = { local = "../../memez" }
 
 dependencies = [
+  { id = "Bridge", name = "Bridge" },
+  { id = "InterestAccessControl", name = "InterestAccessControl" },
+  { id = "MoveStdlib", name = "MoveStdlib" },
   { id = "Sui", name = "Sui" },
+  { id = "SuiSystem", name = "SuiSystem" },
 ]
 
 [[move.package]]
@@ -124,12 +140,12 @@ source = { local = "../../fun" }
 
 dependencies = [
   { id = "Bridge", name = "Bridge" },
-  { id = "ConstantProduct", name = "ConstantProduct" },
-  { id = "DeepBook", name = "DeepBook" },
   { id = "IPXCoinStandard", name = "IPXCoinStandard" },
+  { id = "InterestAccessControl", name = "InterestAccessControl" },
   { id = "InterestBPS", name = "InterestBPS" },
+  { id = "InterestConstantProduct", name = "InterestConstantProduct" },
   { id = "InterestMath", name = "InterestMath" },
-  { id = "MemezACL", name = "MemezACL" },
+  { id = "Memez", name = "Memez" },
   { id = "MemezVesting", name = "MemezVesting" },
   { id = "MoveStdlib", name = "MoveStdlib" },
   { id = "Sui", name = "Sui" },
@@ -141,24 +157,30 @@ id = "MemezVesting"
 source = { local = "../../vesting" }
 
 dependencies = [
+  { id = "Bridge", name = "Bridge" },
+  { id = "MoveStdlib", name = "MoveStdlib" },
   { id = "Sui", name = "Sui" },
+  { id = "SuiSystem", name = "SuiSystem" },
 ]
 
 [[move.package]]
 id = "MoveSTL"
-source = { git = "https://github.com/CetusProtocol/move-stl.git", rev = "mainnet-v1.23.1", subdir = "sui" }
+source = { git = "https://github.com/CetusProtocol/move-stl.git", rev = "mainnet-v1.48.2", subdir = "sui" }
 
 dependencies = [
+  { id = "Bridge", name = "Bridge" },
+  { id = "MoveStdlib", name = "MoveStdlib" },
   { id = "Sui", name = "Sui" },
+  { id = "SuiSystem", name = "SuiSystem" },
 ]
 
 [[move.package]]
 id = "MoveStdlib"
-source = { git = "https://github.com/MystenLabs/sui.git", rev = "9c04e1840eb5", subdir = "crates/sui-framework/packages/move-stdlib" }
+source = { git = "https://github.com/MystenLabs/sui.git", rev = "2c930c25f8d3", subdir = "crates/sui-framework/packages/move-stdlib" }
 
 [[move.package]]
 id = "Sui"
-source = { git = "https://github.com/MystenLabs/sui.git", rev = "9c04e1840eb5", subdir = "crates/sui-framework/packages/sui-framework" }
+source = { git = "https://github.com/MystenLabs/sui.git", rev = "2c930c25f8d3", subdir = "crates/sui-framework/packages/sui-framework" }
 
 dependencies = [
   { id = "MoveStdlib", name = "MoveStdlib" },
@@ -166,7 +188,7 @@ dependencies = [
 
 [[move.package]]
 id = "SuiSystem"
-source = { git = "https://github.com/MystenLabs/sui.git", rev = "9c04e1840eb5", subdir = "crates/sui-framework/packages/sui-system" }
+source = { git = "https://github.com/MystenLabs/sui.git", rev = "2c930c25f8d3", subdir = "crates/sui-framework/packages/sui-system" }
 
 dependencies = [
   { id = "MoveStdlib", name = "MoveStdlib" },
@@ -174,6 +196,6 @@ dependencies = [
 ]
 
 [move.toolchain-version]
-compiler-version = "1.45.2"
+compiler-version = "1.51.1"
 edition = "2024.beta"
 flavor = "sui"

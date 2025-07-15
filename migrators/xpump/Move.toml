@@ -6,15 +6,14 @@ authors = ["Jose Cerqueira (jose@interestprotocol.com)"]
 
 
 [dependencies]
-IPXCoinStandard = { git = "https://github.com/interest-protocol/ipx-coin-standard.git", rev = "main", override = true }
-
-CetusClmm = { git = "https://github.com/CetusProtocol/cetus-clmm-interface.git", subdir = "sui/cetus_clmm", rev = "mainnet-v1.49.0" }
-
-LpBurn = { git = "https://github.com/CetusProtocol/cetus-clmm-interface.git", subdir = "sui/lp_burn", rev = "mainnet-v1.49.0", override = true }
-
-
+ipx_coin_standard = { r.mvr = "@interest/coin-standard" }
 MemezFun = { local = "../../fun" }
+CetusClmm = { local = "../../dependencies/cetus_clmm" }
+LpBurn = { local = "../../dependencies/lp_burn" }
 
 [addresses]
 xpump_migrator = "0x0"
 treasury = "0x5b2aec3521419fe055b6753b15cbad845ec1dca852b75ad0b13b569f2329f82d"
+
+[r.mvr]
+network = "mainnet"

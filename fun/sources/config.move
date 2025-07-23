@@ -4,6 +4,7 @@
 module memez_fun::memez_config;
 
 use interest_access_control::access_control::AdminWitness;
+use interest_bps::bps::{Self, BPS};
 use memez::memez::MEMEZ;
 use memez_fun::{memez_errors, memez_fees::{Self, MemezFees}};
 use std::type_name::{Self, TypeName};
@@ -16,6 +17,8 @@ public struct FeesKey<phantom T>() has copy, drop, store;
 public struct QuoteListKey<phantom T>() has copy, drop, store;
 
 public struct MigratorWitnessKey<phantom T>() has copy, drop, store;
+
+public struct ReferrerFeeKey<phantom T>() has copy, drop, store;
 
 public struct MemezConfig has key {
     id: UID,
@@ -41,6 +44,15 @@ public fun set_fees<ConfigWitness>(
     _ctx: &mut TxContext,
 ) {
     add<FeesKey<ConfigWitness>, _>(self, memez_fees::new(values, recipients));
+}
+
+public fun set_referrer_fee<ConfigWitness>(
+    self: &mut MemezConfig,
+    _: &AdminWitness<MEMEZ>,
+    fee: u64,
+    _ctx: &mut TxContext,
+) {
+    add<ReferrerFeeKey<ConfigWitness>, _>(self, bps::new(fee));
 }
 
 public fun remove<ConfigWitness, Model: drop + store>(
@@ -87,6 +99,14 @@ public fun remove_migrator_witness<ConfigWitness, MigratorWitness>(
 
 public(package) fun fees<ConfigWitness>(self: &MemezConfig): MemezFees {
     let key = type_name::get<FeesKey<ConfigWitness>>();
+
+    assert!(df::exists_(&self.id, key), memez_errors::model_key_not_supported!());
+
+    *df::borrow(&self.id, key)
+}
+
+public(package) fun referrer_fee<ConfigWitness>(self: &MemezConfig): BPS {
+    let key = type_name::get<ReferrerFeeKey<ConfigWitness>>();
 
     assert!(df::exists_(&self.id, key), memez_errors::model_key_not_supported!());
 

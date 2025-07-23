@@ -10,7 +10,7 @@ use sui::vec_set::{Self, VecSet};
 
 // === Constants ===
 
-const VERSION: u64 = 1;
+const VERSION: u64 = 2;
 
 // === Structs ===
 

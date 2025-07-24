@@ -18,7 +18,9 @@ public struct QuoteListKey<phantom T>() has copy, drop, store;
 
 public struct MigratorWitnessKey<phantom T>() has copy, drop, store;
 
-public struct ReferrerFeeKey<phantom T>() has copy, drop, store;
+public struct MemeReferrerFeeKey<phantom T>() has copy, drop, store;
+
+public struct QuoteReferrerFeeKey<phantom T>() has copy, drop, store;
 
 public struct MemezConfig has key {
     id: UID,
@@ -46,13 +48,22 @@ public fun set_fees<ConfigWitness>(
     add<FeesKey<ConfigWitness>, _>(self, memez_fees::new(values, recipients));
 }
 
-public fun set_referrer_fee<ConfigWitness>(
+public fun set_meme_referrer_fee<ConfigWitness>(
     self: &mut MemezConfig,
     _: &AdminWitness<MEMEZ>,
     fee: u64,
     _ctx: &mut TxContext,
 ) {
-    add<ReferrerFeeKey<ConfigWitness>, _>(self, bps::new(fee));
+    add<MemeReferrerFeeKey<ConfigWitness>, _>(self, bps::new(fee));
+}
+
+public fun set_quote_referrer_fee<ConfigWitness>(
+    self: &mut MemezConfig,
+    _: &AdminWitness<MEMEZ>,
+    fee: u64,
+    _ctx: &mut TxContext,
+) {
+    add<QuoteReferrerFeeKey<ConfigWitness>, _>(self, bps::new(fee));
 }
 
 public fun remove<ConfigWitness, Model: drop + store>(
@@ -105,8 +116,16 @@ public(package) fun fees<ConfigWitness>(self: &MemezConfig): MemezFees {
     *df::borrow(&self.id, key)
 }
 
-public(package) fun referrer_fee<ConfigWitness>(self: &MemezConfig): BPS {
-    let key = type_name::get<ReferrerFeeKey<ConfigWitness>>();
+public(package) fun meme_referrer_fee<ConfigWitness>(self: &MemezConfig): BPS {
+    let key = type_name::get<MemeReferrerFeeKey<ConfigWitness>>();
+
+    assert!(df::exists_(&self.id, key), memez_errors::model_key_not_supported!());
+
+    *df::borrow(&self.id, key)
+}
+
+public(package) fun quote_referrer_fee<ConfigWitness>(self: &MemezConfig): BPS {
+    let key = type_name::get<QuoteReferrerFeeKey<ConfigWitness>>();
 
     assert!(df::exists_(&self.id, key), memez_errors::model_key_not_supported!());
 

@@ -4,7 +4,10 @@ module memez_fun::memez_config_tests;
 use interest_access_control::access_control;
 use interest_bps::bps::BPS;
 use memez::memez::MEMEZ;
-use memez_fun::{memez_config::{Self, MemezConfig, FeesKey, ReferrerFeeKey}, memez_fees::MemezFees};
+use memez_fun::{
+    memez_config::{Self, MemezConfig, FeesKey, MemeReferrerFeeKey, QuoteReferrerFeeKey},
+    memez_fees::MemezFees
+};
 use std::unit_test::assert_eq;
 use sui::{test_scenario::{Self as ts, Scenario}, test_utils::destroy};
 
@@ -111,24 +114,65 @@ fun test_coin_not_supported() {
 }
 
 #[test]
-fun test_set_referrer_fee() {
+fun test_set_meme_referrer_fee() {
     let mut world = start();
 
     let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
-    assert_eq!(memez_config::exists_for_testing<ReferrerFeeKey<DefaultKey>>(&world.config), false);
+    assert_eq!(
+        memez_config::exists_for_testing<MemeReferrerFeeKey<DefaultKey>>(&world.config),
+        false,
+    );
 
-    world.config.set_referrer_fee<DefaultKey>(&witness, 1_000, world.scenario.ctx());
+    world.config.set_meme_referrer_fee<DefaultKey>(&witness, 1_000, world.scenario.ctx());
 
-    assert_eq!(memez_config::exists_for_testing<ReferrerFeeKey<DefaultKey>>(&world.config), true);
+    assert_eq!(
+        memez_config::exists_for_testing<MemeReferrerFeeKey<DefaultKey>>(&world.config),
+        true,
+    );
 
-    let referrer_fee = world.config.referrer_fee<DefaultKey>();
+    let meme_referrer_fee = world.config.meme_referrer_fee<DefaultKey>();
 
-    assert_eq!(referrer_fee.value(), 1_000);
+    assert_eq!(meme_referrer_fee.value(), 1_000);
 
-    world.config.remove<ReferrerFeeKey<DefaultKey>, BPS>(&witness, world.scenario.ctx());
+    world.config.remove<MemeReferrerFeeKey<DefaultKey>, BPS>(&witness, world.scenario.ctx());
 
-    assert_eq!(memez_config::exists_for_testing<ReferrerFeeKey<DefaultKey>>(&world.config), false);
+    assert_eq!(
+        memez_config::exists_for_testing<MemeReferrerFeeKey<DefaultKey>>(&world.config),
+        false,
+    );
+
+    world.end();
+}
+
+#[test]
+fun test_set_quote_referrer_fee() {
+    let mut world = start();
+
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0);
+
+    assert_eq!(
+        memez_config::exists_for_testing<QuoteReferrerFeeKey<DefaultKey>>(&world.config),
+        false,
+    );
+
+    world.config.set_quote_referrer_fee<DefaultKey>(&witness, 1_000, world.scenario.ctx());
+
+    assert_eq!(
+        memez_config::exists_for_testing<QuoteReferrerFeeKey<DefaultKey>>(&world.config),
+        true,
+    );
+
+    let quote_referrer_fee = world.config.quote_referrer_fee<DefaultKey>();
+
+    assert_eq!(quote_referrer_fee.value(), 1_000);
+
+    world.config.remove<QuoteReferrerFeeKey<DefaultKey>, BPS>(&witness, world.scenario.ctx());
+
+    assert_eq!(
+        memez_config::exists_for_testing<QuoteReferrerFeeKey<DefaultKey>>(&world.config),
+        false,
+    );
 
     world.end();
 }

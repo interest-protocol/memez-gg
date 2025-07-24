@@ -364,6 +364,25 @@ fun test_calculate_with_discount() {
     assert_eq(creation_fee.calculate_with_discount(bps::new(10), 10_000), 2 * POW_9);
 }
 
+#[test]
+fun test_take_with_discount() {
+    let fees = default_fees();
+
+    let ctx = &mut tx_context::dummy();
+
+    let quote_swap_fee = fees.quote_swap(vector[STAKE_HOLDER_1, STAKE_HOLDER_2]);
+
+    let mut meme_coin = mint_for_testing<Meme>(10_000, ctx);
+
+    assert_eq(quote_swap_fee.take(&mut meme_coin, ctx), 100);
+
+    assert_eq(meme_coin.value(), 9_900);
+
+    assert_eq(quote_swap_fee.take_with_discount(&mut meme_coin, bps::new(10), ctx), 90);
+
+    assert_eq(meme_coin.burn_for_testing(), 9_810);
+}
+
 #[
     test,
     expected_failure(

@@ -57,7 +57,7 @@ public(package) fun pump<Meme, Quote>(
     min_amount_out: u64,
     ctx: &mut TxContext,
 ): (bool, Coin<Meme>) {
-    pump_impl(self, quote_coin, bps::new(0), min_amount_out, ctx)
+    pump_impl(self, quote_coin, bps::new(0), bps::new(0), min_amount_out, ctx)
 }
 
 public(package) fun dump<Meme, Quote>(
@@ -67,28 +67,38 @@ public(package) fun dump<Meme, Quote>(
     min_amount_out: u64,
     ctx: &mut TxContext,
 ): Coin<Quote> {
-    dump_impl(self, treasury_cap, meme_coin, bps::new(0), min_amount_out, ctx)
+    dump_impl(self, treasury_cap, meme_coin, bps::new(0), bps::new(0), min_amount_out, ctx)
 }
 
 public(package) fun pump_with_discount<Meme, Quote>(
     self: &mut MemezConstantProduct<Meme, Quote>,
     quote_coin: Coin<Quote>,
-    swap_fee_discount: BPS,
+    quote_swap_discount: BPS,
+    meme_swap_discount: BPS,
     min_amount_out: u64,
     ctx: &mut TxContext,
 ): (bool, Coin<Meme>) {
-    pump_impl(self, quote_coin, swap_fee_discount, min_amount_out, ctx)
+    pump_impl(self, quote_coin, quote_swap_discount, meme_swap_discount, min_amount_out, ctx)
 }
 
 public(package) fun dump_with_discount<Meme, Quote>(
     self: &mut MemezConstantProduct<Meme, Quote>,
     treasury_cap: &mut IPXTreasuryStandard,
     meme_coin: Coin<Meme>,
-    swap_fee_discount: BPS,
+    quote_swap_discount: BPS,
+    meme_swap_discount: BPS,
     min_amount_out: u64,
     ctx: &mut TxContext,
 ): Coin<Quote> {
-    dump_impl(self, treasury_cap, meme_coin, swap_fee_discount, min_amount_out, ctx)
+    dump_impl(
+        self,
+        treasury_cap,
+        meme_coin,
+        quote_swap_discount,
+        meme_swap_discount,
+        min_amount_out,
+        ctx,
+    )
 }
 
 public(package) fun pump_amount<Meme, Quote>(
@@ -184,13 +194,14 @@ public(package) fun meme_balance_mut<Meme, Quote>(
 fun pump_impl<Meme, Quote>(
     self: &mut MemezConstantProduct<Meme, Quote>,
     mut quote_coin: Coin<Quote>,
-    swap_fee_discount: BPS,
+    quote_swap_discount: BPS,
+    meme_swap_discount: BPS,
     min_amount_out: u64,
     ctx: &mut TxContext,
 ): (bool, Coin<Meme>) {
     let quote_swap_fee = self
         .quote_swap_fee
-        .take_with_discount(&mut quote_coin, swap_fee_discount, ctx);
+        .take_with_discount(&mut quote_coin, quote_swap_discount, ctx);
 
     let quote_coin_value = quote_coin.assert_has_value!();
 
@@ -203,7 +214,7 @@ fun pump_impl<Meme, Quote>(
     );
 
     let meme_coin_value_out_minus_swap_fee =
-        meme_coin_value_out - self.meme_swap_fee.calculate_with_discount(swap_fee_discount, meme_coin_value_out);
+        meme_coin_value_out - self.meme_swap_fee.calculate_with_discount(meme_swap_discount, meme_coin_value_out);
 
     meme_coin_value_out_minus_swap_fee.assert_slippage!(min_amount_out);
 
@@ -215,7 +226,7 @@ fun pump_impl<Meme, Quote>(
         self.memez_fun,
         quote_coin_value + quote_swap_fee,
         meme_coin_value_out_minus_swap_fee,
-        self.meme_swap_fee.take_with_discount(&mut meme_coin, swap_fee_discount, ctx),
+        self.meme_swap_fee.take_with_discount(&mut meme_coin, meme_swap_discount, ctx),
         quote_swap_fee,
         total_quote_balance,
         self.meme_balance.value(),
@@ -229,13 +240,14 @@ fun dump_impl<Meme, Quote>(
     self: &mut MemezConstantProduct<Meme, Quote>,
     treasury_cap: &mut IPXTreasuryStandard,
     mut meme_coin: Coin<Meme>,
-    swap_fee_discount: BPS,
+    quote_swap_discount: BPS,
+    meme_swap_discount: BPS,
     min_amount_out: u64,
     ctx: &mut TxContext,
 ): Coin<Quote> {
     let meme_swap_fee = self
         .meme_swap_fee
-        .take_with_discount(&mut meme_coin, swap_fee_discount, ctx);
+        .take_with_discount(&mut meme_coin, meme_swap_discount, ctx);
 
     let meme_coin_value = meme_coin.assert_has_value!();
 
@@ -261,7 +273,7 @@ fun dump_impl<Meme, Quote>(
     let quote_coin_amount_out = quote_value_out.min(quote_balance_value);
 
     let quote_coin_value_out_minus_swap_fee =
-        quote_coin_amount_out - self.quote_swap_fee.calculate_with_discount(swap_fee_discount, quote_coin_amount_out);
+        quote_coin_amount_out - self.quote_swap_fee.calculate_with_discount(quote_swap_discount, quote_coin_amount_out);
 
     quote_coin_value_out_minus_swap_fee.assert_slippage!(min_amount_out);
 
@@ -272,7 +284,7 @@ fun dump_impl<Meme, Quote>(
         meme_coin_value + meme_swap_fee,
         quote_coin_value_out_minus_swap_fee,
         meme_swap_fee,
-        self.quote_swap_fee.take_with_discount(&mut quote_coin, swap_fee_discount, ctx),
+        self.quote_swap_fee.take_with_discount(&mut quote_coin, quote_swap_discount, ctx),
         meme_burn_fee_value,
         self.quote_balance.value(),
         self.meme_balance.value(),

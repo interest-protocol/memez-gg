@@ -116,13 +116,26 @@ public(package) fun value(fee: Fee): u64 {
 }
 
 public(package) fun calculate(fee: Fee, amount_in: u64): u64 {
+    calculate_with_discount(fee, bps::new(0), amount_in)
+}
+
+public(package) fun calculate_with_discount(fee: Fee, discount: BPS, amount_in: u64): u64 {
     match (fee) {
         Fee::Value(value, _) => value,
-        Fee::Percentage(bps, _) => bps.calc_up(amount_in),
+        Fee::Percentage(bps, _) => bps.sub(discount).calc_up(amount_in),
     }
 }
 
 public(package) fun take<T>(fee: Fee, asset: &mut Coin<T>, ctx: &mut TxContext): u64 {
+    take_with_discount(fee, asset, bps::new(0), ctx)
+}
+
+public(package) fun take_with_discount<T>(
+    fee: Fee,
+    asset: &mut Coin<T>,
+    discount: BPS,
+    ctx: &mut TxContext,
+): u64 {
     match (fee) {
         Fee::Value(value, distributor) => {
             if (value == 0) return 0;
@@ -140,7 +153,7 @@ public(package) fun take<T>(fee: Fee, asset: &mut Coin<T>, ctx: &mut TxContext):
             if (bps.value() == 0) return 0;
 
             let asset_value = asset.value();
-            let payment_value = bps.calc_up(asset_value);
+            let payment_value = bps.sub(discount).calc_up(asset_value);
 
             assert!(asset_value >= payment_value, memez_fun::memez_errors::insufficient_value!());
 
@@ -234,6 +247,8 @@ public(package) fun assert_dynamic_stake_holders(self: MemezFees, stake_holders:
         memez_fun::memez_errors::invalid_dynamic_stake_holders!(),
     );
 }
+
+// === Private Functions ===
 
 // === Internal Method Aliases ===
 

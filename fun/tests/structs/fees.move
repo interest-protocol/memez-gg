@@ -1,6 +1,7 @@
 #[test_only]
 module memez_fun::memez_fees_tests;
 
+use interest_bps::bps;
 use memez_fun::{memez_errors, memez_fees::{Self, MemezFees}, memez_test_helpers};
 use memez_vesting::memez_vesting::MemezVesting;
 use sui::{
@@ -340,6 +341,27 @@ fun test_take() {
     destroy(clock);
 
     scenario.end();
+}
+
+#[test]
+fun test_calculate_with_discount() {
+    let fees = default_fees();
+
+    let quote_swap_fee = fees.quote_swap(vector[STAKE_HOLDER_1, STAKE_HOLDER_2]);
+
+    // 1% fee
+    assert_eq(quote_swap_fee.calculate(10_000), 100);
+
+    // 1% fee with 10% discount
+    assert_eq(quote_swap_fee.calculate_with_discount(bps::new(10), 10_000), 90);
+
+    let creation_fee = fees.creation();
+
+    // Nominal fees ignores amount_in
+    assert_eq(creation_fee.calculate(10_000), 2 * POW_9);
+
+    // No discount on nominal values
+    assert_eq(creation_fee.calculate_with_discount(bps::new(10), 10_000), 2 * POW_9);
 }
 
 #[

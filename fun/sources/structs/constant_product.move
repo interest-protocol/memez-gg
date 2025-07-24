@@ -3,6 +3,7 @@
 
 module memez_fun::memez_constant_product;
 
+use interest_bps::bps::{Self, BPS};
 use interest_constant_product::constant_product::get_amount_out;
 use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
 use memez_fun::{memez_burner::{Self, MemezBurner}, memez_events, memez_fees::Fee};
@@ -52,97 +53,42 @@ public(package) fun set_memez_fun<Meme, Quote>(
 
 public(package) fun pump<Meme, Quote>(
     self: &mut MemezConstantProduct<Meme, Quote>,
-    mut quote_coin: Coin<Quote>,
+    quote_coin: Coin<Quote>,
     min_amount_out: u64,
     ctx: &mut TxContext,
 ): (bool, Coin<Meme>) {
-    let quote_swap_fee = self.quote_swap_fee.take(&mut quote_coin, ctx);
-
-    let quote_coin_value = quote_coin.assert_has_value!();
-
-    let meme_balance_value = self.meme_balance.value();
-
-    let meme_coin_value_out = get_amount_out!(
-        quote_coin_value,
-        self.virtual_liquidity + self.quote_balance.value(),
-        meme_balance_value,
-    );
-
-    let meme_coin_value_out_minus_swap_fee =
-        meme_coin_value_out - self.meme_swap_fee.calculate(meme_coin_value_out);
-
-    meme_coin_value_out_minus_swap_fee.assert_slippage!(min_amount_out);
-
-    let mut meme_coin = self.meme_balance.split(meme_coin_value_out).into_coin(ctx);
-
-    let total_quote_balance = self.quote_balance.join(quote_coin.into_balance());
-
-    memez_events::pump<Meme, Quote>(
-        self.memez_fun,
-        quote_coin_value + quote_swap_fee,
-        meme_coin_value_out_minus_swap_fee,
-        self.meme_swap_fee.take(&mut meme_coin, ctx),
-        quote_swap_fee,
-        total_quote_balance,
-        self.meme_balance.value(),
-        self.virtual_liquidity,
-    );
-
-    (total_quote_balance >= self.target_quote_liquidity, meme_coin)
+    pump_impl(self, quote_coin, bps::new(0), min_amount_out, ctx)
 }
 
 public(package) fun dump<Meme, Quote>(
     self: &mut MemezConstantProduct<Meme, Quote>,
     treasury_cap: &mut IPXTreasuryStandard,
-    mut meme_coin: Coin<Meme>,
+    meme_coin: Coin<Meme>,
     min_amount_out: u64,
     ctx: &mut TxContext,
 ): Coin<Quote> {
-    let meme_swap_fee = self.meme_swap_fee.take(&mut meme_coin, ctx);
+    dump_impl(self, treasury_cap, meme_coin, bps::new(0), min_amount_out, ctx)
+}
 
-    let meme_coin_value = meme_coin.assert_has_value!();
+public(package) fun pump_with_discount<Meme, Quote>(
+    self: &mut MemezConstantProduct<Meme, Quote>,
+    quote_coin: Coin<Quote>,
+    swap_fee_discount: BPS,
+    min_amount_out: u64,
+    ctx: &mut TxContext,
+): (bool, Coin<Meme>) {
+    pump_impl(self, quote_coin, swap_fee_discount, min_amount_out, ctx)
+}
 
-    let meme_balance_value = self.meme_balance.value();
-
-    let quote_balance_value = self.quote_balance.value();
-
-    let dynamic_burn_tax = self.burner.calculate(quote_balance_value);
-    let meme_burn_fee_value = dynamic_burn_tax.calc_up(meme_coin_value);
-
-    if (dynamic_burn_tax.value() != 0) treasury_cap.burn(meme_coin.split(meme_burn_fee_value, ctx));
-
-    let meme_coin_value = meme_coin.assert_has_value!();
-
-    let quote_value_out = get_amount_out!(
-        meme_coin_value,
-        meme_balance_value,
-        self.virtual_liquidity + quote_balance_value,
-    );
-
-    self.meme_balance.join(meme_coin.into_balance());
-
-    let quote_coin_amount_out = quote_value_out.min(quote_balance_value);
-
-    let quote_coin_value_out_minus_swap_fee =
-        quote_coin_amount_out - self.quote_swap_fee.calculate(quote_coin_amount_out);
-
-    quote_coin_value_out_minus_swap_fee.assert_slippage!(min_amount_out);
-
-    let mut quote_coin = self.quote_balance.split(quote_coin_amount_out).into_coin(ctx);
-
-    memez_events::dump<Meme, Quote>(
-        self.memez_fun,
-        meme_coin_value + meme_swap_fee,
-        quote_coin_value_out_minus_swap_fee,
-        meme_swap_fee,
-        self.quote_swap_fee.take(&mut quote_coin, ctx),
-        meme_burn_fee_value,
-        self.quote_balance.value(),
-        self.meme_balance.value(),
-        self.virtual_liquidity,
-    );
-
-    quote_coin
+public(package) fun dump_with_discount<Meme, Quote>(
+    self: &mut MemezConstantProduct<Meme, Quote>,
+    treasury_cap: &mut IPXTreasuryStandard,
+    meme_coin: Coin<Meme>,
+    swap_fee_discount: BPS,
+    min_amount_out: u64,
+    ctx: &mut TxContext,
+): Coin<Quote> {
+    dump_impl(self, treasury_cap, meme_coin, swap_fee_discount, min_amount_out, ctx)
 }
 
 public(package) fun pump_amount<Meme, Quote>(
@@ -231,6 +177,109 @@ public(package) fun meme_balance_mut<Meme, Quote>(
     self: &mut MemezConstantProduct<Meme, Quote>,
 ): &mut Balance<Meme> {
     &mut self.meme_balance
+}
+
+// === Private Functions ===
+
+fun pump_impl<Meme, Quote>(
+    self: &mut MemezConstantProduct<Meme, Quote>,
+    mut quote_coin: Coin<Quote>,
+    swap_fee_discount: BPS,
+    min_amount_out: u64,
+    ctx: &mut TxContext,
+): (bool, Coin<Meme>) {
+    let quote_swap_fee = self
+        .quote_swap_fee
+        .take_with_discount(&mut quote_coin, swap_fee_discount, ctx);
+
+    let quote_coin_value = quote_coin.assert_has_value!();
+
+    let meme_balance_value = self.meme_balance.value();
+
+    let meme_coin_value_out = get_amount_out!(
+        quote_coin_value,
+        self.virtual_liquidity + self.quote_balance.value(),
+        meme_balance_value,
+    );
+
+    let meme_coin_value_out_minus_swap_fee =
+        meme_coin_value_out - self.meme_swap_fee.calculate_with_discount(swap_fee_discount, meme_coin_value_out);
+
+    meme_coin_value_out_minus_swap_fee.assert_slippage!(min_amount_out);
+
+    let mut meme_coin = self.meme_balance.split(meme_coin_value_out).into_coin(ctx);
+
+    let total_quote_balance = self.quote_balance.join(quote_coin.into_balance());
+
+    memez_events::pump<Meme, Quote>(
+        self.memez_fun,
+        quote_coin_value + quote_swap_fee,
+        meme_coin_value_out_minus_swap_fee,
+        self.meme_swap_fee.take_with_discount(&mut meme_coin, swap_fee_discount, ctx),
+        quote_swap_fee,
+        total_quote_balance,
+        self.meme_balance.value(),
+        self.virtual_liquidity,
+    );
+
+    (total_quote_balance >= self.target_quote_liquidity, meme_coin)
+}
+
+fun dump_impl<Meme, Quote>(
+    self: &mut MemezConstantProduct<Meme, Quote>,
+    treasury_cap: &mut IPXTreasuryStandard,
+    mut meme_coin: Coin<Meme>,
+    swap_fee_discount: BPS,
+    min_amount_out: u64,
+    ctx: &mut TxContext,
+): Coin<Quote> {
+    let meme_swap_fee = self
+        .meme_swap_fee
+        .take_with_discount(&mut meme_coin, swap_fee_discount, ctx);
+
+    let meme_coin_value = meme_coin.assert_has_value!();
+
+    let meme_balance_value = self.meme_balance.value();
+
+    let quote_balance_value = self.quote_balance.value();
+
+    let dynamic_burn_tax = self.burner.calculate(quote_balance_value);
+    let meme_burn_fee_value = dynamic_burn_tax.calc_up(meme_coin_value);
+
+    if (dynamic_burn_tax.value() != 0) treasury_cap.burn(meme_coin.split(meme_burn_fee_value, ctx));
+
+    let meme_coin_value = meme_coin.assert_has_value!();
+
+    let quote_value_out = get_amount_out!(
+        meme_coin_value,
+        meme_balance_value,
+        self.virtual_liquidity + quote_balance_value,
+    );
+
+    self.meme_balance.join(meme_coin.into_balance());
+
+    let quote_coin_amount_out = quote_value_out.min(quote_balance_value);
+
+    let quote_coin_value_out_minus_swap_fee =
+        quote_coin_amount_out - self.quote_swap_fee.calculate_with_discount(swap_fee_discount, quote_coin_amount_out);
+
+    quote_coin_value_out_minus_swap_fee.assert_slippage!(min_amount_out);
+
+    let mut quote_coin = self.quote_balance.split(quote_coin_amount_out).into_coin(ctx);
+
+    memez_events::dump<Meme, Quote>(
+        self.memez_fun,
+        meme_coin_value + meme_swap_fee,
+        quote_coin_value_out_minus_swap_fee,
+        meme_swap_fee,
+        self.quote_swap_fee.take_with_discount(&mut quote_coin, swap_fee_discount, ctx),
+        meme_burn_fee_value,
+        self.quote_balance.value(),
+        self.meme_balance.value(),
+        self.virtual_liquidity,
+    );
+
+    quote_coin
 }
 
 // === Aliases ===

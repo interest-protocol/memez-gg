@@ -22,7 +22,6 @@ G:::::G        G::::GG:::::G        G::::G
 #[allow(unused_function)]
 module memez_fun::memez_fun;
 
-use interest_bps::bps::BPS;
 use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
 use memez_fun::{
     memez_allowed_versions::AllowedVersions,
@@ -31,24 +30,13 @@ use memez_fun::{
     memez_versioned::Versioned
 };
 use std::{string::String, type_name::{Self, TypeName}};
-use sui::{
-    bag::{Self, Bag},
-    balance::Balance,
-    clock::Clock,
-    coin::Coin,
-    token::Token,
-    vec_map::VecMap
-};
+use sui::{balance::Balance, clock::Clock, coin::Coin, vec_map::VecMap};
 
 // === Constants ===
 
 const CONFIG_METADATA_KEY: vector<u8> = b"config_key";
 
 // === Structs ===
-
-public struct MemeReferrerFeeKey() has copy, drop, store;
-
-public struct QuoteReferrerFeeKey() has copy, drop, store;
 
 public enum Progress has copy, drop, store {
     Bonding,
@@ -59,21 +47,20 @@ public enum Progress has copy, drop, store {
 public struct MemezMigrator<phantom Meme, phantom Quote> {
     witness: TypeName,
     memez_fun: address,
+    dev: address,
     quote_balance: Balance<Quote>,
     meme_balance: Balance<Meme>,
 }
 
 public struct MemezFun<phantom Curve, phantom Meme, phantom Quote> has key, store {
     id: UID,
+    inner_state: address,
     dev: address,
-    is_token: bool,
     state: Versioned,
     ipx_meme_coin_treasury: address,
     metadata: MemezMetadata,
     migration_witness: TypeName,
     progress: Progress,
-    // Extra fields for future use
-    extra_fields: Bag,
 }
 
 // === Public Functions ===
@@ -82,7 +69,7 @@ public fun destroy<Meme, Quote, Witness: drop>(
     migrator: MemezMigrator<Meme, Quote>,
     _: Witness,
 ): (Balance<Meme>, Balance<Quote>) {
-    let MemezMigrator { witness, memez_fun, meme_balance, quote_balance } = migrator;
+    let MemezMigrator { witness, memez_fun, meme_balance, quote_balance, dev: _ } = migrator;
 
     assert!(type_name::get<Witness>() == witness, memez_fun::memez_errors::invalid_witness!());
 
@@ -108,7 +95,6 @@ public fun metadata<Curve, Meme, Quote>(
 
 public(package) fun new<Curve, Meme, Quote, ConfigKey, MigrationWitness>(
     state: Versioned,
-    is_token: bool,
     inner_state: address,
     mut metadata: MemezMetadata,
     ipx_meme_coin_treasury: address,
@@ -131,6 +117,7 @@ public(package) fun new<Curve, Meme, Quote, ConfigKey, MigrationWitness>(
     memez_events::new<Curve, Meme, Quote>(
         id.to_address(),
         inner_state,
+        dev,
         config_key,
         migration_witness,
         ipx_meme_coin_treasury,
@@ -143,29 +130,20 @@ public(package) fun new<Curve, Meme, Quote, ConfigKey, MigrationWitness>(
     MemezFun {
         id,
         dev,
-        is_token,
+        inner_state,
         ipx_meme_coin_treasury,
         metadata,
         migration_witness,
         progress: Progress::Bonding,
         state,
-        extra_fields: bag::new(ctx),
     }
-}
-
-public(package) fun add_referrer_fees<Curve, Meme, Quote>(
-    self: &mut MemezFun<Curve, Meme, Quote>,
-    meme_referrer_fee: BPS,
-    quote_referrer_fee: BPS,
-): () {
-    self.extra_fields.add(MemeReferrerFeeKey(), meme_referrer_fee);
-    self.extra_fields.add(QuoteReferrerFeeKey(), quote_referrer_fee);
 }
 
 public(package) macro fun cp_pump<$Curve, $Meme, $Quote, $State>(
     $self: &mut MemezFun<$Curve, $Meme, $Quote>,
     $f: |&mut MemezFun<$Curve, $Meme, $Quote>| -> &mut $State,
     $quote_coin: Coin<$Quote>,
+    $referrer: Option<address>,
     $min_amount_out: u64,
     $allowed_versions: AllowedVersions,
     $ctx: &mut TxContext,
@@ -174,16 +152,16 @@ public(package) macro fun cp_pump<$Curve, $Meme, $Quote, $State>(
     let allowed_versions = $allowed_versions;
 
     allowed_versions.assert_pkg_version();
-    self.assert_uses_coin();
     self.assert_is_bonding();
 
-    self.cp_pump_unchecked!($f, $quote_coin, $min_amount_out, $ctx)
+    self.cp_pump_unchecked!($f, $quote_coin, $referrer, $min_amount_out, $ctx)
 }
 
 public(package) macro fun cp_pump_unchecked<$Curve, $Meme, $Quote, $State>(
     $self: &mut MemezFun<$Curve, $Meme, $Quote>,
     $f: |&mut MemezFun<$Curve, $Meme, $Quote>| -> &mut $State,
     $quote_coin: Coin<$Quote>,
+    $referrer: Option<address>,
     $min_amount_out: u64,
     $ctx: &mut TxContext,
 ): Coin<$Meme> {
@@ -198,6 +176,7 @@ public(package) macro fun cp_pump_unchecked<$Curve, $Meme, $Quote, $State>(
         .constant_product
         .pump(
             quote_coin,
+            $referrer,
             min_amount_out,
             ctx,
         );
@@ -207,47 +186,12 @@ public(package) macro fun cp_pump_unchecked<$Curve, $Meme, $Quote, $State>(
     meme_coin
 }
 
-public(package) macro fun cp_pump_token<$Curve, $Meme, $Quote, $State>(
-    $self: &mut MemezFun<$Curve, $Meme, $Quote>,
-    $f: |&mut MemezFun<$Curve, $Meme, $Quote>| -> &mut $State,
-    $quote_coin: Coin<$Quote>,
-    $min_amount_out: u64,
-    $allowed_versions: AllowedVersions,
-    $ctx: &mut TxContext,
-): Token<$Meme> {
-    let self = $self;
-    let allowed_versions = $allowed_versions;
-    let ctx = $ctx;
-
-    let quote_coin = $quote_coin;
-    let min_amount_out = $min_amount_out;
-
-    allowed_versions.assert_pkg_version();
-    self.assert_uses_token();
-    self.assert_is_bonding();
-
-    let state = $f(self);
-
-    let (start_migrating, meme_coin) = state
-        .constant_product
-        .pump(
-            quote_coin,
-            min_amount_out,
-            ctx,
-        );
-
-    let meme_token = state.token_cap().from_coin(meme_coin, ctx);
-
-    if (start_migrating) self.set_progress_to_migrating();
-
-    meme_token
-}
-
 public(package) macro fun cp_dump<$Curve, $Meme, $Quote, $State>(
     $self: &mut MemezFun<$Curve, $Meme, $Quote>,
     $f: |&mut MemezFun<$Curve, $Meme, $Quote>| -> &mut $State,
     $treasury_cap: &mut IPXTreasuryStandard,
     $meme_coin: Coin<$Meme>,
+    $referrer: Option<address>,
     $min_amount_out: u64,
     $allowed_versions: AllowedVersions,
     $ctx: &mut TxContext,
@@ -257,56 +201,17 @@ public(package) macro fun cp_dump<$Curve, $Meme, $Quote, $State>(
     let ctx = $ctx;
 
     allowed_versions.assert_pkg_version();
-    self.assert_uses_coin();
     self.assert_is_bonding();
-
-    let treasury_cap = $treasury_cap;
-    let meme_coin = $meme_coin;
-    let min_amount_out = $min_amount_out;
 
     let state = $f(self);
 
     state
         .constant_product
         .dump(
-            treasury_cap,
-            meme_coin,
-            min_amount_out,
-            ctx,
-        )
-}
-
-public(package) macro fun cp_dump_token<$Curve, $Meme, $Quote, $State>(
-    $self: &mut MemezFun<$Curve, $Meme, $Quote>,
-    $f: |&mut MemezFun<$Curve, $Meme, $Quote>| -> &mut $State,
-    $treasury_cap: &mut IPXTreasuryStandard,
-    $meme_token: Token<$Meme>,
-    $min_amount_out: u64,
-    $allowed_versions: AllowedVersions,
-    $ctx: &mut TxContext,
-): Coin<$Quote> {
-    let self = $self;
-    let allowed_versions = $allowed_versions;
-    let ctx = $ctx;
-
-    allowed_versions.assert_pkg_version();
-    self.assert_uses_token();
-    self.assert_is_bonding();
-
-    let treasury_cap = $treasury_cap;
-    let meme_token = $meme_token;
-    let min_amount_out = $min_amount_out;
-
-    let state = $f(self);
-
-    let meme_coin = state.token_cap().to_coin(meme_token, ctx);
-
-    state
-        .constant_product
-        .dump(
-            treasury_cap,
-            meme_coin,
-            min_amount_out,
+            $treasury_cap,
+            $meme_coin,
+            $referrer,
+            $min_amount_out,
             ctx,
         )
 }
@@ -315,6 +220,7 @@ public(package) macro fun fr_pump<$Curve, $Meme, $Quote, $State>(
     $self: &mut MemezFun<$Curve, $Meme, $Quote>,
     $f: |&mut MemezFun<$Curve, $Meme, $Quote>| -> &mut $State,
     $quote_coin: Coin<$Quote>,
+    $referrer: Option<address>,
     $allowed_versions: AllowedVersions,
     $ctx: &mut TxContext,
 ): (Coin<$Quote>, Coin<$Meme>) {
@@ -322,19 +228,16 @@ public(package) macro fun fr_pump<$Curve, $Meme, $Quote, $State>(
     let allowed_versions = $allowed_versions;
 
     allowed_versions.assert_pkg_version();
-    self.assert_uses_coin();
     self.assert_is_bonding();
 
     let state = $f(self);
 
-    let quote_coin = $quote_coin;
-    let ctx = $ctx;
-
     let (start_migrating, excess_quote_coin, meme_coin) = state
         .fixed_rate
         .pump(
-            quote_coin,
-            ctx,
+            $quote_coin,
+            $referrer,
+            $ctx,
         );
 
     if (start_migrating) self.set_progress_to_migrating();
@@ -342,43 +245,11 @@ public(package) macro fun fr_pump<$Curve, $Meme, $Quote, $State>(
     (excess_quote_coin, meme_coin)
 }
 
-public(package) macro fun fr_pump_token<$Curve, $Meme, $Quote, $State>(
-    $self: &mut MemezFun<$Curve, $Meme, $Quote>,
-    $f: |&mut MemezFun<$Curve, $Meme, $Quote>| -> &mut $State,
-    $quote_coin: Coin<$Quote>,
-    $allowed_versions: AllowedVersions,
-    $ctx: &mut TxContext,
-): (Coin<$Quote>, Token<$Meme>) {
-    let self = $self;
-    let allowed_versions = $allowed_versions;
-
-    allowed_versions.assert_pkg_version();
-    self.assert_uses_token();
-    self.assert_is_bonding();
-
-    let state = $f(self);
-
-    let quote_coin = $quote_coin;
-    let ctx = $ctx;
-
-    let (start_migrating, excess_quote_coin, meme_coin) = state
-        .fixed_rate
-        .pump(
-            quote_coin,
-            ctx,
-        );
-
-    let meme_token = state.token_cap().from_coin(meme_coin, ctx);
-
-    if (start_migrating) self.set_progress_to_migrating();
-
-    (excess_quote_coin, meme_token)
-}
-
 public(package) macro fun fr_dump<$Curve, $Meme, $Quote, $State>(
     $self: &mut MemezFun<$Curve, $Meme, $Quote>,
     $f: |&mut MemezFun<$Curve, $Meme, $Quote>| -> &mut $State,
     $meme_coin: Coin<$Meme>,
+    $referrer: Option<address>,
     $allowed_versions: AllowedVersions,
     $ctx: &mut TxContext,
 ): Coin<$Quote> {
@@ -386,48 +257,16 @@ public(package) macro fun fr_dump<$Curve, $Meme, $Quote, $State>(
     let allowed_versions = $allowed_versions;
 
     allowed_versions.assert_pkg_version();
-    self.assert_uses_coin();
     self.assert_is_bonding();
 
     let state = $f(self);
 
-    let meme_coin = $meme_coin;
-    let ctx = $ctx;
-
     state
         .fixed_rate
         .dump(
-            meme_coin,
-            ctx,
-        )
-}
-
-public(package) macro fun fr_dump_token<$Curve, $Meme, $Quote, $State>(
-    $self: &mut MemezFun<$Curve, $Meme, $Quote>,
-    $f: |&mut MemezFun<$Curve, $Meme, $Quote>| -> &mut $State,
-    $meme_token: Token<$Meme>,
-    $allowed_versions: AllowedVersions,
-    $ctx: &mut TxContext,
-): Coin<$Quote> {
-    let self = $self;
-    let allowed_versions = $allowed_versions;
-
-    allowed_versions.assert_pkg_version();
-    self.assert_uses_token();
-    self.assert_is_bonding();
-
-    let state = $f(self);
-
-    let meme_token = $meme_token;
-    let ctx = $ctx;
-
-    let meme_coin = state.token_cap().to_coin(meme_token, ctx);
-
-    state
-        .fixed_rate
-        .dump(
-            meme_coin,
-            ctx,
+            $meme_coin,
+            $referrer,
+            $ctx,
         )
 }
 
@@ -458,21 +297,6 @@ public(package) macro fun fr_migrate<$Curve, $Meme, $Quote, $State>(
     state.migration_fee.take(&mut quote_coin, ctx);
 
     self.migrate(liquidity_provision, quote_coin.into_balance())
-}
-
-public(package) macro fun to_coin<$Curve, $Meme, $Quote, $State>(
-    $self: &mut MemezFun<$Curve, $Meme, $Quote>,
-    $f: |&mut MemezFun<$Curve, $Meme, $Quote>| -> &mut $State,
-    $meme_token: Token<$Meme>,
-    $ctx: &mut TxContext,
-): Coin<$Meme> {
-    let self = $self;
-    let meme_token = $meme_token;
-    let ctx = $ctx;
-
-    self.assert_migrated();
-
-    $f(self).token_cap().to_coin(meme_token, ctx)
 }
 
 public(package) macro fun distribute_stake_holders_allocation<$Curve, $Meme, $Quote, $State>(
@@ -577,18 +401,6 @@ public(package) fun addr<Curve, Meme, Quote>(self: &MemezFun<Curve, Meme, Quote>
     self.id.to_address()
 }
 
-public(package) fun meme_referrer_fee<Curve, Meme, Quote>(
-    self: &MemezFun<Curve, Meme, Quote>,
-): BPS {
-    self.extra_fields[MemeReferrerFeeKey()]
-}
-
-public(package) fun quote_referrer_fee<Curve, Meme, Quote>(
-    self: &MemezFun<Curve, Meme, Quote>,
-): BPS {
-    self.extra_fields[QuoteReferrerFeeKey()]
-}
-
 public(package) fun migration_witness<Curve, Meme, Quote>(
     self: &MemezFun<Curve, Meme, Quote>,
 ): TypeName {
@@ -632,14 +444,6 @@ public(package) fun assert_is_dev<Curve, Meme, Quote>(
     assert!(self.dev == ctx.sender(), memez_fun::memez_errors::invalid_dev!());
 }
 
-public(package) fun assert_uses_token<Curve, Meme, Quote>(self: &MemezFun<Curve, Meme, Quote>) {
-    assert!(self.is_token, memez_fun::memez_errors::token_not_supported!());
-}
-
-public(package) fun assert_uses_coin<Curve, Meme, Quote>(self: &MemezFun<Curve, Meme, Quote>) {
-    assert!(!self.is_token, memez_fun::memez_errors::token_supported!());
-}
-
 // === Public Package Migration Functions ===
 
 public(package) fun migrate<Curve, Meme, Quote>(
@@ -652,6 +456,7 @@ public(package) fun migrate<Curve, Meme, Quote>(
     MemezMigrator {
         witness: self.migration_witness,
         memez_fun: self.id.to_address(),
+        dev: self.dev,
         quote_balance,
         meme_balance,
     }
@@ -691,6 +496,7 @@ public fun new_migrator_for_testing<Meme, Quote, Witness>(
     MemezMigrator {
         witness: type_name::get<Witness>(),
         memez_fun,
+        dev: memez_fun,
         quote_balance,
         meme_balance,
     }

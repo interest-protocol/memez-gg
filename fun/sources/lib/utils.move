@@ -3,7 +3,7 @@
 
 module memez_fun::memez_utils;
 
-use interest_bps::bps;
+use interest_bps::bps::{Self, BPS};
 use ipx_coin_standard::ipx_coin_standard::{Self, MetadataCap};
 use sui::{balance::Balance, coin::{Coin, TreasuryCap}};
 
@@ -95,4 +95,26 @@ public(package) macro fun new_treasury<$Meme>(
     );
 
     (treasury_address, metadata_cap, meme_balance)
+}
+
+public(package) macro fun send_referrer_fee<$CoinType>(
+    $coin: &mut Coin<$CoinType>,
+    $referrer: Option<address>,
+    $fee: BPS,
+    $ctx: &mut TxContext,
+): u64 {
+    let coin = $coin;
+    let referrer = $referrer;
+    let fee = $fee;
+    let ctx = $ctx;
+
+    if (referrer.is_none()) return 0;
+
+    let payment_value = fee.calc_up(coin.value());
+
+    let payment = coin.split(payment_value, ctx);
+
+    transfer::public_transfer(payment, referrer.destroy_some());
+
+    payment_value
 }

@@ -18,6 +18,9 @@ const EZeroCoin: u64 = 2;
 const ESlippage: u64 = 3;
 
 #[test_only]
+const EOutdatedAuctionStateVersion: u64 = 4;
+
+#[test_only]
 const ENotBonding: u64 = 5;
 
 #[test_only]
@@ -39,6 +42,12 @@ const ETokenNotSupported: u64 = 10;
 const ETokenSupported: u64 = 11;
 
 #[test_only]
+const EOutdatedPumpStateVersion: u64 = 12;
+
+#[test_only]
+const EOutdatedStableStateVersion: u64 = 13;
+
+#[test_only]
 const EOutdatedPackageVersion: u64 = 14;
 
 #[test_only]
@@ -48,10 +57,16 @@ const EInvalidPercentages: u64 = 15;
 const EInvalidConfig: u64 = 16;
 
 #[test_only]
+const EModelKeyNotSupported: u64 = 17;
+
+#[test_only]
 const EInvalidCreationFeeConfig: u64 = 18;
 
 #[test_only]
 const EZeroTotalSupply: u64 = 19;
+
+#[test_only]
+const EInvalidUpgrade: u64 = 20;
 
 #[test_only]
 const ERemoveCurrentVersionNotAllowed: u64 = 21;

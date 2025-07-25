@@ -34,10 +34,9 @@ use memez_fun::{
     memez_fixed_rate::{Self, FixedRate},
     memez_fun::{new as new_memez_fun_pool, MemezFun, MemezMigrator},
     memez_metadata::MemezMetadata,
-    memez_token_cap::{Self, MemezTokenCap},
     memez_versioned::{Self, Versioned}
 };
-use sui::{balance::Balance, clock::Clock, coin::{Coin, TreasuryCap}, sui::SUI, token::Token};
+use sui::{balance::Balance, clock::Clock, coin::{Coin, TreasuryCap}, sui::SUI};
 
 // === Constants ===
 
@@ -58,7 +57,6 @@ public struct AuctionState<phantom Meme, phantom Quote> has key, store {
     meme_reserve: Balance<Meme>,
     liquidity_provision: Balance<Meme>,
     fixed_rate: FixedRate<Meme, Quote>,
-    meme_token_cap: Option<MemezTokenCap<Meme>>,
 }
 
 // === Public Mutative Functions ===
@@ -69,7 +67,6 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
     meme_treasury_cap: TreasuryCap<Meme>,
     mut creation_fee: Coin<SUI>,
     auction_config: AuctionConfig,
-    is_token: bool,
     metadata: MemezMetadata,
     stake_holders: vector<address>,
     allowed_versions: AllowedVersions,
@@ -87,9 +84,6 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
     fees.creation().take(&mut creation_fee, ctx);
 
     creation_fee.destroy_or_return!(ctx);
-
-    let meme_token_cap = if (is_token) option::some(memez_token_cap::new(&meme_treasury_cap, ctx))
-    else option::none();
 
     let (
         ipx_meme_coin_treasury,
@@ -113,6 +107,8 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
         meme_balance,
         fees.meme_swap(stake_holders),
         fees.quote_swap(stake_holders),
+        config.meme_referrer_fee<ConfigKey>(),
+        config.quote_referrer_fee<ConfigKey>(),
     );
 
     let auction_state = AuctionState<Meme, Quote> {
@@ -125,7 +121,6 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
         liquidity_provision,
         allocation,
         fixed_rate,
-        meme_token_cap,
         migration_fee: fees.migration(stake_holders),
     };
 
@@ -133,7 +128,6 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
 
     let mut memez_fun = new_memez_fun_pool<Auction, Meme, Quote, ConfigKey, MigrationWitness>(
         memez_versioned::create(AUCTION_STATE_VERSION_V1, auction_state, ctx),
-        is_token,
         inner_state,
         metadata,
         ipx_meme_coin_treasury,
@@ -150,6 +144,7 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
     let state = memez_fun.state_mut<Meme, Quote>();
 
     state.fixed_rate.set_memez_fun(memez_fun_address);
+    state.fixed_rate.set_inner_state(inner_state);
 
     (memez_fun, metadata_cap)
 }
@@ -158,6 +153,7 @@ public fun pump<Meme, Quote>(
     self: &mut MemezFun<Auction, Meme, Quote>,
     clock: &Clock,
     quote_coin: Coin<Quote>,
+    referrer: Option<address>,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ): (Coin<Quote>, Coin<Meme>) {
@@ -165,27 +161,14 @@ public fun pump<Meme, Quote>(
         let state = self.state_mut();
         state.drip(clock);
         state
-    }, quote_coin, allowed_versions, ctx)
-}
-
-public fun pump_token<Meme, Quote>(
-    self: &mut MemezFun<Auction, Meme, Quote>,
-    clock: &Clock,
-    quote_coin: Coin<Quote>,
-    allowed_versions: AllowedVersions,
-    ctx: &mut TxContext,
-): (Coin<Quote>, Token<Meme>) {
-    self.fr_pump_token!(|self| {
-        let state = self.state_mut();
-        state.drip(clock);
-        state
-    }, quote_coin, allowed_versions, ctx)
+    }, quote_coin, referrer, allowed_versions, ctx)
 }
 
 public fun dump<Meme, Quote>(
     self: &mut MemezFun<Auction, Meme, Quote>,
     clock: &Clock,
     meme_coin: Coin<Meme>,
+    referrer: Option<address>,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ): Coin<Quote> {
@@ -193,21 +176,7 @@ public fun dump<Meme, Quote>(
         let state = self.state_mut();
         state.drip(clock);
         state
-    }, meme_coin, allowed_versions, ctx)
-}
-
-public fun dump_token<Meme, Quote>(
-    self: &mut MemezFun<Auction, Meme, Quote>,
-    clock: &Clock,
-    meme_token: Token<Meme>,
-    allowed_versions: AllowedVersions,
-    ctx: &mut TxContext,
-): Coin<Quote> {
-    self.fr_dump_token!(|self| {
-        let state = self.state_mut();
-        state.drip(clock);
-        state
-    }, meme_token, allowed_versions, ctx)
+    }, meme_coin, referrer, allowed_versions, ctx)
 }
 
 public fun migrate<Meme, Quote>(
@@ -232,14 +201,6 @@ public fun distribute_stake_holders_allocation<Meme, Quote>(
         allowed_versions,
         ctx,
     )
-}
-
-public fun to_coin<Meme, Quote>(
-    self: &mut MemezFun<Auction, Meme, Quote>,
-    meme_token: Token<Meme>,
-    ctx: &mut TxContext,
-): Coin<Meme> {
-    self.to_coin!(|self| self.state_mut<Meme, Quote>(), meme_token, ctx)
 }
 
 // === Public View Functions ===
@@ -310,10 +271,6 @@ fun drip<Meme, Quote>(state: &mut AuctionState<Meme, Quote>, clock: &Clock) {
 
     state.accrued_meme_balance = state.accrued_meme_balance + amount;
     state.fixed_rate.increase_meme_available(state.meme_reserve.split(amount));
-}
-
-fun token_cap<Meme, Quote>(state: &AuctionState<Meme, Quote>): &MemezTokenCap<Meme> {
-    state.meme_token_cap.borrow()
 }
 
 fun state<Meme, Quote>(memez_fun: &mut MemezFun<Auction, Meme, Quote>): &AuctionState<Meme, Quote> {

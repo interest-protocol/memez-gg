@@ -11,6 +11,7 @@ use std::type_name::{Self, TypeName};
 public struct New has copy, drop {
     memez_fun: address,
     inner_state: address,
+    dev: address,
     meme: TypeName,
     quote: TypeName,
     curve: TypeName,
@@ -25,6 +26,7 @@ public struct New has copy, drop {
 
 public struct Pump has copy, drop {
     memez_fun: address,
+    inner_state: address,
     meme: TypeName,
     quote: TypeName,
     quote_amount_in: u64,
@@ -34,10 +36,14 @@ public struct Pump has copy, drop {
     quote_balance: u64,
     meme_balance: u64,
     quote_virtual_liquidity: u64,
+    referrer: Option<address>,
+    meme_referrer_fee: u64,
+    quote_referrer_fee: u64,
 }
 
 public struct Dump has copy, drop {
     memez_fun: address,
+    inner_state: address,
     meme: TypeName,
     quote: TypeName,
     quote_amount_out: u64,
@@ -48,6 +54,9 @@ public struct Dump has copy, drop {
     quote_balance: u64,
     meme_balance: u64,
     quote_virtual_liquidity: u64,
+    referrer: Option<address>,
+    meme_referrer_fee: u64,
+    quote_referrer_fee: u64,
 }
 
 public struct CanMigrate has copy, drop {
@@ -69,6 +78,7 @@ public struct Migrated has copy, drop {
 public(package) fun new<Curve, Meme, Quote>(
     memez_fun: address,
     inner_state: address,
+    dev: address,
     config_key: TypeName,
     migration_witness: TypeName,
     ipx_meme_coin_treasury: address,
@@ -80,6 +90,7 @@ public(package) fun new<Curve, Meme, Quote>(
     emit_event(New {
         memez_fun,
         inner_state,
+        dev,
         meme: type_name::get<Meme>(),
         quote: type_name::get<Quote>(),
         curve: type_name::get<Curve>(),
@@ -95,6 +106,7 @@ public(package) fun new<Curve, Meme, Quote>(
 
 public(package) fun pump<Meme, Quote>(
     memez_fun: address,
+    inner_state: address,
     quote_amount_in: u64,
     meme_amount_out: u64,
     meme_swap_fee: u64,
@@ -102,9 +114,13 @@ public(package) fun pump<Meme, Quote>(
     quote_balance: u64,
     meme_balance: u64,
     quote_virtual_liquidity: u64,
+    referrer: Option<address>,
+    meme_referrer_fee: u64,
+    quote_referrer_fee: u64,
 ) {
     emit_event(Pump {
         memez_fun,
+        inner_state,
         meme: type_name::get<Meme>(),
         quote: type_name::get<Quote>(),
         quote_amount_in,
@@ -114,11 +130,15 @@ public(package) fun pump<Meme, Quote>(
         quote_balance,
         meme_balance,
         quote_virtual_liquidity,
+        referrer,
+        quote_referrer_fee,
+        meme_referrer_fee,
     });
 }
 
 public(package) fun dump<Meme, Quote>(
     memez_fun: address,
+    inner_state: address,
     meme_amount_in: u64,
     quote_amount_out: u64,
     meme_swap_fee: u64,
@@ -127,9 +147,13 @@ public(package) fun dump<Meme, Quote>(
     quote_balance: u64,
     meme_balance: u64,
     quote_virtual_liquidity: u64,
+    referrer: Option<address>,
+    meme_referrer_fee: u64,
+    quote_referrer_fee: u64,
 ) {
     emit_event(Dump {
         memez_fun,
+        inner_state,
         meme: type_name::get<Meme>(),
         quote: type_name::get<Quote>(),
         quote_amount_out,
@@ -140,6 +164,9 @@ public(package) fun dump<Meme, Quote>(
         quote_balance,
         meme_balance,
         quote_virtual_liquidity,
+        referrer,
+        quote_referrer_fee,
+        meme_referrer_fee,
     });
 }
 

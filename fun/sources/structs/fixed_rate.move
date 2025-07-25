@@ -3,7 +3,7 @@
 
 module memez_fun::memez_fixed_rate;
 
-use interest_bps::bps;
+use interest_bps::bps::{Self, BPS};
 use interest_math::u64;
 use memez_fun::{memez_events, memez_fees::Fee};
 use sui::{balance::{Self, Balance}, coin::{Self, Coin}};
@@ -12,12 +12,15 @@ use sui::{balance::{Self, Balance}, coin::{Self, Coin}};
 
 public struct FixedRate<phantom Meme, phantom Quote> has store {
     memez_fun: address,
+    inner_state: address,
     quote_raise_amount: u64,
     meme_sale_amount: u64,
     meme_swap_fee: Fee,
     quote_swap_fee: Fee,
     meme_balance: Balance<Meme>,
     quote_balance: Balance<Quote>,
+    meme_referrer_fee: BPS,
+    quote_referrer_fee: BPS,
 }
 
 // === Public Package Functions ===
@@ -27,17 +30,22 @@ public(package) fun new<Meme, Quote>(
     meme_balance: Balance<Meme>,
     meme_swap_fee: Fee,
     quote_swap_fee: Fee,
+    meme_referrer_fee: BPS,
+    quote_referrer_fee: BPS,
 ): FixedRate<Meme, Quote> {
     assert!(quote_raise_amount != 0);
     let meme_sale_amount = meme_balance.value();
     FixedRate {
         memez_fun: @0x0,
+        inner_state: @0x0,
         quote_raise_amount,
         meme_sale_amount,
         meme_balance,
         quote_balance: balance::zero(),
         meme_swap_fee,
         quote_swap_fee,
+        meme_referrer_fee,
+        quote_referrer_fee,
     }
 }
 
@@ -48,9 +56,17 @@ public(package) fun set_memez_fun<Meme, Quote>(
     self.memez_fun = memez_fun;
 }
 
+public(package) fun set_inner_state<Meme, Quote>(
+    self: &mut FixedRate<Meme, Quote>,
+    inner_state: address,
+) {
+    self.inner_state = inner_state;
+}
+
 public(package) fun pump<Meme, Quote>(
     self: &mut FixedRate<Meme, Quote>,
     mut quote_coin: Coin<Quote>,
+    referrer: Option<address>,
     ctx: &mut TxContext,
 ): (bool, Coin<Quote>, Coin<Meme>) {
     let quote_coin_value = quote_coin.assert_has_value!();
@@ -66,7 +82,11 @@ public(package) fun pump<Meme, Quote>(
         quote_coin.split(quote_coin_value - quote_amount_left_before_fee, ctx)
     } else coin::zero(ctx);
 
-    let quote_swap_fee = self.quote_swap_fee.take(&mut quote_coin, ctx);
+    let quote_referrer_fee = quote_coin.send_referrer_fee!(referrer, self.quote_referrer_fee, ctx);
+
+    let quote_swap_fee = self
+        .quote_swap_fee
+        .take_with_discount(&mut quote_coin, self.quote_referrer_fee, ctx);
 
     let quote_coin_value = quote_coin.value();
 
@@ -81,10 +101,13 @@ public(package) fun pump<Meme, Quote>(
 
     let total_quote_balance = self.quote_balance.join(quote_coin.into_balance());
 
-    let meme_swap_fee = self.meme_swap_fee.take(&mut meme_coin, ctx);
+    let meme_swap_fee = self
+        .meme_swap_fee
+        .take_with_discount(&mut meme_coin, self.meme_referrer_fee, ctx);
 
     memez_events::pump<Meme, Quote>(
         self.memez_fun,
+        self.inner_state,
         quote_coin_value,
         meme_coin_value_out - meme_swap_fee,
         meme_swap_fee,
@@ -92,6 +115,9 @@ public(package) fun pump<Meme, Quote>(
         total_quote_balance,
         self.meme_balance.value(),
         0,
+        referrer,
+        meme_coin.send_referrer_fee!(referrer, self.meme_referrer_fee, ctx),
+        quote_referrer_fee,
     );
 
     (total_quote_balance >= self.quote_raise_amount, excess_quote_coin, meme_coin)
@@ -100,9 +126,14 @@ public(package) fun pump<Meme, Quote>(
 public(package) fun dump<Meme, Quote>(
     self: &mut FixedRate<Meme, Quote>,
     mut meme_coin: Coin<Meme>,
+    referrer: Option<address>,
     ctx: &mut TxContext,
 ): Coin<Quote> {
-    let meme_swap_fee = self.meme_swap_fee.take(&mut meme_coin, ctx);
+    let meme_referrer_fee = meme_coin.send_referrer_fee!(referrer, self.meme_referrer_fee, ctx);
+
+    let meme_swap_fee = self
+        .meme_swap_fee
+        .take_with_discount(&mut meme_coin, self.meme_referrer_fee, ctx);
 
     let meme_coin_value = meme_coin.assert_has_value!();
 
@@ -117,10 +148,13 @@ public(package) fun dump<Meme, Quote>(
 
     let mut quote_coin = self.quote_balance.split(quote_coin_value_out).into_coin(ctx);
 
-    let quote_swap_fee = self.quote_swap_fee.take(&mut quote_coin, ctx);
+    let quote_swap_fee = self
+        .quote_swap_fee
+        .take_with_discount(&mut quote_coin, self.quote_referrer_fee, ctx);
 
     memez_events::dump<Meme, Quote>(
         self.memez_fun,
+        self.inner_state,
         meme_coin_value + meme_swap_fee,
         quote_coin_value_out - quote_swap_fee,
         meme_swap_fee,
@@ -129,6 +163,9 @@ public(package) fun dump<Meme, Quote>(
         self.quote_balance.value(),
         self.meme_balance.value(),
         0,
+        referrer,
+        meme_referrer_fee,
+        quote_coin.send_referrer_fee!(referrer, self.quote_referrer_fee, ctx),
     );
 
     quote_coin
@@ -243,6 +280,7 @@ fun amount_before_fee(amount_in: u64, fee: u64): u64 {
 
 // === Aliases ===
 
+use fun memez_fun::memez_utils::send_referrer_fee as Coin.send_referrer_fee;
 use fun memez_fun::memez_utils::assert_coin_has_value as Coin.assert_has_value;
 
 // === Test Only Functions ===

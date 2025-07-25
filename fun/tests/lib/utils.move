@@ -1,6 +1,7 @@
 #[test_only]
 module memez_fun::memez_utils_tests;
 
+use interest_bps::bps;
 use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
 use memez_fun::{memez_errors, memez_utils};
 use std::unit_test::assert_eq;
@@ -130,6 +131,43 @@ fun set_up_treasury() {
     destroy(meme_treasury);
 
     destroy(metadata_cap);
+
+    scenario.end();
+}
+
+#[test]
+fun send_referrer_fee() {
+    let mut scenario = ts::begin(DEAD_ADDRESS);
+
+    let mut coin = mint_for_testing<Meme>(1000, scenario.ctx());
+
+    let referrer_address = @0x2;
+
+    let fee = bps::new(1_000);
+
+    let payment_value = memez_utils::send_referrer_fee!(
+        &mut coin,
+        option::none(),
+        fee,
+        scenario.ctx(),
+    );
+
+    assert_eq!(payment_value, 0);
+
+    let payment_value = memez_utils::send_referrer_fee!(
+        &mut coin,
+        option::some(referrer_address),
+        fee,
+        scenario.ctx(),
+    );
+
+    scenario.next_epoch(referrer_address);
+
+    let referrer_coin = scenario.take_from_sender<Coin<Meme>>();
+
+    assert_eq!(payment_value, 100);
+    assert_eq!(referrer_coin.burn_for_testing(), 100);
+    assert_eq!(coin.burn_for_testing(), 900);
 
     scenario.end();
 }

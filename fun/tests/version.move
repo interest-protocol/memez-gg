@@ -17,7 +17,7 @@ public struct World {
 fun test_init() {
     let world = start();
 
-    assert_eq(world.av.allowed_versions(), vector[2]);
+    assert_eq(world.av.allowed_versions(), vector[1]);
 
     end(world);
 }
@@ -28,17 +28,17 @@ fun test_admin_functions() {
 
     let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
-    assert_eq(world.av.allowed_versions(), vector[2]);
+    assert_eq(world.av.allowed_versions(), vector[1]);
 
-    world.av.add(&witness, 1);
+    world.av.add(&witness, 2);
 
     world.av.add(&witness, 3);
 
-    assert_eq(world.av.allowed_versions(), vector[2, 1, 3]);
+    assert_eq(world.av.allowed_versions(), vector[1, 2, 3]);
 
-    world.av.remove(&witness, 1);
+    world.av.remove(&witness, 2);
 
-    assert_eq(world.av.allowed_versions(), vector[2, 3]);
+    assert_eq(world.av.allowed_versions(), vector[1, 3]);
 
     end(world);
 }
@@ -51,9 +51,9 @@ fun test_assert_pkg_version() {
 
     let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
-    world.av.add(&witness, 1);
+    world.av.add(&witness, 2);
 
-    memez_allowed_versions::get_allowed_versions_for_testing(2).assert_pkg_version();
+    memez_allowed_versions::get_allowed_versions_for_testing(1).assert_pkg_version();
 
     end(world);
 }
@@ -72,13 +72,13 @@ fun test_outdated_package_version() {
 
     current_version.assert_pkg_version();
 
-    world.av.remove_for_testing(2);
+    world.av.remove_for_testing(1);
 
     let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
-    world.av.add(&witness, 1);
+    world.av.add(&witness, 2);
 
-    assert_eq(world.av.allowed_versions(), vector[1]);
+    assert_eq(world.av.allowed_versions(), vector[2]);
 
     world.av.get_allowed_versions().assert_pkg_version();
 
@@ -97,7 +97,7 @@ fun test_remove_current_version_not_allowed() {
 
     let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
-    world.av.remove(&witness, 2);
+    world.av.remove(&witness, 1);
 
     end(world);
 }

@@ -119,7 +119,7 @@ public(package) fun fees<ConfigWitness>(self: &MemezConfig): MemezFees {
 public(package) fun meme_referrer_fee<ConfigWitness>(self: &MemezConfig): BPS {
     let key = type_name::get<MemeReferrerFeeKey<ConfigWitness>>();
 
-    assert!(df::exists_(&self.id, key), memez_errors::model_key_not_supported!());
+    if (!df::exists_(&self.id, key)) return bps::new(0);
 
     *df::borrow(&self.id, key)
 }
@@ -127,7 +127,7 @@ public(package) fun meme_referrer_fee<ConfigWitness>(self: &MemezConfig): BPS {
 public(package) fun quote_referrer_fee<ConfigWitness>(self: &MemezConfig): BPS {
     let key = type_name::get<QuoteReferrerFeeKey<ConfigWitness>>();
 
-    assert!(df::exists_(&self.id, key), memez_errors::model_key_not_supported!());
+    if (!df::exists_(&self.id, key)) return bps::new(0);
 
     *df::borrow(&self.id, key)
 }

@@ -124,6 +124,8 @@ fun test_set_meme_referrer_fee() {
         false,
     );
 
+    assert_eq!(world.config.meme_referrer_fee<DefaultKey>().value(), 0);
+
     world.config.set_meme_referrer_fee<DefaultKey>(&witness, 1_000, world.scenario.ctx());
 
     assert_eq!(
@@ -155,6 +157,8 @@ fun test_set_quote_referrer_fee() {
         memez_config::exists_for_testing<QuoteReferrerFeeKey<DefaultKey>>(&world.config),
         false,
     );
+
+    assert_eq!(world.config.quote_referrer_fee<DefaultKey>().value(), 0);
 
     world.config.set_quote_referrer_fee<DefaultKey>(&witness, 1_000, world.scenario.ctx());
 

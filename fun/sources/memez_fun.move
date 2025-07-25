@@ -22,6 +22,7 @@ G:::::G        G::::GG:::::G        G::::G
 #[allow(unused_function)]
 module memez_fun::memez_fun;
 
+use interest_bps::bps::BPS;
 use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
 use memez_fun::{
     memez_allowed_versions::AllowedVersions,
@@ -44,6 +45,10 @@ use sui::{
 const CONFIG_METADATA_KEY: vector<u8> = b"config_key";
 
 // === Structs ===
+
+public struct MemeReferrerFeeKey() has copy, drop, store;
+
+public struct QuoteReferrerFeeKey() has copy, drop, store;
 
 public enum Progress has copy, drop, store {
     Bonding,
@@ -146,6 +151,15 @@ public(package) fun new<Curve, Meme, Quote, ConfigKey, MigrationWitness>(
         state,
         extra_fields: bag::new(ctx),
     }
+}
+
+public(package) fun add_referrer_fees<Curve, Meme, Quote>(
+    self: &mut MemezFun<Curve, Meme, Quote>,
+    meme_referrer_fee: BPS,
+    quote_referrer_fee: BPS,
+): () {
+    self.extra_fields.add(MemeReferrerFeeKey(), meme_referrer_fee);
+    self.extra_fields.add(QuoteReferrerFeeKey(), quote_referrer_fee);
 }
 
 public(package) macro fun cp_pump<$Curve, $Meme, $Quote, $State>(
@@ -561,6 +575,18 @@ public(package) macro fun fr_dump_amount<$Curve, $Meme, $Quote, $State>(
 
 public(package) fun addr<Curve, Meme, Quote>(self: &MemezFun<Curve, Meme, Quote>): address {
     self.id.to_address()
+}
+
+public(package) fun meme_referrer_fee<Curve, Meme, Quote>(
+    self: &MemezFun<Curve, Meme, Quote>,
+): BPS {
+    self.extra_fields[MemeReferrerFeeKey()]
+}
+
+public(package) fun quote_referrer_fee<Curve, Meme, Quote>(
+    self: &MemezFun<Curve, Meme, Quote>,
+): BPS {
+    self.extra_fields[QuoteReferrerFeeKey()]
 }
 
 public(package) fun migration_witness<Curve, Meme, Quote>(

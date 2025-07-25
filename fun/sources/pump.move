@@ -137,6 +137,11 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
         ctx,
     );
 
+    memez_fun.add_referrer_fees(
+        config.meme_referrer_fee<ConfigKey>(),
+        config.quote_referrer_fee<ConfigKey>(),
+    );
+
     let memez_fun_address = memez_fun.address();
 
     let state = memez_fun.state_mut<Meme, Quote>();

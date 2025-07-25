@@ -311,6 +311,30 @@ public fun quote_dump<Meme, Quote>(
     self.cp_dump_amount!(|self| (self.state<Meme, Quote>()), amount_in)
 }
 
+public fun meme_balance<Meme, Quote>(self: &mut MemezFun<Pump, Meme, Quote>): u64 {
+    self.state_mut<Meme, Quote>().constant_product.meme_balance().value()
+}
+
+public fun quote_balance<Meme, Quote>(self: &mut MemezFun<Pump, Meme, Quote>): u64 {
+    self.state_mut<Meme, Quote>().constant_product.quote_balance().value()
+}
+
+public fun virtual_liquidity<Meme, Quote>(self: &mut MemezFun<Pump, Meme, Quote>): u64 {
+    self.state_mut<Meme, Quote>().constant_product.virtual_liquidity()
+}
+
+public fun target_quote_liquidity<Meme, Quote>(self: &mut MemezFun<Pump, Meme, Quote>): u64 {
+    self.state_mut<Meme, Quote>().constant_product.target_quote_liquidity()
+}
+
+public fun meme_swap_fee<Meme, Quote>(self: &mut MemezFun<Pump, Meme, Quote>): u64 {
+    self.state_mut<Meme, Quote>().constant_product.meme_swap_fee().value()
+}
+
+public fun quote_swap_fee<Meme, Quote>(self: &mut MemezFun<Pump, Meme, Quote>): u64 {
+    self.state_mut<Meme, Quote>().constant_product.quote_swap_fee().value()
+}
+
 // === Private Functions ===
 
 fun token_cap<Meme, Quote>(state: &PumpState<Meme, Quote>): &MemezTokenCap<Meme> {

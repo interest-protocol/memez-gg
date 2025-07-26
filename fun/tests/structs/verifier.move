@@ -12,6 +12,9 @@ const PUBLIC_KEY: vector<u8> = x"ad84194c595cc2942e14be5269aa4c1de89a97434a88173
 const SIGNATURE: vector<u8> =
     x"7da869e51d9654979576829d7becdb87128cc039462f63986ba840c15dbee44570f9f9695e214a8382b384b222eb046539f48edc56f758c9b2cb2a6710f3d607";
 
+const SIGNATURE_2: vector<u8> =
+    x"260471dc1cc91aa05f8c36e081557439d4b8649b344b102d09cfda7c27b5905ad9469488cc2735b79cf7fe2d14d454c12537e4d20f62e9813c2da4293c5a3c05";
+
 #[test]
 fun test_assert_can_buy() {
     let mut scenario = ts::begin(SENDER);
@@ -39,6 +42,17 @@ fun test_assert_can_buy() {
     );
 
     assert_eq!(nonces.next_nonce(SENDER), 1);
+
+    // === Uses the next nonce correctly
+    nonces.assert_can_buy(
+        PUBLIC_KEY,
+        option::some(SIGNATURE_2),
+        @0x2,
+        123,
+        scenario.ctx(),
+    );
+
+    assert_eq!(nonces.next_nonce(SENDER), 2);
 
     destroy(nonces);
     scenario.end();

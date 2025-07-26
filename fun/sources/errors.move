@@ -1,6 +1,7 @@
 // Copyright (c) DEFI, LDA
 // SPDX-License-Identifier: Apache-2.0
 
+#[allow(unused_const)]
 module memez_fun::memez_errors;
 
 // === Constants ===

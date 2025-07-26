@@ -95,7 +95,7 @@ public fun metadata<Curve, Meme, Quote>(
 }
 
 public fun next_nonce<Curve, Meme, Quote>(self: &MemezFun<Curve, Meme, Quote>, user: address): u64 {
-    memez_verifier::next_nonce(&self.nonces, user)
+    self.nonces.next_nonce(user)
 }
 
 // === Public Package Functions ===

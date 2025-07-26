@@ -192,7 +192,8 @@ public(package) fun pump_amount<Meme, Quote>(
 
     let quote_coin_value = quote_amount - excess_quote_amount;
 
-    let quote_swap_fee = self.quote_swap_fee.calculate(quote_coin_value);
+    let quote_swap_fee =
+        self.quote_swap_fee.calculate_with_discount(self.quote_referrer_fee, quote_coin_value) + self.quote_referrer_fee.calc_up(quote_coin_value);
 
     let meme_balance_value = self.meme_balance.value() + extra_meme_sale_amount;
 
@@ -204,7 +205,8 @@ public(package) fun pump_amount<Meme, Quote>(
         ),
     );
 
-    let meme_swap_fee = self.meme_swap_fee.calculate(meme_coin_value_out);
+    let meme_swap_fee =
+        self.meme_swap_fee.calculate_with_discount(self.meme_referrer_fee, meme_coin_value_out) + self.meme_referrer_fee.calc_up(meme_coin_value_out);
 
     vector[excess_quote_amount, meme_coin_value_out - meme_swap_fee, quote_swap_fee, meme_swap_fee]
 }
@@ -216,7 +218,8 @@ public(package) fun dump_amount<Meme, Quote>(
 ): vector<u64> {
     if (meme_amount == 0) return vector[0, 0, 0];
 
-    let meme_swap_fee = self.meme_swap_fee.calculate(meme_amount);
+    let meme_swap_fee =
+        self.meme_swap_fee.calculate_with_discount(self.meme_referrer_fee, meme_amount) + self.meme_referrer_fee.calc_up(meme_amount);
 
     let quote_coin_value_out = self
         .quote_balance
@@ -229,7 +232,8 @@ public(package) fun dump_amount<Meme, Quote>(
             ),
         );
 
-    let quote_swap_fee = self.quote_swap_fee.calculate(quote_coin_value_out);
+    let quote_swap_fee =
+        self.quote_swap_fee.calculate_with_discount(self.quote_referrer_fee, quote_coin_value_out) + self.quote_referrer_fee.calc_up(quote_coin_value_out);
 
     vector[quote_coin_value_out - quote_swap_fee, meme_swap_fee, quote_swap_fee]
 }
@@ -298,4 +302,14 @@ public fun meme_swap_fee<Meme, Quote>(self: &FixedRate<Meme, Quote>): Fee {
 #[test_only]
 public fun quote_swap_fee<Meme, Quote>(self: &FixedRate<Meme, Quote>): Fee {
     self.quote_swap_fee
+}
+
+#[test_only]
+public fun meme_referrer_fee<Meme, Quote>(self: &FixedRate<Meme, Quote>): BPS {
+    self.meme_referrer_fee
+}
+
+#[test_only]
+public fun quote_referrer_fee<Meme, Quote>(self: &FixedRate<Meme, Quote>): BPS {
+    self.quote_referrer_fee
 }

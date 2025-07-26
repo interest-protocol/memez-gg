@@ -128,7 +128,7 @@ public fun migrate<Meme, CoinTypeFee>(
 
     let reward = sui_balance.split(config.reward_value).into_coin(ctx);
 
-    let meme_balance_value = meme_balance.value();
+    let sui_balance_value = sui_balance.value();
 
     let (
         pool_id,
@@ -164,8 +164,8 @@ public fun migrate<Meme, CoinTypeFee>(
         MAX_TICK,
         meme_balance,
         sui_balance,
-        meme_balance_value,
-        true,
+        sui_balance_value,
+        false,
         ctx,
     );
 

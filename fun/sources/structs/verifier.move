@@ -10,7 +10,6 @@ public struct Nonces has store {
 }
 
 public struct Message has copy, drop, store {
-    public_key: vector<u8>,
     pool: address,
     amount: u64,
     nonce: u64,
@@ -46,7 +45,6 @@ public(package) fun assert_can_buy(
     let current_nonce = &mut nonces.inner[sender];
 
     let message = Message {
-        public_key,
         pool,
         amount,
         nonce: *current_nonce,

@@ -197,7 +197,8 @@ public(package) fun pump_amount<Meme, Quote>(
 ): vector<u64> {
     if (amount_in == 0) return vector[0, 0, 0];
 
-    let quote_swap_fee = self.quote_swap_fee.calculate(amount_in);
+    let quote_swap_fee =
+        self.quote_swap_fee.calculate_with_discount(self.quote_referrer_fee, amount_in) + self.quote_referrer_fee.calc_up(amount_in);
 
     let amount_out = get_amount_out!(
         amount_in - quote_swap_fee,
@@ -205,7 +206,8 @@ public(package) fun pump_amount<Meme, Quote>(
         self.meme_balance.value(),
     );
 
-    let meme_swap_fee = self.meme_swap_fee.calculate(amount_out);
+    let meme_swap_fee =
+        self.meme_swap_fee.calculate_with_discount(self.meme_referrer_fee, amount_out) + self.meme_referrer_fee.calc_up(amount_out);
 
     vector[amount_out - meme_swap_fee, quote_swap_fee, meme_swap_fee]
 }
@@ -220,7 +222,8 @@ public(package) fun dump_amount<Meme, Quote>(
 
     let quote_balance_value = self.quote_balance.value();
 
-    let meme_swap_fee = self.meme_swap_fee.calculate(amount_in);
+    let meme_swap_fee =
+        self.meme_swap_fee.calculate_with_discount(self.meme_referrer_fee, amount_in) + self.meme_referrer_fee.calc_up(amount_in);
 
     let amount_in_minus_swap_fee = amount_in - meme_swap_fee;
 
@@ -236,7 +239,8 @@ public(package) fun dump_amount<Meme, Quote>(
 
     let safe_value_out = quote_value_out.min(quote_balance_value);
 
-    let quote_swap_fee = self.quote_swap_fee.calculate(safe_value_out);
+    let quote_swap_fee =
+        self.quote_swap_fee.calculate_with_discount(self.quote_referrer_fee, safe_value_out) + self.quote_referrer_fee.calc_up(safe_value_out);
 
     vector[safe_value_out - quote_swap_fee, meme_swap_fee, meme_burn_fee_value, quote_swap_fee]
 }

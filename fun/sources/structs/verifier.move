@@ -1,6 +1,6 @@
 // Copyright (c) DEFI, LDA
 // SPDX-License-Identifier: Apache-2.0
-#[allow(unused_field)]
+
 module memez_fun::memez_verifier;
 
 use sui::{bcs, ed25519, table::{Self, Table}};
@@ -41,9 +41,7 @@ public(package) fun assert_can_buy(
 
     let sender = ctx.sender();
 
-    if (!nonces.inner.contains(sender)) {
-        nonces.inner.add(sender, 0);
-    };
+    if (!nonces.inner.contains(sender)) nonces.inner.add(sender, 0);
 
     let current_nonce = &mut nonces.inner[sender];
 

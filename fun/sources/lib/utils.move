@@ -112,6 +112,8 @@ public(package) macro fun send_referrer_fee<$CoinType>(
 
     let payment_value = fee.calc_up(coin.value());
 
+    if (payment_value == 0) return 0;
+
     let payment = coin.split(payment_value, ctx);
 
     transfer::public_transfer(payment, referrer.destroy_some());

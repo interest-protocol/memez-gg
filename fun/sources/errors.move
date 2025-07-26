@@ -87,6 +87,9 @@ const EQuoteCoinNotSupported: u64 = 25;
 #[test_only]
 const EMigratorWitnessNotSupported: u64 = 26;
 
+#[test_only]
+const EInvalidPumpSignature: u64 = 27;
+
 // === Public Package Functions ===
 
 public(package) macro fun insufficient_value(): u64 {

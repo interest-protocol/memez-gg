@@ -11,7 +11,7 @@ BluefinSpot = { git = "https://github.com/fireflyprotocol/bluefin-spot-contract-
 
 [addresses]
 xpump_migrator = "0x0"
-treasury = "0x5b2aec3521419fe055b6753b15cbad845ec1dca852b75ad0b13b569f2329f82d"
+treasury = "0x881d835c410f33a1decd8067ce04f6c2ec63eaca196235386b44d315c2152797"
 
 [r.mvr]
 network = "mainnet"

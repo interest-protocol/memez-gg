@@ -74,6 +74,7 @@ public struct NewPool has copy, drop {
     meme_amount: u64,
     sui_amount: u64,
     position: address,
+    dev: address,
 }
 
 public struct SetTreasury(address, address) has copy, drop;
@@ -175,6 +176,7 @@ public fun migrate<Meme, CoinTypeFee>(
         meme_amount,
         sui_amount,
         position: object::id_address(&position),
+        dev,
     });
 
     config.save_position<Meme>(PositionData {

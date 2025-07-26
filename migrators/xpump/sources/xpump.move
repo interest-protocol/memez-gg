@@ -60,6 +60,7 @@ public struct XPumpConfig has key {
 public struct PositionKey(TypeName) has copy, drop, store;
 
 public struct PositionData has store {
+    pool: address,
     dev: address,
     position: Position,
 }
@@ -81,7 +82,12 @@ public struct SetInitializePrice(u128, u128) has copy, drop;
 
 public struct SetRewardValue(u64, u64) has copy, drop;
 
-public struct CollectFee(address, u64, u64) has copy, drop;
+public struct CollectFee has copy, drop {
+    pool: address,
+    dev: address,
+    meme_amount: u64,
+    sui_amount: u64,
+}
 
 // === Initializer ===
 
@@ -172,6 +178,7 @@ public fun migrate<Meme, CoinTypeFee>(
     });
 
     config.save_position<Meme>(PositionData {
+        pool: pool_id.to_address(),
         dev,
         position,
     });
@@ -202,7 +209,12 @@ public fun collect_fee<Meme>(
         &mut position_data.position,
     );
 
-    emit(CollectFee(sender, meme_amount, sui_amount));
+    emit(CollectFee {
+        pool: position_data.pool,
+        dev: sender,
+        meme_amount,
+        sui_amount,
+    });
 
     (meme_balance.into_coin(ctx), sui_balance.into_coin(ctx))
 }
@@ -211,6 +223,10 @@ public fun collect_fee<Meme>(
 
 public fun position_dev<Meme>(config: &XPumpConfig): address {
     get_position<Meme>(config).dev
+}
+
+public fun position_pool<Meme>(config: &XPumpConfig): address {
+    get_position<Meme>(config).pool
 }
 
 public fun position<Meme>(config: &XPumpConfig): &Position {

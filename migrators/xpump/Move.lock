@@ -2,13 +2,12 @@
 
 [move]
 version = 3
-manifest_digest = "6C2663F7DE189587F176CF5162C4FA9AA71BE103B379EE6221FE37947C80A1AA"
-deps_digest = "04732BFEF428F74DE262001DC455D76B909EBC394B034A9A15CC095E4BDD9CEF"
+manifest_digest = "04371F51921632A6356DE52167AB49C40CC9EC1E6E3ADC215854EA2CB4CA10A4"
+deps_digest = "CAFAD8A7CF51067FB4358215BECB86BD100DD64E57C2AC8A7AE7D74B688F5965"
 dependencies = [
   { id = "BluefinSpot", name = "BluefinSpot" },
   { id = "Bridge", name = "Bridge" },
   { id = "IPXCoinStandard", name = "IPXCoinStandard" },
-  { id = "IntegerMate", name = "IntegerMate" },
   { id = "MemezFun", name = "MemezFun" },
   { id = "MoveStdlib", name = "MoveStdlib" },
   { id = "Sui", name = "Sui" },

@@ -45,7 +45,7 @@ public(package) fun assert_can_buy(
 
     let current_nonce = &mut nonces.inner[sender];
 
-    let msg = Message {
+    let message = Message {
         public_key,
         pool,
         amount,
@@ -56,7 +56,7 @@ public(package) fun assert_can_buy(
     *current_nonce = *current_nonce + 1;
 
     assert!(
-        ed25519::ed25519_verify(&signature.destroy_some(), &public_key, &bcs::to_bytes(&msg)),
+        ed25519::ed25519_verify(&signature.destroy_some(), &public_key, &bcs::to_bytes(&message)),
         memez_fun::memez_errors::invalid_pump_signature!(),
     );
 }

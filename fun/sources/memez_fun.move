@@ -71,8 +71,8 @@ public struct MemezFun<phantom Curve, phantom Meme, phantom Quote> has key, stor
 public fun destroy<Meme, Quote, Witness: drop>(
     migrator: MemezMigrator<Meme, Quote>,
     _: Witness,
-): (Balance<Meme>, Balance<Quote>) {
-    let MemezMigrator { witness, memez_fun, meme_balance, quote_balance, dev: _ } = migrator;
+): (address, Balance<Meme>, Balance<Quote>) {
+    let MemezMigrator { witness, memez_fun, meme_balance, quote_balance, dev } = migrator;
 
     assert!(type_name::get<Witness>() == witness, memez_fun::memez_errors::invalid_witness!());
 
@@ -83,7 +83,7 @@ public fun destroy<Meme, Quote, Witness: drop>(
         meme_balance.value(),
     );
 
-    (meme_balance, quote_balance)
+    (dev, meme_balance, quote_balance)
 }
 
 // === Public View Functions ===
@@ -527,13 +527,14 @@ public fun ip_meme_coin_treasury<Curve, Meme, Quote>(self: &MemezFun<Curve, Meme
 #[test_only]
 public fun new_migrator_for_testing<Meme, Quote, Witness>(
     memez_fun: address,
+    dev: address,
     quote_balance: Balance<Quote>,
     meme_balance: Balance<Meme>,
 ): MemezMigrator<Meme, Quote> {
     MemezMigrator {
         witness: type_name::get<Witness>(),
         memez_fun,
-        dev: memez_fun,
+        dev,
         quote_balance,
         meme_balance,
     }

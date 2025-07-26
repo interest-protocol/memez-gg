@@ -27,8 +27,8 @@ use memez_fun::{
     memez_allowed_versions::AllowedVersions,
     memez_events,
     memez_metadata::MemezMetadata,
-    memez_versioned::Versioned,
     memez_verifier::{Self, Nonces},
+    memez_versioned::Versioned
 };
 use std::{string::String, type_name::{Self, TypeName}};
 use sui::{balance::Balance, clock::Clock, coin::Coin, vec_map::VecMap};
@@ -240,6 +240,7 @@ public(package) macro fun fr_pump<$Curve, $Meme, $Quote, $State>(
     $f: |&mut MemezFun<$Curve, $Meme, $Quote>| -> &mut $State,
     $quote_coin: Coin<$Quote>,
     $referrer: Option<address>,
+    $signature: Option<vector<u8>>,
     $allowed_versions: AllowedVersions,
     $ctx: &mut TxContext,
 ): (Coin<$Quote>, Coin<$Meme>) {
@@ -258,6 +259,11 @@ public(package) macro fun fr_pump<$Curve, $Meme, $Quote, $State>(
             $referrer,
             $ctx,
         );
+
+    let pool = self.address();
+    let public_key = self.public_key();
+
+    self.nonces_mut().assert_can_buy(public_key, $signature, pool, meme_coin.value(), $ctx);
 
     if (start_migrating) self.set_progress_to_migrating();
 
@@ -420,11 +426,15 @@ public(package) fun addr<Curve, Meme, Quote>(self: &MemezFun<Curve, Meme, Quote>
     self.id.to_address()
 }
 
-public(package) fun public_key<Curve, Meme, Quote>(self: &MemezFun<Curve, Meme, Quote>): vector<u8> {
+public(package) fun public_key<Curve, Meme, Quote>(
+    self: &MemezFun<Curve, Meme, Quote>,
+): vector<u8> {
     self.public_key
 }
 
-public(package) fun nonces_mut<Curve, Meme, Quote>(self: &mut MemezFun<Curve, Meme, Quote>): &mut Nonces {
+public(package) fun nonces_mut<Curve, Meme, Quote>(
+    self: &mut MemezFun<Curve, Meme, Quote>,
+): &mut Nonces {
     &mut self.nonces
 }
 

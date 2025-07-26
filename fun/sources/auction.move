@@ -129,7 +129,8 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
 
     let mut memez_fun = new_memez_fun_pool<Auction, Meme, Quote, ConfigKey, MigrationWitness>(
         memez_versioned::create(AUCTION_STATE_VERSION_V1, auction_state, ctx),
-        if (is_protected) config.public_key<ConfigKey>() else vector[],
+        if (is_protected) config.public_key<ConfigKey>()
+        else vector[],
         inner_state,
         metadata,
         ipx_meme_coin_treasury,
@@ -156,6 +157,7 @@ public fun pump<Meme, Quote>(
     clock: &Clock,
     quote_coin: Coin<Quote>,
     referrer: Option<address>,
+    signature: Option<vector<u8>>,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ): (Coin<Quote>, Coin<Meme>) {
@@ -163,7 +165,7 @@ public fun pump<Meme, Quote>(
         let state = self.state_mut();
         state.drip(clock);
         state
-    }, quote_coin, referrer, allowed_versions, ctx)
+    }, quote_coin, referrer, signature, allowed_versions, ctx)
 }
 
 public fun dump<Meme, Quote>(

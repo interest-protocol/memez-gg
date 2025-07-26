@@ -4,12 +4,10 @@ edition = "2024.beta"
 license = "MIT"          
 authors = ["Jose Cerqueira (jose@interestprotocol.com)"]     
 
-
 [dependencies]
 ipx_coin_standard = { r.mvr = "@interest/coin-standard" }
 MemezFun = { local = "../../fun" }
-CetusClmm = { local = "../../dependencies/cetus_clmm" }
-LpBurn = { local = "../../dependencies/lp_burn" }
+BluefinSpot = { git = "https://github.com/fireflyprotocol/bluefin-spot-contract-interface.git", rev = "main" }
 
 [addresses]
 xpump_migrator = "0x0"

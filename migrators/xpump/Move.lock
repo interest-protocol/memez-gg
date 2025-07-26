@@ -2,13 +2,13 @@
 
 [move]
 version = 3
-manifest_digest = "A5D499033147C9F67500D6E965C6AE5F643D0D39737438E2A1CA8984A142CE6D"
+manifest_digest = "6C2663F7DE189587F176CF5162C4FA9AA71BE103B379EE6221FE37947C80A1AA"
 deps_digest = "04732BFEF428F74DE262001DC455D76B909EBC394B034A9A15CC095E4BDD9CEF"
 dependencies = [
+  { id = "BluefinSpot", name = "BluefinSpot" },
   { id = "Bridge", name = "Bridge" },
-  { id = "CetusClmm", name = "CetusClmm" },
   { id = "IPXCoinStandard", name = "IPXCoinStandard" },
-  { id = "LpBurn", name = "LpBurn" },
+  { id = "IntegerMate", name = "IntegerMate" },
   { id = "MemezFun", name = "MemezFun" },
   { id = "MoveStdlib", name = "MoveStdlib" },
   { id = "Sui", name = "Sui" },
@@ -16,48 +16,20 @@ dependencies = [
 ]
 
 [[move.package]]
+id = "BluefinSpot"
+source = { git = "https://github.com/fireflyprotocol/bluefin-spot-contract-interface.git", rev = "main", subdir = "" }
+
+dependencies = [
+  { id = "IntegerLibrary", name = "IntegerLibrary" },
+  { id = "IntegerMate", name = "IntegerMate" },
+  { id = "Sui", name = "Sui" },
+]
+
+[[move.package]]
 id = "Bridge"
 source = { git = "https://github.com/MystenLabs/sui.git", rev = "2c930c25f8d3", subdir = "crates/sui-framework/packages/bridge" }
 
 dependencies = [
-  { id = "MoveStdlib", name = "MoveStdlib" },
-  { id = "Sui", name = "Sui" },
-  { id = "SuiSystem", name = "SuiSystem" },
-]
-
-[[move.package]]
-id = "Cetus"
-source = { git = "https://github.com/CetusProtocol/cetus-clmm-interface.git", rev = "mainnet-v1.48.2", subdir = "sui/token/cetus" }
-
-dependencies = [
-  { id = "Bridge", name = "Bridge" },
-  { id = "MoveStdlib", name = "MoveStdlib" },
-  { id = "Sui", name = "Sui" },
-  { id = "SuiSystem", name = "SuiSystem" },
-]
-
-[[move.package]]
-id = "CetusClmm"
-source = { local = "../../dependencies/cetus_clmm" }
-
-dependencies = [
-  { id = "Bridge", name = "Bridge" },
-  { id = "IntegerMate", name = "IntegerMate" },
-  { id = "MoveSTL", name = "MoveSTL" },
-  { id = "MoveStdlib", name = "MoveStdlib" },
-  { id = "Sui", name = "Sui" },
-  { id = "SuiSystem", name = "SuiSystem" },
-]
-
-[[move.package]]
-id = "ClmmVester"
-source = { local = "../../dependencies/clmm_vester" }
-
-dependencies = [
-  { id = "Bridge", name = "Bridge" },
-  { id = "Cetus", name = "Cetus" },
-  { id = "CetusClmm", name = "CetusClmm" },
-  { id = "IntegerMate", name = "IntegerMate" },
   { id = "MoveStdlib", name = "MoveStdlib" },
   { id = "Sui", name = "Sui" },
   { id = "SuiSystem", name = "SuiSystem" },
@@ -84,8 +56,16 @@ dependencies = [
 ]
 
 [[move.package]]
+id = "IntegerLibrary"
+source = { git = "https://github.com/fireflyprotocol/integer-library.git", rev = "v1.0.1", subdir = "" }
+
+dependencies = [
+  { id = "Sui", name = "Sui" },
+]
+
+[[move.package]]
 id = "IntegerMate"
-source = { git = "https://github.com/CetusProtocol/integer-mate.git", rev = "sui-v1.2.0", subdir = "sui" }
+source = { git = "https://github.com/CetusProtocol/integer-mate.git", rev = "sui-v1.1.2", subdir = "sui" }
 
 dependencies = [
   { id = "Sui", name = "Sui" },
@@ -139,19 +119,6 @@ dependencies = [
 ]
 
 [[move.package]]
-id = "LpBurn"
-source = { local = "../../dependencies/lp_burn" }
-
-dependencies = [
-  { id = "Bridge", name = "Bridge" },
-  { id = "CetusClmm", name = "CetusClmm" },
-  { id = "ClmmVester", name = "ClmmVester" },
-  { id = "MoveStdlib", name = "MoveStdlib" },
-  { id = "Sui", name = "Sui" },
-  { id = "SuiSystem", name = "SuiSystem" },
-]
-
-[[move.package]]
 id = "Memez"
 source = { local = "../../memez" }
 
@@ -184,17 +151,6 @@ dependencies = [
 [[move.package]]
 id = "MemezVesting"
 source = { local = "../../vesting" }
-
-dependencies = [
-  { id = "Bridge", name = "Bridge" },
-  { id = "MoveStdlib", name = "MoveStdlib" },
-  { id = "Sui", name = "Sui" },
-  { id = "SuiSystem", name = "SuiSystem" },
-]
-
-[[move.package]]
-id = "MoveSTL"
-source = { git = "https://github.com/CetusProtocol/move-stl.git", rev = "mainnet-v1.48.2", subdir = "sui" }
 
 dependencies = [
   { id = "Bridge", name = "Bridge" },

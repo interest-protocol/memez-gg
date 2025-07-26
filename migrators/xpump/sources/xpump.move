@@ -1,21 +1,16 @@
 module xpump_migrator::xpump_migrator;
 
-use cetusclmm::{
-    config::GlobalConfig,
-    factory::{Self, Pools, PoolCreationCap},
-    pool::Pool,
-    pool_creator
-};
+use bluefin_spot::{config::GlobalConfig, pool::{Self, Pool}, position::Position};
 use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
-use lpburn::lp_burn::{CetusLPBurnProof, BurnManager};
 use memez_fun::memez_fun::MemezMigrator;
 use std::type_name::{Self, TypeName};
 use sui::{
     clock::Clock,
-    coin::{Coin, CoinMetadata, TreasuryCap},
-    dynamic_object_field as dof,
+    coin::{Coin, CoinMetadata},
+    dynamic_field as df,
     event::emit,
-    sui::SUI
+    sui::SUI,
+    url
 };
 
 // === Constants ===
@@ -24,6 +19,8 @@ const DEAD_ADDRESS: address = @0x0;
 
 // https://cetus-1.gitbook.io/cetus-developer-docs/developer/via-contract/features-available/create-pool
 const TICK_SPACING: u32 = 200;
+
+const FEE_RATE: u64 = 10000;
 
 // @dev Refer to https://github.com/interest-protocol/memez.gg-sdk/blob/main/src/scripts/memez/cetus-price.ts
 // This means that 1 Meme coin equals to 0.000012 Sui.
@@ -60,9 +57,12 @@ public struct XPumpConfig has key {
     reward_value: u64,
 }
 
-public struct PoolCreationCapKey(TypeName) has copy, drop, store;
+public struct PositionKey(TypeName) has copy, drop, store;
 
-public struct LpBurnConfigKey(TypeName) has copy, drop, store;
+public struct PositionData has store {
+    dev: address,
+    position: Position,
+}
 
 // === Events ===
 
@@ -70,9 +70,9 @@ public struct NewPool has copy, drop {
     pool: address,
     tick_spacing: u32,
     meme: TypeName,
-    sui_balance: u64,
-    meme_balance: u64,
-    burn_proof: address
+    meme_amount: u64,
+    sui_amount: u64,
+    position: address,
 }
 
 public struct SetTreasury(address, address) has copy, drop;
@@ -103,77 +103,62 @@ fun init(ctx: &mut TxContext) {
 
 // === Public Mutative Functions ===
 
-public fun register_pool<Meme>(
+public fun migrate<Meme, CoinTypeFee>(
     config: &mut XPumpConfig,
-    cetus_config: &GlobalConfig,
-    cetus_pools: &mut Pools,
-    meme_coin_treasury_cap: &mut TreasuryCap<Meme>,
-    ctx: &mut TxContext,
-) {
-    let pool_creation_cap = factory::mint_pool_creation_cap(
-        cetus_config,
-        cetus_pools,
-        meme_coin_treasury_cap,
-        ctx,
-    );
-
-    factory::register_permission_pair<Meme, SUI>(
-        cetus_config,
-        cetus_pools,
-        TICK_SPACING,
-        &pool_creation_cap,
-        ctx,
-    );
-
-    config.save_pool_creation_cap<Meme>(pool_creation_cap);
-}
-
-public fun migrate<Meme>(
-    config: &mut XPumpConfig,
-    burn_manager: &mut BurnManager,
+    bluefin_config: &mut GlobalConfig,
     clock: &Clock,
     ipx_treasury: &IPXTreasuryStandard,
-    cetus_config: &GlobalConfig,
-    cetus_pools: &mut Pools,
     sui_metadata: &CoinMetadata<SUI>,
     meme_metadata: &CoinMetadata<Meme>,
     migrator: MemezMigrator<Meme, SUI>,
+    fee: Coin<CoinTypeFee>,
     ctx: &mut TxContext,
 ): Coin<SUI> {
     assert!(meme_metadata.get_decimals() == MEME_DECIMALS, EInvalidDecimals);
     assert!(ipx_treasury.total_supply<Meme>() == MEME_TOTAL_SUPPLY, EInvalidTotalSupply);
 
-    let (meme_balance, mut sui_balance) = migrator.destroy(Witness());
+    let (dev, meme_balance, mut sui_balance) = migrator.destroy(Witness());
 
     let reward = sui_balance.split(config.reward_value).into_coin(ctx);
 
-    let pool_creation_cap = config.pool_creation_cap<Meme>();
-
-    let sui_balance_value = sui_balance.value();
     let meme_balance_value = meme_balance.value();
 
-    let (position, excess_meme, excess_sui) = pool_creator::create_pool_v2_with_creation_cap(
-        cetus_config,
-        cetus_pools,
-        pool_creation_cap,
+    let (
+        pool_id,
+        position,
+        meme_amount,
+        sui_amount,
+        excess_meme,
+        excess_sui,
+    ) = pool::create_pool_with_liquidity<Meme, SUI, CoinTypeFee>(
+        clock,
+        bluefin_config,
+        pool_name<Meme>(meme_metadata),
+        x"",
+        meme_metadata.get_symbol().into_bytes(),
+        meme_metadata.get_decimals(),
+        meme_metadata
+            .get_icon_url()
+            .destroy_with_default(url::new_unsafe_from_bytes(x""))
+            .inner_url()
+            .into_bytes(),
+        sui_metadata.get_symbol().into_bytes(),
+        sui_metadata.get_decimals(),
+        sui_metadata
+            .get_icon_url()
+            .destroy_with_default(url::new_unsafe_from_bytes(x""))
+            .inner_url()
+            .into_bytes(),
         TICK_SPACING,
+        FEE_RATE,
         config.initialize_price,
-        b"".to_string(),
+        fee.into_balance(),
         MIN_TICK,
         MAX_TICK,
-        meme_balance.into_coin(ctx),
-        sui_balance.into_coin(ctx),
-        meme_metadata,
-        sui_metadata,
-        false,
-        clock,
-        ctx,
-    );
-
-    let pool_id = position.pool_id();
-
-    let burn_proof = burn_manager.burn_lp_v2(
-        position,
+        meme_balance,
+        sui_balance,
+        meme_balance_value,
+        true,
         ctx,
     );
 
@@ -181,23 +166,55 @@ public fun migrate<Meme>(
         pool: pool_id.to_address(),
         tick_spacing: TICK_SPACING,
         meme: type_name::get<Meme>(),
-        sui_balance: sui_balance_value - excess_sui.value(),
-        meme_balance: meme_balance_value - excess_meme.value(),
-        burn_proof: object::id_address(&burn_proof),
+        meme_amount,
+        sui_amount,
+        position: object::id_address(&position),
     });
 
-    config.save_lp_burn_proof<Meme>(burn_proof);
+    config.save_position<Meme>(PositionData {
+        dev,
+        position,
+    });
 
-    transfer_or_burn(excess_meme, DEAD_ADDRESS);
-    transfer_or_burn(excess_sui, config.treasury);
+    transfer_or_burn(excess_meme.into_coin(ctx), DEAD_ADDRESS);
+    transfer_or_burn(excess_sui.into_coin(ctx), config.treasury);
 
     reward
 }
 
+public fun collect_fee<Meme>(
+    config: &mut XPumpConfig,
+    bluefin_config: &GlobalConfig,
+    pool: &mut Pool<Meme, SUI>,
+    clock: &Clock,
+    ctx: &mut TxContext,
+): (Coin<Meme>, Coin<SUI>) {
+    let position_data = position_mut<Meme>(config);
+
+    let sender = ctx.sender();
+
+    assert!(sender == position_data.dev);
+
+    let (meme_amount, sui_amount, meme_balance, sui_balance) = pool::collect_fee<Meme, SUI>(
+        clock,
+        bluefin_config,
+        pool,
+        &mut position_data.position,
+    );
+
+    emit(CollectFee(sender, meme_amount, sui_amount));
+
+    (meme_balance.into_coin(ctx), sui_balance.into_coin(ctx))
+}
+
 // === View Functions ===
 
-public fun get_lp_burn_proof<Meme>(config: &XPumpConfig): &CetusLPBurnProof {
-    dof::borrow<_, CetusLPBurnProof>(&config.id, LpBurnConfigKey(type_name::get<Meme>()))
+public fun position_dev<Meme>(config: &XPumpConfig): address {
+    get_position<Meme>(config).dev
+}
+
+public fun position<Meme>(config: &XPumpConfig): &Position {
+    &get_position<Meme>(config).position
 }
 
 // === Admin Functions ===
@@ -218,27 +235,17 @@ public fun set_reward_value(self: &mut XPumpConfig, _: &Admin, reward_value: u64
     self.reward_value = reward_value;
 }
 
-public fun collect_fee<Meme>(
-    config: &mut XPumpConfig,
-    burn_manager: &BurnManager,
-    cetus_config: &GlobalConfig,
-    pool: &mut Pool<Meme, SUI>,
-    _: &Admin,
-    ctx: &mut TxContext,
-): (Coin<Meme>, Coin<SUI>) {
-    let (meme_fee, sui_fee) = burn_manager.collect_fee<Meme, SUI>(
-        cetus_config,
-        pool,
-        config.lp_burn_proof_mut<Meme>(),
-        ctx,
-    );
-
-    emit(CollectFee(object::id_address(pool), meme_fee.value(), sui_fee.value()));
-
-    (meme_fee, sui_fee)
-}
-
 // === Private Functions ===
+
+fun pool_name<Meme>(meme_metadata: &CoinMetadata<Meme>): vector<u8> {
+    let mut name = b"xPump-";
+
+    name.append(meme_metadata.get_name().into_bytes());
+    name.append(b"/");
+    name.append(b"SUI");
+
+    name
+}
 
 fun transfer_or_burn<CoinType>(coin: Coin<CoinType>, to: address) {
     if (coin.value() == 0) {
@@ -248,18 +255,14 @@ fun transfer_or_burn<CoinType>(coin: Coin<CoinType>, to: address) {
     }
 }
 
-fun pool_creation_cap<Meme>(config: &XPumpConfig): &PoolCreationCap {
-    dof::borrow<_, PoolCreationCap>(&config.id, PoolCreationCapKey(type_name::get<Meme>()))
+fun get_position<Meme>(config: &XPumpConfig): &PositionData {
+    df::borrow<_, PositionData>(&config.id, PositionKey(type_name::get<Meme>()))
 }
 
-fun lp_burn_proof_mut<Meme>(config: &mut XPumpConfig): &mut CetusLPBurnProof {
-    dof::borrow_mut<_, CetusLPBurnProof>(&mut config.id, LpBurnConfigKey(type_name::get<Meme>()))
+fun position_mut<Meme>(config: &mut XPumpConfig): &mut PositionData {
+    df::borrow_mut<_, PositionData>(&mut config.id, PositionKey(type_name::get<Meme>()))
 }
 
-fun save_lp_burn_proof<Meme>(config: &mut XPumpConfig, lp_burn_proof: CetusLPBurnProof) {
-    dof::add(&mut config.id, LpBurnConfigKey(type_name::get<Meme>()), lp_burn_proof);
-}
-
-fun save_pool_creation_cap<Meme>(config: &mut XPumpConfig, pool_creation_cap: PoolCreationCap) {
-    dof::add(&mut config.id, PoolCreationCapKey(type_name::get<Meme>()), pool_creation_cap);
+fun save_position<Meme>(config: &mut XPumpConfig, position: PositionData) {
+    df::add(&mut config.id, PositionKey(type_name::get<Meme>()), position);
 }

@@ -3,11 +3,19 @@ module memez_fun::memez_fixed_rate_tests;
 
 use interest_bps::bps;
 use memez_fun::{memez_distributor, memez_errors, memez_fees, memez_fixed_rate};
-use sui::{balance, coin::mint_for_testing, sui::SUI, test_utils::{assert_eq, destroy}};
+use sui::{
+    balance,
+    coin::{mint_for_testing, Coin},
+    sui::SUI,
+    test_scenario as ts,
+    test_utils::{assert_eq, destroy}
+};
 
 public struct Meme()
 
 const BPS_MAX: u64 = 10_000;
+
+const REFERRER_ADDRESS: address = @0x7;
 
 #[test]
 fun test_new() {
@@ -530,6 +538,74 @@ fun test_increase_meme_available() {
     destroy(fixed_rate);
 }
 
+#[test]
+fun test_pump_with_referrer() {
+    let mut scenario = ts::begin(REFERRER_ADDRESS);
+
+    let sui_raise_amount = 10_000;
+    let meme_balance_value = 5000;
+
+    let meme_balance = balance::create_for_testing<Meme>(meme_balance_value);
+
+    let meme_swap_fee = memez_fees::new_percentage_fee(
+        300,
+        memez_distributor::new(
+            vector[@0x0],
+            vector[BPS_MAX],
+        ),
+    );
+
+    let quote_swap_fee = memez_fees::new_percentage_fee(
+        200,
+        memez_distributor::new(
+            vector[@0x0],
+            vector[BPS_MAX],
+        ),
+    );
+
+    let meme_discount = bps::new(200);
+    let quote_discount = bps::new(100);
+
+    let mut fixed_rate = memez_fixed_rate::new(
+        sui_raise_amount,
+        meme_balance,
+        meme_swap_fee,
+        quote_swap_fee,
+        meme_discount,
+        quote_discount,
+    );
+
+    let amount_in = 1_000;
+
+    let amounts = fixed_rate.pump_amount(amount_in, 0);
+
+    let (can_migrate, excess_sui_coin, meme_coin_out) = fixed_rate.pump(
+        mint_for_testing<SUI>(amount_in, scenario.ctx()),
+        option::some(REFERRER_ADDRESS),
+        scenario.ctx(),
+    );
+
+    assert_eq(can_migrate, false);
+    assert_eq(amounts[0], 0);
+    assert_eq(excess_sui_coin.burn_for_testing(), 0);
+    assert_eq(
+        meme_coin_out.burn_for_testing(),
+        490 - meme_swap_fee.calculate_with_discount(meme_discount, 490) - meme_discount.calc_up(490),
+    );
+    assert_eq(amounts[2], quote_swap_fee.calculate(amount_in));
+
+    scenario.next_tx(REFERRER_ADDRESS);
+
+    let quote_referrer_coin = scenario.take_from_sender<Coin<SUI>>();
+    let meme_referrer_coin = scenario.take_from_sender<Coin<Meme>>();
+
+    assert_eq(quote_referrer_coin.burn_for_testing(), quote_discount.calc_up(amount_in));
+    assert_eq(meme_referrer_coin.burn_for_testing(), meme_discount.calc_up(490));
+
+    destroy(fixed_rate);
+    scenario.end();
+}
+
 #[test, expected_failure(abort_code = memez_errors::EZeroCoin, location = memez_fixed_rate)]
 fun test_pump_zero_coin() {
     let mut ctx = tx_context::dummy();
@@ -540,7 +616,7 @@ fun test_pump_zero_coin() {
     let meme_balance = balance::create_for_testing<Meme>(meme_balance_value);
 
     let swap_fee = memez_fees::new_percentage_fee(
-        30,
+        300,
         memez_distributor::new(
             vector[@0x0],
             vector[BPS_MAX],

@@ -301,3 +301,13 @@ public fun meme_swap_fee<Meme, Quote>(self: &MemezConstantProduct<Meme, Quote>):
 public fun quote_swap_fee<Meme, Quote>(self: &MemezConstantProduct<Meme, Quote>): Fee {
     self.quote_swap_fee
 }
+
+#[test_only]
+public fun meme_referrer_fee<Meme, Quote>(self: &MemezConstantProduct<Meme, Quote>): BPS {
+    self.meme_referrer_fee
+}
+
+#[test_only]
+public fun quote_referrer_fee<Meme, Quote>(self: &MemezConstantProduct<Meme, Quote>): BPS {
+    self.quote_referrer_fee
+}

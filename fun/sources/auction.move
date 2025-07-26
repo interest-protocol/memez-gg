@@ -69,6 +69,7 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
     auction_config: AuctionConfig,
     metadata: MemezMetadata,
     stake_holders: vector<address>,
+    is_protected: bool,
     allowed_versions: AllowedVersions,
     ctx: &mut TxContext,
 ): (MemezFun<Auction, Meme, Quote>, MetadataCap) {
@@ -128,6 +129,7 @@ public fun new<Meme, Quote, ConfigKey, MigrationWitness>(
 
     let mut memez_fun = new_memez_fun_pool<Auction, Meme, Quote, ConfigKey, MigrationWitness>(
         memez_versioned::create(AUCTION_STATE_VERSION_V1, auction_state, ctx),
+        if (is_protected) config.public_key<ConfigKey>() else vector[],
         inner_state,
         metadata,
         ipx_meme_coin_treasury,

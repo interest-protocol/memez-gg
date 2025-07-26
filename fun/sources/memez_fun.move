@@ -27,7 +27,8 @@ use memez_fun::{
     memez_allowed_versions::AllowedVersions,
     memez_events,
     memez_metadata::MemezMetadata,
-    memez_versioned::Versioned
+    memez_versioned::Versioned,
+    memez_verifier::{Self, Nonces},
 };
 use std::{string::String, type_name::{Self, TypeName}};
 use sui::{balance::Balance, clock::Clock, coin::Coin, vec_map::VecMap};
@@ -54,6 +55,8 @@ public struct MemezMigrator<phantom Meme, phantom Quote> {
 
 public struct MemezFun<phantom Curve, phantom Meme, phantom Quote> has key, store {
     id: UID,
+    public_key: vector<u8>,
+    nonces: Nonces,
     inner_state: address,
     dev: address,
     state: Versioned,
@@ -91,10 +94,15 @@ public fun metadata<Curve, Meme, Quote>(
     *self.metadata.borrow()
 }
 
+public fun next_nonce<Curve, Meme, Quote>(self: &MemezFun<Curve, Meme, Quote>, user: address): u64 {
+    memez_verifier::next_nonce(&self.nonces, user)
+}
+
 // === Public Package Functions ===
 
 public(package) fun new<Curve, Meme, Quote, ConfigKey, MigrationWitness>(
     state: Versioned,
+    public_key: vector<u8>,
     inner_state: address,
     mut metadata: MemezMetadata,
     ipx_meme_coin_treasury: address,
@@ -116,6 +124,7 @@ public(package) fun new<Curve, Meme, Quote, ConfigKey, MigrationWitness>(
 
     memez_events::new<Curve, Meme, Quote>(
         id.to_address(),
+        public_key,
         inner_state,
         dev,
         config_key,
@@ -129,6 +138,8 @@ public(package) fun new<Curve, Meme, Quote, ConfigKey, MigrationWitness>(
 
     MemezFun {
         id,
+        public_key,
+        nonces: memez_verifier::new(ctx),
         dev,
         inner_state,
         ipx_meme_coin_treasury,
@@ -144,6 +155,7 @@ public(package) macro fun cp_pump<$Curve, $Meme, $Quote, $State>(
     $f: |&mut MemezFun<$Curve, $Meme, $Quote>| -> &mut $State,
     $quote_coin: Coin<$Quote>,
     $referrer: Option<address>,
+    $signature: Option<vector<u8>>,
     $min_amount_out: u64,
     $allowed_versions: AllowedVersions,
     $ctx: &mut TxContext,
@@ -154,7 +166,14 @@ public(package) macro fun cp_pump<$Curve, $Meme, $Quote, $State>(
     allowed_versions.assert_pkg_version();
     self.assert_is_bonding();
 
-    self.cp_pump_unchecked!($f, $quote_coin, $referrer, $min_amount_out, $ctx)
+    let meme_coin = self.cp_pump_unchecked!($f, $quote_coin, $referrer, $min_amount_out, $ctx);
+
+    let pool = self.address();
+    let public_key = self.public_key();
+
+    self.nonces_mut().assert_can_buy(public_key, $signature, pool, meme_coin.value(), $ctx);
+
+    meme_coin
 }
 
 public(package) macro fun cp_pump_unchecked<$Curve, $Meme, $Quote, $State>(
@@ -399,6 +418,14 @@ public(package) macro fun fr_dump_amount<$Curve, $Meme, $Quote, $State>(
 
 public(package) fun addr<Curve, Meme, Quote>(self: &MemezFun<Curve, Meme, Quote>): address {
     self.id.to_address()
+}
+
+public(package) fun public_key<Curve, Meme, Quote>(self: &MemezFun<Curve, Meme, Quote>): vector<u8> {
+    self.public_key
+}
+
+public(package) fun nonces_mut<Curve, Meme, Quote>(self: &mut MemezFun<Curve, Meme, Quote>): &mut Nonces {
+    &mut self.nonces
 }
 
 public(package) fun migration_witness<Curve, Meme, Quote>(

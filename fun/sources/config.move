@@ -22,6 +22,8 @@ public struct MemeReferrerFeeKey<phantom T>() has copy, drop, store;
 
 public struct QuoteReferrerFeeKey<phantom T>() has copy, drop, store;
 
+public struct PublicKey<phantom T>() has copy, drop, store;
+
 public struct MemezConfig has key {
     id: UID,
 }
@@ -37,6 +39,15 @@ fun init(ctx: &mut TxContext) {
 }
 
 // === Public Admin Functions ===
+
+public fun set_public_key<ConfigWitness>(
+    self: &mut MemezConfig,
+    _: &AdminWitness<MEMEZ>,
+    public_key: vector<u8>,
+    _ctx: &mut TxContext,
+) {
+    add<PublicKey<ConfigWitness>, _>(self, public_key);
+}
 
 public fun set_fees<ConfigWitness>(
     self: &mut MemezConfig,
@@ -107,6 +118,14 @@ public fun remove_migrator_witness<ConfigWitness, MigratorWitness>(
 }
 
 // === Public Package Functions ===
+
+public(package) fun public_key<ConfigWitness>(self: &MemezConfig): vector<u8> {
+    let key = type_name::get<PublicKey<ConfigWitness>>();
+
+    assert!(df::exists_(&self.id, key), memez_errors::model_key_not_supported!());
+
+    *df::borrow(&self.id, key)
+}
 
 public(package) fun fees<ConfigWitness>(self: &MemezConfig): MemezFees {
     let key = type_name::get<FeesKey<ConfigWitness>>();

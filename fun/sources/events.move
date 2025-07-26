@@ -10,6 +10,7 @@ use std::type_name::{Self, TypeName};
 
 public struct New has copy, drop {
     memez_fun: address,
+    public_key: vector<u8>,
     inner_state: address,
     dev: address,
     meme: TypeName,
@@ -77,6 +78,7 @@ public struct Migrated has copy, drop {
 
 public(package) fun new<Curve, Meme, Quote>(
     memez_fun: address,
+    public_key: vector<u8>,
     inner_state: address,
     dev: address,
     config_key: TypeName,
@@ -89,6 +91,7 @@ public(package) fun new<Curve, Meme, Quote>(
 ) {
     emit_event(New {
         memez_fun,
+        public_key,
         inner_state,
         dev,
         meme: type_name::get<Meme>(),

@@ -195,3 +195,7 @@ public(package) macro fun quote_coin_not_supported(): u64 {
 public(package) macro fun migrator_witness_not_supported(): u64 {
     26
 }
+
+public(package) macro fun invalid_pump_signature(): u64 {
+    27
+}

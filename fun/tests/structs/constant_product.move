@@ -1,91 +1,101 @@
-// #[test_only]
-// module memez_fun::memez_constant_product_tests;
+#[test_only]
+module memez_fun::memez_constant_product_tests;
 
-// use interest_bps::bps;
-// use interest_constant_product::constant_product::get_amount_out;
-// use ipx_coin_standard::ipx_coin_standard;
-// use memez_fun::{memez_burner, memez_constant_product, memez_distributor, memez_errors, memez_fees};
-// use sui::{balance, coin::{Self, mint_for_testing}, sui::SUI, test_utils::{assert_eq, destroy}};
+use interest_bps::bps;
+use interest_constant_product::constant_product::get_amount_out;
+use ipx_coin_standard::ipx_coin_standard;
+use memez_fun::{memez_burner, memez_constant_product, memez_distributor, memez_errors, memez_fees};
+use sui::{balance, coin::{Self, mint_for_testing}, sui::SUI, test_utils::{assert_eq, destroy}};
 
-// public struct Meme()
+public struct Meme()
 
-// public struct Quote()
+public struct Quote()
 
-// const BURN_TAX: u64 = 2_000;
+const BURN_TAX: u64 = 2_000;
 
-// const BPS_MAX: u64 = 10_000;
+const BPS_MAX: u64 = 10_000;
 
-// #[test]
-// fun test_new() {
-//     let virtual_liquidity = 100;
-//     let target_quote_liquidity = 1100;
-//     let meme_balance_value = 5000;
+#[test]
+fun test_new() {
+    let virtual_liquidity = 100;
+    let target_quote_liquidity = 1100;
+    let meme_balance_value = 5000;
 
-//     let meme_swap_fee = 40;
-//     let quote_swap_fee = 30;
-//     let cp = memez_constant_product::new<Meme, Quote>(
-//         virtual_liquidity,
-//         target_quote_liquidity,
-//         balance::create_for_testing<Meme>(meme_balance_value),
-//         memez_fees::new_percentage_fee(
-//             meme_swap_fee,
-//             memez_distributor::new(
-//                 vector[@0x0],
-//                 vector[BPS_MAX],
-//             ),
-//         ),
-//         memez_fees::new_percentage_fee(
-//             quote_swap_fee,
-//             memez_distributor::new(
-//                 vector[@0x0],
-//                 vector[BPS_MAX],
-//             ),
-//         ),
-//         BURN_TAX,
-//     );
+    let meme_swap_fee = 40;
+    let quote_swap_fee = 30;
 
-//     assert_eq(cp.virtual_liquidity(), virtual_liquidity);
-//     assert_eq(cp.target_quote_liquidity(), target_quote_liquidity);
-//     assert_eq(cp.meme_balance().value(), meme_balance_value);
-//     assert_eq(cp.burner().fee().value(), BURN_TAX);
-//     assert_eq(cp.burner().target_liquidity(), target_quote_liquidity);
-//     assert_eq(cp.meme_swap_fee().value(), meme_swap_fee);
-//     assert_eq(cp.quote_swap_fee().value(), quote_swap_fee);
+    let meme_referrer_fee = bps::new(10);
+    let quote_referrer_fee = bps::new(5);
 
-//     destroy(cp);
-// }
+    let cp = memez_constant_product::new<Meme, Quote>(
+        virtual_liquidity,
+        target_quote_liquidity,
+        balance::create_for_testing<Meme>(meme_balance_value),
+        memez_fees::new_percentage_fee(
+            meme_swap_fee,
+            memez_distributor::new(
+                vector[@0x0],
+                vector[BPS_MAX],
+            ),
+        ),
+        memez_fees::new_percentage_fee(
+            quote_swap_fee,
+            memez_distributor::new(
+                vector[@0x0],
+                vector[BPS_MAX],
+            ),
+        ),
+        meme_referrer_fee,
+        quote_referrer_fee,
+        BURN_TAX,
+    );
 
-// #[test]
-// fun test_set_memez_fun() {
-//     let mut cp = memez_constant_product::new<Meme, Quote>(
-//         100,
-//         1100,
-//         balance::create_for_testing<Meme>(5000),
-//         memez_fees::new_percentage_fee(
-//             30,
-//             memez_distributor::new(
-//                 vector[@0x0],
-//                 vector[BPS_MAX],
-//             ),
-//         ),
-//         memez_fees::new_percentage_fee(
-//             0,
-//             memez_distributor::new(
-//                 vector[@0x0],
-//                 vector[BPS_MAX],
-//             ),
-//         ),
-//         BURN_TAX,
-//     );
+    assert_eq(cp.virtual_liquidity(), virtual_liquidity);
+    assert_eq(cp.target_quote_liquidity(), target_quote_liquidity);
+    assert_eq(cp.meme_balance().value(), meme_balance_value);
+    assert_eq(cp.burner().fee().value(), BURN_TAX);
+    assert_eq(cp.burner().target_liquidity(), target_quote_liquidity);
+    assert_eq(cp.meme_swap_fee().value(), meme_swap_fee);
+    assert_eq(cp.quote_swap_fee().value(), quote_swap_fee);
+    assert_eq(cp.meme_referrer_fee().value(), meme_referrer_fee.value());
+    assert_eq(cp.quote_referrer_fee().value(), quote_referrer_fee.value());
 
-//     assert_eq(cp.memez_fun(), @0x0);
+    destroy(cp);
+}
 
-//     cp.set_memez_fun(@0x1);
+#[test]
+fun test_set_memez_fun() {
+    let mut cp = memez_constant_product::new<Meme, Quote>(
+        100,
+        1100,
+        balance::create_for_testing<Meme>(5000),
+        memez_fees::new_percentage_fee(
+            30,
+            memez_distributor::new(
+                vector[@0x0],
+                vector[BPS_MAX],
+            ),
+        ),
+        memez_fees::new_percentage_fee(
+            0,
+            memez_distributor::new(
+                vector[@0x0],
+                vector[BPS_MAX],
+            ),
+        ),
+        bps::new(0),
+        bps::new(0),
+        BURN_TAX,
+    );
 
-//     assert_eq(cp.memez_fun(), @0x1);
+    assert_eq(cp.memez_fun(), @0x0);
 
-//     destroy(cp);
-// }
+    cp.set_memez_fun(@0x1);
+
+    assert_eq(cp.memez_fun(), @0x1);
+
+    destroy(cp);
+}
 
 // #[test]
 // fun test_pump() {

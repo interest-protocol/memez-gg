@@ -166,14 +166,14 @@ public(package) macro fun cp_pump<$Curve, $Meme, $Quote, $State>(
     allowed_versions.assert_pkg_version();
     self.assert_is_bonding();
 
-    let meme_coin = self.cp_pump_unchecked!($f, $quote_coin, $referrer, $min_amount_out, $ctx);
-
     let pool = self.address();
     let public_key = self.public_key();
+    let signature = $signature;
+    let quote_coin = $quote_coin;
 
-    self.nonces_mut().assert_can_buy(public_key, $signature, pool, meme_coin.value(), $ctx);
+    self.nonces_mut().assert_can_buy(public_key, signature, pool, quote_coin.value(), $ctx);
 
-    meme_coin
+    self.cp_pump_unchecked!($f, quote_coin, $referrer, $min_amount_out, $ctx);
 }
 
 public(package) macro fun cp_pump_unchecked<$Curve, $Meme, $Quote, $State>(
@@ -249,21 +249,21 @@ public(package) macro fun fr_pump<$Curve, $Meme, $Quote, $State>(
 
     allowed_versions.assert_pkg_version();
     self.assert_is_bonding();
+    let pool = self.address();
+    let public_key = self.public_key();
+    let quote_coin = $quote_coin;
+
+    self.nonces_mut().assert_can_buy(public_key, $signature, pool, quote_coin.value(), $ctx);
 
     let state = $f(self);
 
     let (start_migrating, excess_quote_coin, meme_coin) = state
         .fixed_rate
         .pump(
-            $quote_coin,
+            quote_coin,
             $referrer,
             $ctx,
         );
-
-    let pool = self.address();
-    let public_key = self.public_key();
-
-    self.nonces_mut().assert_can_buy(public_key, $signature, pool, meme_coin.value(), $ctx);
 
     if (start_migrating) self.set_progress_to_migrating();
 

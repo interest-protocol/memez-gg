@@ -173,7 +173,7 @@ public(package) macro fun cp_pump<$Curve, $Meme, $Quote, $State>(
 
     self.nonces_mut().assert_can_buy(public_key, signature, pool, quote_coin.value(), $ctx);
 
-    self.cp_pump_unchecked!($f, quote_coin, $referrer, $min_amount_out, $ctx);
+    self.cp_pump_unchecked!($f, quote_coin, $referrer, $min_amount_out, $ctx)
 }
 
 public(package) macro fun cp_pump_unchecked<$Curve, $Meme, $Quote, $State>(

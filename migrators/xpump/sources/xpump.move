@@ -1,10 +1,12 @@
 module xpump_migrator::xpump_migrator;
 
 use bluefin_spot::{config::GlobalConfig, pool::{Self, Pool}, position::Position};
+use interest_bps::bps::{Self, BPS};
 use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
 use memez_fun::memez_fun::MemezMigrator;
 use std::type_name::{Self, TypeName};
 use sui::{
+    balance::{Self, Balance},
     clock::Clock,
     coin::{Coin, CoinMetadata},
     dynamic_field as df,
@@ -36,6 +38,8 @@ const MEME_TOTAL_SUPPLY: u64 = 1_000_000_000_000_000_000;
 
 const ONE_SUI: u64 = 1_000_000_000;
 
+const TREASURY_FEE: u64 = 5_000;
+
 // === Errors ===
 
 const EInvalidDecimals: u64 = 0;
@@ -55,14 +59,22 @@ public struct XPumpConfig has key {
     initialize_price: u128,
     treasury: address,
     reward_value: u64,
+    treasury_fee: BPS,
+}
+
+public struct PositionOwner<phantom Meme> has key, store {
+    id: UID,
+    pool: address,
+    position: address,
 }
 
 public struct PositionKey(TypeName) has copy, drop, store;
 
-public struct PositionData has store {
+public struct PositionData<phantom Meme> has store {
     pool: address,
-    dev: address,
     position: Position,
+    meme_balance: Balance<Meme>,
+    sui_balance: Balance<SUI>,
 }
 
 // === Events ===
@@ -85,9 +97,12 @@ public struct SetRewardValue(u64, u64) has copy, drop;
 
 public struct CollectFee has copy, drop {
     pool: address,
-    dev: address,
-    meme_amount: u64,
-    sui_amount: u64,
+    position_owner: address,
+    position: address,
+    owner_meme_amount: u64,
+    owner_sui_amount: u64,
+    treasury_meme_amount: u64,
+    treasury_sui_amount: u64,
 }
 
 // === Initializer ===
@@ -98,6 +113,7 @@ fun init(ctx: &mut TxContext) {
         initialize_price: INITIALIZE_PRICE,
         treasury: @treasury,
         reward_value: ONE_SUI,
+        treasury_fee: bps::new(TREASURY_FEE),
     };
 
     let admin = Admin {
@@ -120,7 +136,7 @@ public fun migrate_to_new_pool<Meme, CoinTypeFee>(
     migrator: MemezMigrator<Meme, SUI>,
     fee: Coin<CoinTypeFee>,
     ctx: &mut TxContext,
-): Coin<SUI> {
+): (PositionOwner<Meme>, Coin<SUI>) {
     assert!(meme_metadata.get_decimals() == MEME_DECIMALS, EInvalidDecimals);
     assert!(ipx_treasury.total_supply<Meme>() == MEME_TOTAL_SUPPLY, EInvalidTotalSupply);
 
@@ -181,16 +197,23 @@ public fun migrate_to_new_pool<Meme, CoinTypeFee>(
         dev,
     });
 
+    let position_owner = PositionOwner {
+        id: object::new(ctx),
+        pool: pool_address,
+        position: object::id_address(&position),
+    };
+
     config.save_position<Meme>(PositionData {
         pool: pool_address,
-        dev,
         position,
+        meme_balance: balance::zero(),
+        sui_balance: balance::zero(),
     });
 
-    transfer_or_burn(excess_meme.into_coin(ctx), DEAD_ADDRESS);
-    transfer_or_burn(excess_sui.into_coin(ctx), config.treasury);
+    destroy_zero_or_transfer(excess_meme.into_coin(ctx), DEAD_ADDRESS);
+    destroy_zero_or_transfer(excess_sui.into_coin(ctx), config.treasury);
 
-    reward
+    (position_owner, reward)
 }
 
 public fun migrate_to_existing_pool<Meme>(
@@ -202,7 +225,7 @@ public fun migrate_to_existing_pool<Meme>(
     meme_metadata: &CoinMetadata<Meme>,
     migrator: MemezMigrator<Meme, SUI>,
     ctx: &mut TxContext,
-): Coin<SUI> {
+): (PositionOwner<Meme>, Coin<SUI>) {
     assert!(meme_metadata.get_decimals() == MEME_DECIMALS, EInvalidDecimals);
     assert!(ipx_treasury.total_supply<Meme>() == MEME_TOTAL_SUPPLY, EInvalidTotalSupply);
     assert!(pool.get_fee_rate() == FEE_RATE);
@@ -248,16 +271,23 @@ public fun migrate_to_existing_pool<Meme>(
         dev,
     });
 
+    let position_owner = PositionOwner {
+        id: object::new(ctx),
+        pool: pool_address,
+        position: object::id_address(&position),
+    };
+
     config.save_position<Meme>(PositionData {
         pool: pool_address,
-        dev,
         position,
+        meme_balance: balance::zero(),
+        sui_balance: balance::zero(),
     });
 
-    transfer_or_burn(excess_meme.into_coin(ctx), DEAD_ADDRESS);
-    transfer_or_burn(excess_sui.into_coin(ctx), config.treasury);
+    destroy_zero_or_transfer(excess_meme.into_coin(ctx), DEAD_ADDRESS);
+    destroy_zero_or_transfer(excess_sui.into_coin(ctx), config.treasury);
 
-    reward
+    (position_owner, reward)
 }
 
 public fun collect_fee<Meme>(
@@ -265,36 +295,83 @@ public fun collect_fee<Meme>(
     bluefin_config: &GlobalConfig,
     pool: &mut Pool<Meme, SUI>,
     clock: &Clock,
+    position_owner: &PositionOwner<Meme>,
     ctx: &mut TxContext,
 ): (Coin<Meme>, Coin<SUI>) {
+    let treasury_fee = config.treasury_fee;
+
     let position_data = position_mut<Meme>(config);
 
-    let sender = ctx.sender();
+    assert!(position_owner.position == object::id_address(&position_data.position));
 
-    assert!(sender == position_data.dev);
-
-    let (meme_amount, sui_amount, meme_balance, sui_balance) = pool::collect_fee<Meme, SUI>(
+    let (meme_amount, sui_amount, mut meme_balance, mut sui_balance) = pool::collect_fee<Meme, SUI>(
         clock,
         bluefin_config,
         pool,
         &mut position_data.position,
     );
 
+    let meme_treasury_fee = meme_balance.split(treasury_fee.calc_up(meme_amount));
+    let sui_treasury_fee = sui_balance.split(treasury_fee.calc_up(sui_amount));
+
     emit(CollectFee {
         pool: position_data.pool,
-        dev: sender,
-        meme_amount,
-        sui_amount,
+        position_owner: position_owner.id.to_address(),
+        position: object::id_address(&position_data.position),
+        owner_meme_amount: meme_balance.value(),
+        owner_sui_amount: sui_balance.value(),
+        treasury_meme_amount: meme_treasury_fee.value(),
+        treasury_sui_amount: sui_treasury_fee.value(),
     });
+
+    meme_balance.join(position_data.meme_balance.withdraw_all());
+    sui_balance.join(position_data.sui_balance.withdraw_all());
+
+    transfer::public_transfer(meme_treasury_fee.into_coin(ctx), config.treasury);
+    transfer::public_transfer(sui_treasury_fee.into_coin(ctx), config.treasury);
 
     (meme_balance.into_coin(ctx), sui_balance.into_coin(ctx))
 }
 
-// === View Functions ===
+public fun treasury_collect_fee<Meme>(
+    config: &mut XPumpConfig,
+    bluefin_config: &GlobalConfig,
+    pool: &mut Pool<Meme, SUI>,
+    clock: &Clock,
+    ctx: &mut TxContext,
+) {
+    let treasury_fee = config.treasury_fee;
 
-public fun position_dev<Meme>(config: &XPumpConfig): address {
-    get_position<Meme>(config).dev
+    let position_data = position_mut<Meme>(config);
+
+    let (meme_amount, sui_amount, mut meme_balance, mut sui_balance) = pool::collect_fee<Meme, SUI>(
+        clock,
+        bluefin_config,
+        pool,
+        &mut position_data.position,
+    );
+
+    let meme_treasury_fee = meme_balance.split(treasury_fee.calc_up(meme_amount));
+    let sui_treasury_fee = sui_balance.split(treasury_fee.calc_up(sui_amount));
+
+    emit(CollectFee {
+        pool: position_data.pool,
+        position_owner: @0x0,
+        position: object::id_address(&position_data.position),
+        owner_meme_amount: meme_balance.value(),
+        owner_sui_amount: sui_balance.value(),
+        treasury_meme_amount: meme_treasury_fee.value(),
+        treasury_sui_amount: sui_treasury_fee.value(),
+    });
+
+    position_data.meme_balance.join(meme_balance);
+    position_data.sui_balance.join(sui_balance);
+
+    transfer::public_transfer(meme_treasury_fee.into_coin(ctx), config.treasury);
+    transfer::public_transfer(sui_treasury_fee.into_coin(ctx), config.treasury);
 }
+
+// === View Functions ===
 
 public fun position_pool<Meme>(config: &XPumpConfig): address {
     get_position<Meme>(config).pool
@@ -334,7 +411,7 @@ fun pool_name<Meme>(meme_metadata: &CoinMetadata<Meme>): vector<u8> {
     name
 }
 
-fun transfer_or_burn<CoinType>(coin: Coin<CoinType>, to: address) {
+fun destroy_zero_or_transfer<CoinType>(coin: Coin<CoinType>, to: address) {
     if (coin.value() == 0) {
         coin.destroy_zero();
     } else {
@@ -342,14 +419,14 @@ fun transfer_or_burn<CoinType>(coin: Coin<CoinType>, to: address) {
     }
 }
 
-fun get_position<Meme>(config: &XPumpConfig): &PositionData {
-    df::borrow<_, PositionData>(&config.id, PositionKey(type_name::get<Meme>()))
+fun get_position<Meme>(config: &XPumpConfig): &PositionData<Meme> {
+    df::borrow<_, PositionData<Meme>>(&config.id, PositionKey(type_name::get<Meme>()))
 }
 
-fun position_mut<Meme>(config: &mut XPumpConfig): &mut PositionData {
-    df::borrow_mut<_, PositionData>(&mut config.id, PositionKey(type_name::get<Meme>()))
+fun position_mut<Meme>(config: &mut XPumpConfig): &mut PositionData<Meme> {
+    df::borrow_mut<_, PositionData<Meme>>(&mut config.id, PositionKey(type_name::get<Meme>()))
 }
 
-fun save_position<Meme>(config: &mut XPumpConfig, position: PositionData) {
+fun save_position<Meme>(config: &mut XPumpConfig, position: PositionData<Meme>) {
     df::add(&mut config.id, PositionKey(type_name::get<Meme>()), position);
 }

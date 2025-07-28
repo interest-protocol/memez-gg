@@ -6,6 +6,7 @@ authors = ["Jose Cerqueira (jose@interestprotocol.com)"]
 
 [dependencies]
 ipx_coin_standard = { r.mvr = "@interest/coin-standard" }
+interest_bps = { r.mvr = "@interest/bps" }
 MemezFun = { local = "../../fun" }
 BluefinSpot = { git = "https://github.com/fireflyprotocol/bluefin-spot-contract-interface.git", rev = "main" }
 

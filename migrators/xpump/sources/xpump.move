@@ -73,6 +73,7 @@ public struct PositionKey(TypeName) has copy, drop, store;
 public struct PositionData<phantom Meme> has store {
     pool: address,
     position: Position,
+    position_owner: address,
     meme_balance: Balance<Meme>,
     sui_balance: Balance<SUI>,
 }
@@ -206,6 +207,7 @@ public fun migrate_to_new_pool<Meme, CoinTypeFee>(
     config.save_position<Meme>(PositionData {
         pool: pool_address,
         position,
+        position_owner: position_owner.id.to_address(),
         meme_balance: balance::zero(),
         sui_balance: balance::zero(),
     });
@@ -280,6 +282,7 @@ public fun migrate_to_existing_pool<Meme>(
     config.save_position<Meme>(PositionData {
         pool: pool_address,
         position,
+        position_owner: position_owner.id.to_address(),
         meme_balance: balance::zero(),
         sui_balance: balance::zero(),
     });
@@ -303,6 +306,7 @@ public fun collect_fee<Meme>(
     let position_data = position_mut<Meme>(config);
 
     assert!(position_owner.position == object::id_address(&position_data.position));
+    assert!(position_owner.pool == object::id_address(pool));
 
     let (meme_amount, sui_amount, mut meme_balance, mut sui_balance) = pool::collect_fee<Meme, SUI>(
         clock,
@@ -344,6 +348,8 @@ public fun treasury_collect_fee<Meme>(
 
     let position_data = position_mut<Meme>(config);
 
+    assert!(position_data.pool == object::id_address(pool));
+
     let (meme_amount, sui_amount, mut meme_balance, mut sui_balance) = pool::collect_fee<Meme, SUI>(
         clock,
         bluefin_config,
@@ -356,7 +362,7 @@ public fun treasury_collect_fee<Meme>(
 
     emit(CollectFee {
         pool: position_data.pool,
-        position_owner: @0x0,
+        position_owner: position_data.position_owner,
         position: object::id_address(&position_data.position),
         owner_meme_amount: meme_balance.value(),
         owner_sui_amount: sui_balance.value(),

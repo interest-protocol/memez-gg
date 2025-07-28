@@ -137,7 +137,7 @@ public fun migrate_to_new_pool<Meme, CoinTypeFee>(
     migrator: MemezMigrator<Meme, SUI>,
     fee: Coin<CoinTypeFee>,
     ctx: &mut TxContext,
-): (PositionOwner<Meme>, Coin<SUI>) {
+): Coin<SUI> {
     assert!(meme_metadata.get_decimals() == MEME_DECIMALS, EInvalidDecimals);
     assert!(ipx_treasury.total_supply<Meme>() == MEME_TOTAL_SUPPLY, EInvalidTotalSupply);
 
@@ -198,7 +198,7 @@ public fun migrate_to_new_pool<Meme, CoinTypeFee>(
         dev,
     });
 
-    let position_owner = PositionOwner {
+    let position_owner = PositionOwner<Meme> {
         id: object::new(ctx),
         pool: pool_address,
         position: object::id_address(&position),
@@ -212,10 +212,12 @@ public fun migrate_to_new_pool<Meme, CoinTypeFee>(
         sui_balance: balance::zero(),
     });
 
+    transfer::public_transfer(position_owner, dev);
+
     destroy_zero_or_transfer(excess_meme.into_coin(ctx), DEAD_ADDRESS);
     destroy_zero_or_transfer(excess_sui.into_coin(ctx), config.treasury);
 
-    (position_owner, reward)
+    reward
 }
 
 public fun migrate_to_existing_pool<Meme>(
@@ -227,7 +229,7 @@ public fun migrate_to_existing_pool<Meme>(
     meme_metadata: &CoinMetadata<Meme>,
     migrator: MemezMigrator<Meme, SUI>,
     ctx: &mut TxContext,
-): (PositionOwner<Meme>, Coin<SUI>) {
+): Coin<SUI> {
     assert!(meme_metadata.get_decimals() == MEME_DECIMALS, EInvalidDecimals);
     assert!(ipx_treasury.total_supply<Meme>() == MEME_TOTAL_SUPPLY, EInvalidTotalSupply);
     assert!(pool.get_fee_rate() == FEE_RATE);
@@ -273,7 +275,7 @@ public fun migrate_to_existing_pool<Meme>(
         dev,
     });
 
-    let position_owner = PositionOwner {
+    let position_owner = PositionOwner<Meme> {
         id: object::new(ctx),
         pool: pool_address,
         position: object::id_address(&position),
@@ -287,10 +289,12 @@ public fun migrate_to_existing_pool<Meme>(
         sui_balance: balance::zero(),
     });
 
+    transfer::public_transfer(position_owner, dev);
+
     destroy_zero_or_transfer(excess_meme.into_coin(ctx), DEAD_ADDRESS);
     destroy_zero_or_transfer(excess_sui.into_coin(ctx), config.treasury);
 
-    (position_owner, reward)
+    reward
 }
 
 public fun collect_fee<Meme>(

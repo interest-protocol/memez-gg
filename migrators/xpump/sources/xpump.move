@@ -97,6 +97,8 @@ public struct SetInitializePrice(u128, u128) has copy, drop;
 
 public struct SetRewardValue(u64, u64) has copy, drop;
 
+public struct SetTreasuryFee(u64, u64) has copy, drop;
+
 public struct CollectFee has copy, drop {
     pool: address,
     position_owner: address,
@@ -410,6 +412,11 @@ public fun set_treasury(self: &mut XPumpConfig, _: &Admin, treasury: address) {
 public fun set_reward_value(self: &mut XPumpConfig, _: &Admin, reward_value: u64) {
     emit(SetRewardValue(self.reward_value, reward_value));
     self.reward_value = reward_value;
+}
+
+public fun set_treasury_fee(self: &mut XPumpConfig, _: &Admin, treasury_fee: u64) {
+    emit(SetTreasuryFee(self.treasury_fee.value(), treasury_fee));
+    self.treasury_fee = bps::new(treasury_fee);
 }
 
 // === Private Functions ===

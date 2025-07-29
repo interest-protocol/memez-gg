@@ -62,10 +62,11 @@ public struct XPumpConfig has key {
     treasury_fee: BPS,
 }
 
-public struct PositionOwner<phantom Meme> has key, store {
+public struct PositionOwner has key, store {
     id: UID,
     pool: address,
     position: address,
+    meme: TypeName,
 }
 
 public struct PositionKey(TypeName) has copy, drop, store;
@@ -198,10 +199,11 @@ public fun migrate_to_new_pool<Meme, CoinTypeFee>(
         dev,
     });
 
-    let position_owner = PositionOwner<Meme> {
+    let position_owner = PositionOwner {
         id: object::new(ctx),
         pool: pool_address,
         position: object::id_address(&position),
+        meme: type_name::get<Meme>(),
     };
 
     config.save_position<Meme>(PositionData {
@@ -275,10 +277,11 @@ public fun migrate_to_existing_pool<Meme>(
         dev,
     });
 
-    let position_owner = PositionOwner<Meme> {
+    let position_owner = PositionOwner {
         id: object::new(ctx),
         pool: pool_address,
         position: object::id_address(&position),
+        meme: type_name::get<Meme>(),
     };
 
     config.save_position<Meme>(PositionData {
@@ -302,7 +305,7 @@ public fun collect_fee<Meme>(
     bluefin_config: &GlobalConfig,
     pool: &mut Pool<Meme, SUI>,
     clock: &Clock,
-    position_owner: &PositionOwner<Meme>,
+    position_owner: &PositionOwner,
     ctx: &mut TxContext,
 ): (Coin<Meme>, Coin<SUI>) {
     let treasury_fee = config.treasury_fee;

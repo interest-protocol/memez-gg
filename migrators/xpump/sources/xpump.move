@@ -40,11 +40,15 @@ const ONE_SUI: u64 = 1_000_000_000;
 
 const TREASURY_FEE: u64 = 5_000;
 
+const PACKAGE_VERSION: u64 = 1;
+
 // === Errors ===
 
 const EInvalidDecimals: u64 = 0;
 
 const EInvalidTotalSupply: u64 = 1;
+
+const EInvalidPackageVersion: u64 = 2;
 
 // === Structs ===
 
@@ -60,6 +64,7 @@ public struct XPumpConfig has key {
     treasury: address,
     reward_value: u64,
     treasury_fee: BPS,
+    package_version: u64,
 }
 
 public struct PositionOwner has key, store {
@@ -99,6 +104,12 @@ public struct SetRewardValue(u64, u64) has copy, drop;
 
 public struct SetTreasuryFee(u64, u64) has copy, drop;
 
+public struct UpdatePositionOwner has copy, drop {
+    old_position_owner: address,
+    new_position_owner: address,
+    meme: TypeName,
+}
+
 public struct CollectFee has copy, drop {
     pool: address,
     position_owner: address,
@@ -118,6 +129,7 @@ fun init(ctx: &mut TxContext) {
         treasury: @treasury,
         reward_value: ONE_SUI,
         treasury_fee: bps::new(TREASURY_FEE),
+        package_version: PACKAGE_VERSION,
     };
 
     let admin = Admin {
@@ -141,6 +153,8 @@ public fun migrate_to_new_pool<Meme, CoinTypeFee>(
     fee: Coin<CoinTypeFee>,
     ctx: &mut TxContext,
 ): Coin<SUI> {
+    config.assert_package_version();
+
     assert!(meme_metadata.get_decimals() == MEME_DECIMALS, EInvalidDecimals);
     assert!(ipx_treasury.total_supply<Meme>() == MEME_TOTAL_SUPPLY, EInvalidTotalSupply);
 
@@ -234,6 +248,8 @@ public fun migrate_to_existing_pool<Meme>(
     migrator: MemezMigrator<Meme, SUI>,
     ctx: &mut TxContext,
 ): Coin<SUI> {
+    config.assert_package_version();
+
     assert!(meme_metadata.get_decimals() == MEME_DECIMALS, EInvalidDecimals);
     assert!(ipx_treasury.total_supply<Meme>() == MEME_TOTAL_SUPPLY, EInvalidTotalSupply);
     assert!(pool.get_fee_rate() == FEE_RATE);
@@ -310,6 +326,8 @@ public fun collect_fee<Meme>(
     position_owner: &PositionOwner,
     ctx: &mut TxContext,
 ): (Coin<Meme>, Coin<SUI>) {
+    config.assert_package_version();
+
     let treasury_fee = config.treasury_fee;
 
     let position_data = position_mut<Meme>(config);
@@ -346,6 +364,26 @@ public fun collect_fee<Meme>(
     (meme_balance.into_coin(ctx), sui_balance.into_coin(ctx))
 }
 
+public fun destroy_position_owner<Meme>(config: &mut XPumpConfig, position_owner: PositionOwner) {
+    config.assert_package_version();
+
+    let position_data = position_mut<Meme>(config);
+
+    let PositionOwner {
+        id,
+        pool,
+        position,
+        meme: _,
+    } = position_owner;
+
+    assert!(position == object::id_address(&position_data.position));
+    assert!(pool == position_data.pool);
+
+    position_data.position_owner = DEAD_ADDRESS;
+
+    id.delete();
+}
+
 public fun treasury_collect_fee<Meme>(
     config: &mut XPumpConfig,
     bluefin_config: &GlobalConfig,
@@ -353,6 +391,8 @@ public fun treasury_collect_fee<Meme>(
     clock: &Clock,
     ctx: &mut TxContext,
 ) {
+    config.assert_package_version();
+
     let treasury_fee = config.treasury_fee;
 
     let position_data = position_mut<Meme>(config);
@@ -396,6 +436,10 @@ public fun position<Meme>(config: &XPumpConfig): &Position {
     &get_position<Meme>(config).position
 }
 
+public fun position_data<Meme>(config: &XPumpConfig): &PositionData<Meme> {
+    get_position<Meme>(config)
+}
+
 // === Admin Functions ===
 
 public fun set_initialize_price(self: &mut XPumpConfig, _: &Admin, initialize_price: u128) {
@@ -417,6 +461,39 @@ public fun set_reward_value(self: &mut XPumpConfig, _: &Admin, reward_value: u64
 public fun set_treasury_fee(self: &mut XPumpConfig, _: &Admin, treasury_fee: u64) {
     emit(SetTreasuryFee(self.treasury_fee.value(), treasury_fee));
     self.treasury_fee = bps::new(treasury_fee);
+}
+
+public fun new_position_owner<Meme>(
+    self: &mut XPumpConfig,
+    _: &Admin,
+    ctx: &mut TxContext,
+): PositionOwner {
+    let position_data = position_mut<Meme>(self);
+
+    let position_owner = PositionOwner {
+        id: object::new(ctx),
+        pool: position_data.pool,
+        position: object::id_address(&position_data.position),
+        meme: type_name::get<Meme>(),
+    };
+
+    position_data.position_owner = position_owner.id.to_address();
+
+    position_owner
+}
+
+public fun update_position_owner<Meme>(
+    self: &mut XPumpConfig,
+    _: &Admin,
+    new_position_owner: address,
+) {
+    let position_data = position_mut<Meme>(self);
+    emit(UpdatePositionOwner {
+        old_position_owner: position_data.position_owner,
+        new_position_owner,
+        meme: type_name::get<Meme>(),
+    });
+    position_data.position_owner = new_position_owner;
 }
 
 // === Private Functions ===
@@ -449,4 +526,8 @@ fun position_mut<Meme>(config: &mut XPumpConfig): &mut PositionData<Meme> {
 
 fun save_position<Meme>(config: &mut XPumpConfig, position: PositionData<Meme>) {
     df::add(&mut config.id, PositionKey(type_name::get<Meme>()), position);
+}
+
+fun assert_package_version(config: &XPumpConfig) {
+    assert!(config.package_version == PACKAGE_VERSION, EInvalidPackageVersion);
 }

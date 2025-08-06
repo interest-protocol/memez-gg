@@ -80,7 +80,6 @@ public struct PositionData<phantom Meme> has store {
     pool: address,
     position: Position,
     position_owner: address,
-    meme_balance: Balance<Meme>,
     sui_balance: Balance<SUI>,
 }
 
@@ -226,7 +225,6 @@ public fun migrate_to_new_pool<Meme, CoinTypeFee>(
         pool: pool_address,
         position,
         position_owner: position_owner.id.to_address(),
-        meme_balance: balance::zero(),
         sui_balance: balance::zero(),
     });
 
@@ -306,7 +304,6 @@ public fun migrate_to_existing_pool<Meme>(
         pool: pool_address,
         position,
         position_owner: position_owner.id.to_address(),
-        meme_balance: balance::zero(),
         sui_balance: balance::zero(),
     });
 
@@ -325,7 +322,7 @@ public fun collect_fee<Meme>(
     clock: &Clock,
     position_owner: &PositionOwner,
     ctx: &mut TxContext,
-): (Coin<Meme>, Coin<SUI>) {
+): Coin<SUI> {
     config.assert_package_version();
 
     let treasury_fee = config.treasury_fee;
@@ -335,33 +332,31 @@ public fun collect_fee<Meme>(
     assert!(position_owner.position == object::id_address(&position_data.position));
     assert!(position_owner.pool == object::id_address(pool));
 
-    let (meme_amount, sui_amount, mut meme_balance, mut sui_balance) = pool::collect_fee<Meme, SUI>(
+    let (meme_amount, sui_amount, meme_balance, mut sui_balance) = pool::collect_fee<Meme, SUI>(
         clock,
         bluefin_config,
         pool,
         &mut position_data.position,
     );
 
-    let meme_treasury_fee = meme_balance.split(treasury_fee.calc_up(meme_amount));
     let sui_treasury_fee = sui_balance.split(treasury_fee.calc_up(sui_amount));
 
     emit(CollectFee {
         pool: position_data.pool,
         position_owner: position_owner.id.to_address(),
         position: object::id_address(&position_data.position),
-        owner_meme_amount: meme_balance.value(),
-        owner_sui_amount: sui_balance.value(),
-        treasury_meme_amount: meme_treasury_fee.value(),
+        owner_meme_amount: 0,
+        owner_sui_amount: sui_balance.value() + position_data.sui_balance.value(),
+        treasury_meme_amount: meme_amount,
         treasury_sui_amount: sui_treasury_fee.value(),
     });
 
-    meme_balance.join(position_data.meme_balance.withdraw_all());
     sui_balance.join(position_data.sui_balance.withdraw_all());
 
-    transfer::public_transfer(meme_treasury_fee.into_coin(ctx), config.treasury);
+    transfer::public_transfer(meme_balance.into_coin(ctx), config.treasury);
     transfer::public_transfer(sui_treasury_fee.into_coin(ctx), config.treasury);
 
-    (meme_balance.into_coin(ctx), sui_balance.into_coin(ctx))
+    sui_balance.into_coin(ctx)
 }
 
 public fun destroy_position_owner<Meme>(config: &mut XPumpConfig, position_owner: PositionOwner) {
@@ -379,7 +374,9 @@ public fun destroy_position_owner<Meme>(config: &mut XPumpConfig, position_owner
     assert!(position == object::id_address(&position_data.position));
     assert!(pool == position_data.pool);
 
-    position_data.position_owner = DEAD_ADDRESS;
+    if (position_data.position_owner == id.to_address()) {
+        position_data.position_owner = DEAD_ADDRESS;
+    };
 
     id.delete();
 }
@@ -399,30 +396,28 @@ public fun treasury_collect_fee<Meme>(
 
     assert!(position_data.pool == object::id_address(pool));
 
-    let (meme_amount, sui_amount, mut meme_balance, mut sui_balance) = pool::collect_fee<Meme, SUI>(
+    let (meme_amount, sui_amount, meme_balance, mut sui_balance) = pool::collect_fee<Meme, SUI>(
         clock,
         bluefin_config,
         pool,
         &mut position_data.position,
     );
 
-    let meme_treasury_fee = meme_balance.split(treasury_fee.calc_up(meme_amount));
     let sui_treasury_fee = sui_balance.split(treasury_fee.calc_up(sui_amount));
 
     emit(CollectFee {
         pool: position_data.pool,
         position_owner: position_data.position_owner,
         position: object::id_address(&position_data.position),
-        owner_meme_amount: meme_balance.value(),
-        owner_sui_amount: sui_balance.value(),
-        treasury_meme_amount: meme_treasury_fee.value(),
+        owner_meme_amount: 0,
+        owner_sui_amount: 0,
+        treasury_meme_amount: meme_amount,
         treasury_sui_amount: sui_treasury_fee.value(),
     });
 
-    position_data.meme_balance.join(meme_balance);
     position_data.sui_balance.join(sui_balance);
 
-    transfer::public_transfer(meme_treasury_fee.into_coin(ctx), config.treasury);
+    transfer::public_transfer(meme_balance.into_coin(ctx), config.treasury);
     transfer::public_transfer(sui_treasury_fee.into_coin(ctx), config.treasury);
 }
 

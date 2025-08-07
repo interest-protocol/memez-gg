@@ -435,6 +435,10 @@ public fun position_data<Meme>(config: &XPumpConfig): &PositionData<Meme> {
     get_position<Meme>(config)
 }
 
+public fun position_data_owner<Meme>(config: &XPumpConfig): address {
+    get_position<Meme>(config).position_owner
+}
+
 // === Admin Functions ===
 
 public fun set_initialize_price(self: &mut XPumpConfig, _: &Admin, initialize_price: u128) {

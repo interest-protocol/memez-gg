@@ -1,3 +1,4 @@
+#[allow(lint(self_transfer))]
 module xpump_migrator::xpump_migrator;
 
 use bluefin_spot::{config::GlobalConfig, pool::{Self, Pool}, position::Position};
@@ -75,6 +76,8 @@ public struct PositionOwner has key, store {
 }
 
 public struct PositionKey(TypeName) has copy, drop, store;
+
+public struct PositionKeyV2(TypeName) has copy, drop, store;
 
 public struct PositionData<phantom Meme> has store {
     pool: address,
@@ -230,10 +233,74 @@ public fun migrate_to_new_pool<Meme, CoinTypeFee>(
 
     transfer::public_transfer(position_owner, dev);
 
-    destroy_zero_or_transfer(excess_meme.into_coin(ctx), DEAD_ADDRESS);
+    destroy_zero_or_transfer(excess_meme.into_coin(ctx), config.treasury);
     destroy_zero_or_transfer(excess_sui.into_coin(ctx), config.treasury);
 
     reward
+}
+
+public fun add_liquidity_to_existing_pool<Meme>(
+    config: &mut XPumpConfig,
+    bluefin_config: &mut GlobalConfig,
+    pool: &mut Pool<Meme, SUI>,
+    clock: &Clock,
+    ipx_treasury: &IPXTreasuryStandard,
+    meme_metadata: &CoinMetadata<Meme>,
+    sui_coin: Coin<SUI>,
+    meme_coin: Coin<Meme>,
+    ctx: &mut TxContext,
+) {
+    config.assert_package_version();
+
+    assert!(meme_metadata.get_decimals() == MEME_DECIMALS, EInvalidDecimals);
+    assert!(ipx_treasury.total_supply<Meme>() == MEME_TOTAL_SUPPLY, EInvalidTotalSupply);
+    assert!(pool.get_fee_rate() == FEE_RATE);
+    assert!(pool.get_tick_spacing() == TICK_SPACING);
+
+    let mut position = pool::open_position<Meme, SUI>(
+        bluefin_config,
+        pool,
+        MIN_TICK,
+        MAX_TICK,
+        ctx,
+    );
+
+    let pool_address = object::id_address(pool);
+
+    let sui_amount = sui_coin.value();
+
+    let (_, _, excess_meme, excess_sui) = pool::add_liquidity_with_fixed_amount<
+        Meme,
+        SUI,
+    >(
+        clock,
+        bluefin_config,
+        pool,
+        &mut position,
+        meme_coin.into_balance(),
+        sui_coin.into_balance(),
+        sui_amount,
+        false,
+    );
+    
+    let position_owner = PositionOwner {
+        id: object::new(ctx),
+        pool: pool_address,
+        position: object::id_address(&position),
+        meme: type_name::get<Meme>(),
+    };
+
+    config.save_position_v2<Meme>(PositionData {
+        pool: pool_address,
+        position,
+        position_owner: position_owner.id.to_address(),
+        sui_balance: balance::zero(),
+    });
+
+    transfer::public_transfer(position_owner, ctx.sender());
+
+    destroy_zero_or_transfer(excess_meme.into_coin(ctx), ctx.sender());
+    destroy_zero_or_transfer(excess_sui.into_coin(ctx), ctx.sender());
 }
 
 public fun migrate_to_existing_pool<Meme>(
@@ -525,6 +592,10 @@ fun position_mut<Meme>(config: &mut XPumpConfig): &mut PositionData<Meme> {
 
 fun save_position<Meme>(config: &mut XPumpConfig, position: PositionData<Meme>) {
     df::add(&mut config.id, PositionKey(type_name::get<Meme>()), position);
+}
+
+fun save_position_v2<Meme>(config: &mut XPumpConfig, position: PositionData<Meme>) {
+    df::add(&mut config.id, PositionKeyV2(type_name::get<Meme>()), position);
 }
 
 fun assert_package_version(config: &XPumpConfig) {

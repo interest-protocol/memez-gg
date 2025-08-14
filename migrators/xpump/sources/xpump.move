@@ -166,14 +166,7 @@ public fun migrate_to_new_pool<Meme, CoinTypeFee>(
 
     let sui_balance_value = sui_balance.value();
 
-    let (
-        pool_id,
-        position,
-        meme_amount,
-        sui_amount,
-        excess_meme,
-        excess_sui,
-    ) = pool::create_pool_with_liquidity<Meme, SUI, CoinTypeFee>(
+    let mut bluefin_pool = pool::create_pool_and_get_object<Meme, SUI, CoinTypeFee>(
         clock,
         bluefin_config,
         pool_name<Meme>(meme_metadata),
@@ -196,16 +189,31 @@ public fun migrate_to_new_pool<Meme, CoinTypeFee>(
         FEE_RATE,
         config.initialize_price,
         fee.into_balance(),
+        ctx,
+    );
+
+    let mut position = pool::open_position<Meme, SUI>(
+        bluefin_config,
+        &mut bluefin_pool,
         MIN_TICK,
         MAX_TICK,
+        ctx,
+    );
+
+    let (meme_amount, sui_amount, excess_meme, excess_sui) = pool::add_liquidity_with_fixed_amount(
+        clock,
+        bluefin_config,
+        &mut bluefin_pool,
+        &mut position,
         meme_balance,
         sui_balance,
         sui_balance_value,
         false,
-        ctx,
     );
 
-    let pool_address = pool_id.to_address();
+    let pool_address = object::id_address(&bluefin_pool);
+
+    pool::share_pool_object(bluefin_pool);
 
     emit(NewPool {
         pool: pool_address,
@@ -269,10 +277,7 @@ public fun add_liquidity_to_existing_pool<Meme>(
 
     let sui_amount = sui_coin.value();
 
-    let (_, _, excess_meme, excess_sui) = pool::add_liquidity_with_fixed_amount<
-        Meme,
-        SUI,
-    >(
+    let (_, _, excess_meme, excess_sui) = pool::add_liquidity_with_fixed_amount<Meme, SUI>(
         clock,
         bluefin_config,
         pool,
@@ -282,7 +287,7 @@ public fun add_liquidity_to_existing_pool<Meme>(
         sui_amount,
         false,
     );
-    
+
     let position_owner = PositionOwner {
         id: object::new(ctx),
         pool: pool_address,

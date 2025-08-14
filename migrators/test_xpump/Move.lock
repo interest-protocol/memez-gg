@@ -27,7 +27,7 @@ dependencies = [
 
 [[move.package]]
 id = "Bridge"
-source = { git = "https://github.com/MystenLabs/sui.git", rev = "79918a3f1357", subdir = "crates/sui-framework/packages/bridge" }
+source = { git = "https://github.com/MystenLabs/sui.git", rev = "b448b1d971bd6c1aac8ef4eee4305943806d5d5b", subdir = "crates/sui-framework/packages/bridge" }
 
 dependencies = [
   { id = "MoveStdlib", name = "MoveStdlib" },
@@ -161,11 +161,11 @@ dependencies = [
 
 [[move.package]]
 id = "MoveStdlib"
-source = { git = "https://github.com/MystenLabs/sui.git", rev = "79918a3f1357", subdir = "crates/sui-framework/packages/move-stdlib" }
+source = { git = "https://github.com/MystenLabs/sui.git", rev = "b448b1d971bd6c1aac8ef4eee4305943806d5d5b", subdir = "crates/sui-framework/packages/move-stdlib" }
 
 [[move.package]]
 id = "Sui"
-source = { git = "https://github.com/MystenLabs/sui.git", rev = "79918a3f1357", subdir = "crates/sui-framework/packages/sui-framework" }
+source = { git = "https://github.com/MystenLabs/sui.git", rev = "b448b1d971bd6c1aac8ef4eee4305943806d5d5b", subdir = "crates/sui-framework/packages/sui-framework" }
 
 dependencies = [
   { id = "MoveStdlib", name = "MoveStdlib" },
@@ -173,7 +173,7 @@ dependencies = [
 
 [[move.package]]
 id = "SuiSystem"
-source = { git = "https://github.com/MystenLabs/sui.git", rev = "79918a3f1357", subdir = "crates/sui-framework/packages/sui-system" }
+source = { git = "https://github.com/MystenLabs/sui.git", rev = "b448b1d971bd6c1aac8ef4eee4305943806d5d5b", subdir = "crates/sui-framework/packages/sui-system" }
 
 dependencies = [
   { id = "MoveStdlib", name = "MoveStdlib" },
@@ -189,6 +189,6 @@ flavor = "sui"
 
 [env.mainnet]
 chain-id = "35834a8a"
-original-published-id = "0x0000000000000000000000000000000000000000000000000000000000000000"
-latest-published-id = "0x600af9069af0a19cfc8deeb60b8fd577c56b2bf6a43886a8e997ab3ecc53f420"
-published-version = "7"
+original-published-id = "0xcd8766f0e879a4b5d1c2b0903765b2064d366e805267145ae7ba48d0064d9be6"
+latest-published-id = "0xcd8766f0e879a4b5d1c2b0903765b2064d366e805267145ae7ba48d0064d9be6"
+published-version = "1"

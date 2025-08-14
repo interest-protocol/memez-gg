@@ -1,0 +1,18 @@
+[package]
+name = "XPumpMigrator"
+edition = "2024.beta" 
+license = "MIT"          
+authors = ["Jose Cerqueira (jose@interestprotocol.com)"]     
+
+[dependencies]
+ipx_coin_standard = { r.mvr = "@interest/coin-standard" }
+interest_bps = { r.mvr = "@interest/bps" }
+MemezFun = { local = "../../fun" }
+BluefinSpot = { git = "https://github.com/fireflyprotocol/bluefin-spot-contract-interface.git", rev = "main" }
+
+[addresses]
+xpump_migrator = "0x0"
+treasury = "0x881d835c410f33a1decd8067ce04f6c2ec63eaca196235386b44d315c2152797"
+
+[r.mvr]
+network = "mainnet"

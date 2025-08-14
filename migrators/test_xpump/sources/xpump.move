@@ -43,6 +43,8 @@ const TREASURY_FEE: u64 = 5_000;
 
 const PACKAGE_VERSION: u64 = 1;
 
+const SAFE_SUI_AMOUNT_TO_ADD: u64 = 2_400 * ONE_SUI;
+
 // === Errors ===
 
 const EInvalidDecimals: u64 = 0;
@@ -174,7 +176,7 @@ public fun migrate_to_new_pool<Meme, Quote, CoinTypeFee>(
         ctx,
     );
 
-    let sui_balance_value = sui_balance.value();
+    let sui_balance_value = sui_balance.value().min(SAFE_SUI_AMOUNT_TO_ADD);
 
     let (_, _, excess_meme, excess_quote) = pool::add_liquidity_with_fixed_amount(
         clock,

@@ -260,6 +260,89 @@ public fun migrate_to_new_pool_v2<Meme, Quote, CoinTypeFee>(
     reward
 }
 
+public fun migrate_to_new_pool_v3<Meme, Quote, CoinTypeFee>(
+    config: &mut XPumpConfig,
+    bluefin_config: &mut GlobalConfig,
+    clock: &Clock,
+    ipx_treasury: &IPXTreasuryStandard,
+    meme_metadata: &CoinMetadata<Meme>,
+    quote_metadata: &CoinMetadata<Quote>,
+    migrator: MemezMigrator<Meme, Quote>,
+    fee: Coin<CoinTypeFee>,
+    ctx: &mut TxContext,
+): Coin<Quote> {
+    config.assert_package_version();
+
+    assert!(meme_metadata.get_decimals() == MEME_DECIMALS, EInvalidDecimals);
+    assert!(ipx_treasury.total_supply<Meme>() == MEME_TOTAL_SUPPLY, EInvalidTotalSupply);
+
+    let (dev, meme_balance, mut quote_balance) = migrator.destroy(Witness());
+
+    let reward = quote_balance.split(config.reward_value).into_coin(ctx);
+
+    let price = ((quote_balance.value() as u128) * 2u128.pow(64) / (meme_balance.value() as u128)).sqrt();
+
+    let mut bluefin_pool = pool::create_pool_and_get_object<Meme, Quote, CoinTypeFee>(
+        clock,
+        bluefin_config,
+        pool_name<Meme>(meme_metadata),
+        x"",
+        meme_metadata.get_symbol().into_bytes(),
+        meme_metadata.get_decimals(),
+        meme_metadata
+            .get_icon_url()
+            .destroy_with_default(url::new_unsafe_from_bytes(x""))
+            .inner_url()
+            .into_bytes(),
+        quote_metadata.get_symbol().into_bytes(),
+        quote_metadata.get_decimals(),
+        quote_metadata
+            .get_icon_url()
+            .destroy_with_default(url::new_unsafe_from_bytes(x""))
+            .inner_url()
+            .into_bytes(),
+        TICK_SPACING,
+        FEE_RATE,
+        price,
+        fee.into_balance(),
+        ctx,
+    );
+
+    let mut position = pool::open_position<Meme, Quote>(
+        bluefin_config,
+        &mut bluefin_pool,
+        MIN_TICK,
+        MAX_TICK,
+        ctx,
+    );
+
+    let quote_balance_value = quote_balance.value().min(SAFE_SUI_AMOUNT_TO_ADD);
+
+    let (meme_amount, sui_amount, excess_meme, excess_sui) = pool::add_liquidity_with_fixed_amount(
+        clock,
+        bluefin_config,
+        &mut bluefin_pool,
+        &mut position,
+        meme_balance,
+        quote_balance,
+        quote_balance_value,
+        false,
+    );
+
+    config.share_pool_and_save_position(
+        bluefin_pool,
+        position,
+        meme_amount,
+        sui_amount,
+        excess_meme,
+        excess_sui,
+        dev,
+        ctx,
+    );
+
+    reward
+}
+
 public fun migrate_to_new_pool_with_liquidity<Meme, CoinTypeFee>(
     config: &mut XPumpConfig,
     bluefin_config: &mut GlobalConfig,

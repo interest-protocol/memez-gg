@@ -30,10 +30,6 @@ const FEE_RATE: u64 = 10000;
 // This means that 1 Meme coin equals to 0.000012 Sui.
 const INITIALIZE_PRICE: u128 = 63901395939770060;
 
-const MIN_TICK: u32 = 4294523696;
-
-const MAX_TICK: u32 = 443600;
-
 const MEME_DECIMALS: u8 = 9;
 
 const MEME_TOTAL_SUPPLY: u64 = 1_000_000_000_000_000_000;
@@ -42,7 +38,7 @@ const ONE_SUI: u64 = 1_000_000_000;
 
 const TREASURY_FEE: u64 = 5_000;
 
-const PACKAGE_VERSION: u64 = 2;
+const PACKAGE_VERSION: u64 = 3;
 
 // === Errors ===
 
@@ -231,11 +227,13 @@ public fun migrate_to_new_pool_v3<Meme, Quote, CoinTypeFee>(
         ctx,
     );
 
+    let ticks = get_ticks(config);
+
     let mut position = pool::open_position<Meme, Quote>(
         bluefin_config,
         &mut bluefin_pool,
-        MIN_TICK,
-        MAX_TICK,
+        ticks.min,
+        ticks.max,
         ctx,
     );
 
@@ -582,4 +580,8 @@ fun save_position<Meme>(config: &mut XPumpConfig, position: PositionData<Meme>) 
 
 fun assert_package_version(config: &XPumpConfig) {
     assert!(config.package_version == PACKAGE_VERSION, EInvalidPackageVersion);
+}
+
+fun get_ticks(config: &XPumpConfig): &Ticks {
+    df::borrow<_, Ticks>(&config.id, TicksKey())
 }

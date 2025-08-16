@@ -38,7 +38,7 @@ const ONE_SUI: u64 = 1_000_000_000;
 
 const TREASURY_FEE: u64 = 5_000;
 
-const PACKAGE_VERSION: u64 = 3;
+const PACKAGE_VERSION: u64 = 4;
 
 // === Errors ===
 
@@ -76,6 +76,8 @@ public struct Ticks has store {
     min: u32,
     max: u32,
 }
+
+public struct LiquidityMarginKey() has copy, drop, store;
 
 public struct TicksKey() has copy, drop, store;
 
@@ -196,9 +198,14 @@ public fun migrate_to_new_pool_v3<Meme, Quote, CoinTypeFee>(
 
     let reward = quote_balance.split(config.reward_value).into_coin(ctx);
 
+    let liquidity_margin = get_liquidity_margin(config);
+
+    let safe_meme_balance_value =
+        meme_balance.value() - liquidity_margin.calc_up(meme_balance.value());
+
     let price =
         math::sqrt_down((
-            (quote_balance.value() as u256) * 2u256.pow(128) / (meme_balance.value() as u256),
+            (quote_balance.value() as u256) * 2u256.pow(128) / (safe_meme_balance_value as u256),
         )) as u128;
 
     let mut bluefin_pool = pool::create_pool_and_get_object<Meme, Quote, CoinTypeFee>(
@@ -457,7 +464,17 @@ public fun set_package_version(self: &mut XPumpConfig, _: &Admin, package_versio
     self.package_version = package_version;
 }
 
-public fun set_tick_spacing(self: &mut XPumpConfig, _: &Admin, min: u32, max: u32) {
+public fun set_liquidity_margin(self: &mut XPumpConfig, _: &Admin, value: u64) {
+    if (!df::exists_(&self.id, LiquidityMarginKey())) {
+        df::add(&mut self.id, LiquidityMarginKey(), bps::new(0));
+    };
+
+    let liquidity_margin = df::borrow_mut<_, BPS>(&mut self.id, LiquidityMarginKey());
+
+    *liquidity_margin = bps::new(value);
+}
+
+public fun set_ticks(self: &mut XPumpConfig, _: &Admin, min: u32, max: u32) {
     if (!df::exists_(&self.id, TicksKey())) {
         df::add(&mut self.id, TicksKey(), Ticks { min, max });
     };
@@ -466,6 +483,10 @@ public fun set_tick_spacing(self: &mut XPumpConfig, _: &Admin, min: u32, max: u3
 
     ticks.min = min;
     ticks.max = max;
+}
+
+public fun set_tick_spacing(self: &mut XPumpConfig, _: &Admin, min: u32, max: u32) {
+    abort
 }
 
 public fun new_position_owner<Meme>(
@@ -584,4 +605,8 @@ fun assert_package_version(config: &XPumpConfig) {
 
 fun get_ticks(config: &XPumpConfig): &Ticks {
     df::borrow<_, Ticks>(&config.id, TicksKey())
+}
+
+fun get_liquidity_margin(config: &XPumpConfig): BPS {
+    *df::borrow<_, BPS>(&config.id, LiquidityMarginKey())
 }

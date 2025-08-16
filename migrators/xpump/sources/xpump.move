@@ -15,6 +15,7 @@ use sui::{
     sui::SUI,
     url
 };
+use xpump_migrator::math;
 
 // === Constants ===
 
@@ -280,7 +281,7 @@ public fun migrate_to_new_pool_v3<Meme, Quote, CoinTypeFee>(
 
     let reward = quote_balance.split(config.reward_value).into_coin(ctx);
 
-    let price = ((quote_balance.value() as u128) * 2u128.pow(64) / (meme_balance.value() as u128)).sqrt();
+    let price = math::sqrt_down(((quote_balance.value() as u256) * 2u256.pow(128) / (meme_balance.value() as u256))) as u128;
 
     let mut bluefin_pool = pool::create_pool_and_get_object<Meme, Quote, CoinTypeFee>(
         clock,
@@ -316,7 +317,7 @@ public fun migrate_to_new_pool_v3<Meme, Quote, CoinTypeFee>(
         ctx,
     );
 
-    let quote_balance_value = quote_balance.value().min(SAFE_SUI_AMOUNT_TO_ADD);
+    let quote_balance_value = quote_balance.value();
 
     let (meme_amount, sui_amount, excess_meme, excess_sui) = pool::add_liquidity_with_fixed_amount(
         clock,

@@ -4,6 +4,11 @@ public(package) fun sqrt_down(x: u256): u256 {
     sqrt_down_!(x)
 }
 
+public(package) fun sqrt_up(x: u256): u256 {
+    let r = sqrt_down(x);
+    r + if (r * r < x) 1 else 0
+}
+
 public(package) macro fun sqrt_down_<$T>($x: _): $T {
     let x = $x as u256;
 
@@ -24,11 +29,6 @@ public(package) macro fun sqrt_down_<$T>($x: _): $T {
 
 public(package) macro fun min($x: _, $y: _): _ {
     if ($x < $y) $x else $y
-}
-
-public(package) macro fun sqrt_up<$T>($x: _): $T {
-    let r = sqrt_down!($x);
-    r + if (r * r < $x) 1 else 0
 }
 
 public(package) macro fun log2_down<$T>($x: _): $T {

@@ -1,4 +1,4 @@
-#[allow(lint(self_transfer))]
+#[allow(lint(self_transfer), unused_variable, unused_field)]
 module xpump_migrator::xpump_migrator;
 
 use bluefin_spot::{config::GlobalConfig, pool::{Self, Pool}, position::Position};
@@ -42,9 +42,7 @@ const ONE_SUI: u64 = 1_000_000_000;
 
 const TREASURY_FEE: u64 = 5_000;
 
-const PACKAGE_VERSION: u64 = 1;
-
-const SAFE_SUI_AMOUNT_TO_ADD: u64 = 2_400 * ONE_SUI;
+const PACKAGE_VERSION: u64 = 2;
 
 // === Errors ===
 
@@ -77,6 +75,13 @@ public struct PositionOwner has key, store {
     position: address,
     meme: TypeName,
 }
+
+public struct Ticks has store {
+    min: u32,
+    max: u32,
+}
+
+public struct TicksKey() has copy, drop, store;
 
 public struct PositionKey(TypeName) has copy, drop, store;
 
@@ -158,50 +163,7 @@ public fun migrate_to_new_pool<Meme, CoinTypeFee>(
     fee: Coin<CoinTypeFee>,
     ctx: &mut TxContext,
 ): Coin<SUI> {
-    let (
-        dev,
-        mut bluefin_pool,
-        mut position,
-        sui_balance,
-        meme_balance,
-        reward,
-    ) = new_pool_and_position<Meme, SUI, CoinTypeFee>(
-        config,
-        bluefin_config,
-        clock,
-        ipx_treasury,
-        meme_metadata,
-        sui_metadata,
-        migrator,
-        fee,
-        ctx,
-    );
-
-    let sui_balance_value = sui_balance.value().min(SAFE_SUI_AMOUNT_TO_ADD);
-
-    let (meme_amount, sui_amount, excess_meme, excess_sui) = pool::add_liquidity_with_fixed_amount(
-        clock,
-        bluefin_config,
-        &mut bluefin_pool,
-        &mut position,
-        meme_balance,
-        sui_balance,
-        sui_balance_value,
-        false,
-    );
-
-    config.share_pool_and_save_position(
-        bluefin_pool,
-        position,
-        meme_amount,
-        sui_amount,
-        excess_meme,
-        excess_sui,
-        dev,
-        ctx,
-    );
-
-    reward
+    abort
 }
 
 public fun migrate_to_new_pool_v2<Meme, Quote, CoinTypeFee>(
@@ -215,50 +177,7 @@ public fun migrate_to_new_pool_v2<Meme, Quote, CoinTypeFee>(
     fee: Coin<CoinTypeFee>,
     ctx: &mut TxContext,
 ): Coin<Quote> {
-    let (
-        dev,
-        mut bluefin_pool,
-        mut position,
-        quote_balance,
-        meme_balance,
-        reward,
-    ) = new_pool_and_position<Meme, Quote, CoinTypeFee>(
-        config,
-        bluefin_config,
-        clock,
-        ipx_treasury,
-        meme_metadata,
-        quote_metadata,
-        migrator,
-        fee,
-        ctx,
-    );
-
-    let quote_balance_value = quote_balance.value().min(SAFE_SUI_AMOUNT_TO_ADD);
-
-    let (meme_amount, sui_amount, excess_meme, excess_sui) = pool::add_liquidity_with_fixed_amount(
-        clock,
-        bluefin_config,
-        &mut bluefin_pool,
-        &mut position,
-        meme_balance,
-        quote_balance,
-        quote_balance_value,
-        false,
-    );
-
-    config.share_pool_and_save_position(
-        bluefin_pool,
-        position,
-        meme_amount,
-        sui_amount,
-        excess_meme,
-        excess_sui,
-        dev,
-        ctx,
-    );
-
-    reward
+    abort
 }
 
 public fun migrate_to_new_pool_v3<Meme, Quote, CoinTypeFee>(
@@ -281,7 +200,10 @@ public fun migrate_to_new_pool_v3<Meme, Quote, CoinTypeFee>(
 
     let reward = quote_balance.split(config.reward_value).into_coin(ctx);
 
-    let price = math::sqrt_down(((quote_balance.value() as u256) * 2u256.pow(128) / (meme_balance.value() as u256))) as u128;
+    let price =
+        math::sqrt_down((
+            (quote_balance.value() as u256) * 2u256.pow(128) / (meme_balance.value() as u256),
+        )) as u128;
 
     let mut bluefin_pool = pool::create_pool_and_get_object<Meme, Quote, CoinTypeFee>(
         clock,
@@ -356,46 +278,7 @@ public fun migrate_to_new_pool_with_liquidity<Meme, CoinTypeFee>(
     liquidity: u128,
     ctx: &mut TxContext,
 ): Coin<SUI> {
-    let (
-        dev,
-        mut bluefin_pool,
-        mut position,
-        sui_balance,
-        meme_balance,
-        reward,
-    ) = config.new_pool_and_position<Meme, SUI, CoinTypeFee>(
-        bluefin_config,
-        clock,
-        ipx_treasury,
-        meme_metadata,
-        sui_metadata,
-        migrator,
-        fee,
-        ctx,
-    );
-
-    let (meme_amount, sui_amount, excess_meme, excess_sui) = pool::add_liquidity(
-        clock,
-        bluefin_config,
-        &mut bluefin_pool,
-        &mut position,
-        meme_balance,
-        sui_balance,
-        liquidity,
-    );
-
-    config.share_pool_and_save_position(
-        bluefin_pool,
-        position,
-        meme_amount,
-        sui_amount,
-        excess_meme,
-        excess_sui,
-        dev,
-        ctx,
-    );
-
-    reward
+    abort
 }
 
 public fun add_liquidity_to_existing_pool<Meme>(
@@ -409,54 +292,7 @@ public fun add_liquidity_to_existing_pool<Meme>(
     meme_coin: Coin<Meme>,
     ctx: &mut TxContext,
 ) {
-    config.assert_package_version();
-
-    assert!(meme_metadata.get_decimals() == MEME_DECIMALS, EInvalidDecimals);
-    assert!(ipx_treasury.total_supply<Meme>() == MEME_TOTAL_SUPPLY, EInvalidTotalSupply);
-    assert!(pool.get_fee_rate() == FEE_RATE);
-    assert!(pool.get_tick_spacing() == TICK_SPACING);
-
-    let mut position = pool::open_position<Meme, SUI>(
-        bluefin_config,
-        pool,
-        MIN_TICK,
-        MAX_TICK,
-        ctx,
-    );
-
-    let pool_address = object::id_address(pool);
-
-    let sui_amount = sui_coin.value();
-
-    let (_, _, excess_meme, excess_sui) = pool::add_liquidity_with_fixed_amount<Meme, SUI>(
-        clock,
-        bluefin_config,
-        pool,
-        &mut position,
-        meme_coin.into_balance(),
-        sui_coin.into_balance(),
-        sui_amount,
-        false,
-    );
-
-    let position_owner = PositionOwner {
-        id: object::new(ctx),
-        pool: pool_address,
-        position: object::id_address(&position),
-        meme: type_name::get<Meme>(),
-    };
-
-    config.save_position_v2<Meme>(PositionData {
-        pool: pool_address,
-        position,
-        position_owner: position_owner.id.to_address(),
-        sui_balance: balance::zero(),
-    });
-
-    transfer::public_transfer(position_owner, ctx.sender());
-
-    destroy_zero_or_transfer(excess_meme.into_coin(ctx), ctx.sender());
-    destroy_zero_or_transfer(excess_sui.into_coin(ctx), ctx.sender());
+    abort
 }
 
 public fun migrate_to_existing_pool<Meme>(
@@ -469,73 +305,7 @@ public fun migrate_to_existing_pool<Meme>(
     migrator: MemezMigrator<Meme, SUI>,
     ctx: &mut TxContext,
 ): Coin<SUI> {
-    config.assert_package_version();
-
-    assert!(meme_metadata.get_decimals() == MEME_DECIMALS, EInvalidDecimals);
-    assert!(ipx_treasury.total_supply<Meme>() == MEME_TOTAL_SUPPLY, EInvalidTotalSupply);
-    assert!(pool.get_fee_rate() == FEE_RATE);
-    assert!(pool.get_tick_spacing() == TICK_SPACING);
-
-    let (dev, meme_balance, mut sui_balance) = migrator.destroy(Witness());
-
-    let reward = sui_balance.split(config.reward_value).into_coin(ctx);
-
-    let sui_balance_value = sui_balance.value();
-
-    let mut position = pool::open_position<Meme, SUI>(
-        bluefin_config,
-        pool,
-        MIN_TICK,
-        MAX_TICK,
-        ctx,
-    );
-
-    let pool_address = object::id_address(pool);
-
-    let (meme_amount, sui_amount, excess_meme, excess_sui) = pool::add_liquidity_with_fixed_amount<
-        Meme,
-        SUI,
-    >(
-        clock,
-        bluefin_config,
-        pool,
-        &mut position,
-        meme_balance,
-        sui_balance,
-        sui_balance_value,
-        false,
-    );
-
-    emit(NewPool {
-        pool: pool_address,
-        tick_spacing: TICK_SPACING,
-        meme: type_name::get<Meme>(),
-        meme_amount,
-        sui_amount,
-        position: object::id_address(&position),
-        dev,
-    });
-
-    let position_owner = PositionOwner {
-        id: object::new(ctx),
-        pool: pool_address,
-        position: object::id_address(&position),
-        meme: type_name::get<Meme>(),
-    };
-
-    config.save_position<Meme>(PositionData {
-        pool: pool_address,
-        position,
-        position_owner: position_owner.id.to_address(),
-        sui_balance: balance::zero(),
-    });
-
-    transfer::public_transfer(position_owner, dev);
-
-    destroy_zero_or_transfer(excess_meme.into_coin(ctx), DEAD_ADDRESS);
-    destroy_zero_or_transfer(excess_sui.into_coin(ctx), config.treasury);
-
-    reward
+    abort
 }
 
 public fun collect_fee<Meme>(
@@ -685,6 +455,21 @@ public fun set_treasury_fee(self: &mut XPumpConfig, _: &Admin, treasury_fee: u64
     self.treasury_fee = bps::new(treasury_fee);
 }
 
+public fun set_package_version(self: &mut XPumpConfig, _: &Admin, package_version: u64) {
+    self.package_version = package_version;
+}
+
+public fun set_tick_spacing(self: &mut XPumpConfig, _: &Admin, min: u32, max: u32) {
+    if (!df::exists_(&self.id, TicksKey())) {
+        df::add(&mut self.id, TicksKey(), Ticks { min, max });
+    };
+
+    let ticks = df::borrow_mut<_, Ticks>(&mut self.id, TicksKey());
+
+    ticks.min = min;
+    ticks.max = max;
+}
+
 public fun new_position_owner<Meme>(
     self: &mut XPumpConfig,
     _: &Admin,
@@ -719,63 +504,6 @@ public fun update_position_owner<Meme>(
 }
 
 // === Private Functions ===
-
-fun new_pool_and_position<Meme, Quote, CoinTypeFee>(
-    config: &XPumpConfig,
-    bluefin_config: &mut GlobalConfig,
-    clock: &Clock,
-    ipx_treasury: &IPXTreasuryStandard,
-    meme_metadata: &CoinMetadata<Meme>,
-    quote_metadata: &CoinMetadata<Quote>,
-    migrator: MemezMigrator<Meme, Quote>,
-    fee: Coin<CoinTypeFee>,
-    ctx: &mut TxContext,
-): (address, Pool<Meme, Quote>, Position, Balance<Quote>, Balance<Meme>, Coin<Quote>) {
-    config.assert_package_version();
-
-    assert!(meme_metadata.get_decimals() == MEME_DECIMALS, EInvalidDecimals);
-    assert!(ipx_treasury.total_supply<Meme>() == MEME_TOTAL_SUPPLY, EInvalidTotalSupply);
-
-    let (dev, meme_balance, mut sui_balance) = migrator.destroy(Witness());
-
-    let reward = sui_balance.split(config.reward_value).into_coin(ctx);
-
-    let mut bluefin_pool = pool::create_pool_and_get_object<Meme, Quote, CoinTypeFee>(
-        clock,
-        bluefin_config,
-        pool_name<Meme>(meme_metadata),
-        x"",
-        meme_metadata.get_symbol().into_bytes(),
-        meme_metadata.get_decimals(),
-        meme_metadata
-            .get_icon_url()
-            .destroy_with_default(url::new_unsafe_from_bytes(x""))
-            .inner_url()
-            .into_bytes(),
-        quote_metadata.get_symbol().into_bytes(),
-        quote_metadata.get_decimals(),
-        quote_metadata
-            .get_icon_url()
-            .destroy_with_default(url::new_unsafe_from_bytes(x""))
-            .inner_url()
-            .into_bytes(),
-        TICK_SPACING,
-        FEE_RATE,
-        config.initialize_price,
-        fee.into_balance(),
-        ctx,
-    );
-
-    let position = pool::open_position<Meme, Quote>(
-        bluefin_config,
-        &mut bluefin_pool,
-        MIN_TICK,
-        MAX_TICK,
-        ctx,
-    );
-
-    (dev, bluefin_pool, position, sui_balance, meme_balance, reward)
-}
 
 fun share_pool_and_save_position<Meme, Quote>(
     config: &mut XPumpConfig,
@@ -850,10 +578,6 @@ fun position_mut<Meme>(config: &mut XPumpConfig): &mut PositionData<Meme> {
 
 fun save_position<Meme>(config: &mut XPumpConfig, position: PositionData<Meme>) {
     df::add(&mut config.id, PositionKey(type_name::get<Meme>()), position);
-}
-
-fun save_position_v2<Meme>(config: &mut XPumpConfig, position: PositionData<Meme>) {
-    df::add(&mut config.id, PositionKeyV2(type_name::get<Meme>()), position);
 }
 
 fun assert_package_version(config: &XPumpConfig) {

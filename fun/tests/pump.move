@@ -51,6 +51,8 @@ const VESTING_PERIOD: u64 = 100;
 
 const TEN_PERCENT: u64 = MAX_BPS / 10;
 
+const PUBLIC_KEY: vector<u8> = x"ad84194c595cc2942e14be5269aa4c1de89a97434a88173bd9dabc06b83c0bc5";
+
 public struct World {
     config: MemezConfig,
     scenario: Scenario,
@@ -164,6 +166,118 @@ fun test_new_coin() {
         total_supply - pump_config.liquidity_provision() - dev_purchase - meme_swap_fee,
     );
     assert_eq(dev_purchase, expected_dev_purchase - meme_swap_fee);
+
+    destroy(memez_fun);
+    end(world);
+}
+
+#[test]
+fun test_new_coin_bypasses_protection() {
+    let mut world = start();
+
+    let first_purchase_value = 50_000_000_000;
+
+    let total_supply = 1_000_000_000_000_000_000;
+
+    let first_purchase = mint_for_testing(first_purchase_value, world.scenario.ctx());
+
+    let witness = access_control::sign_in_for_testing<MEMEZ>(0);
+
+    world.config.add_quote_coin<ConfigurableWitness, SUI>(&witness, world.scenario.ctx());
+    world
+        .config
+        .add_migrator_witness<ConfigurableWitness, MigrationWitness>(
+            &witness,
+            world.scenario.ctx(),
+        );
+
+    world.config.set_public_key<ConfigurableWitness>(&witness, PUBLIC_KEY, world.scenario.ctx());
+
+    world
+        .config
+        .set_fees<ConfigurableWitness>(
+            &witness,
+            vector[
+                vector[MAX_BPS, 2 * POW_9],
+                vector[MAX_BPS, 0, 30],
+                vector[MAX_BPS, 0, 30],
+                vector[MAX_BPS, 0, TEN_PERCENT],
+                vector[MAX_BPS, 0, 0],
+                vector[VESTING_PERIOD],
+            ],
+            vector[vector[ADMIN], vector[ADMIN], vector[ADMIN], vector[ADMIN]],
+            world.scenario.ctx(),
+        );
+
+    let pump_config = memez_pump_config::new(vector[
+        BURN_TAX * 3,
+        VIRTUAL_LIQUIDITY * 3,
+        TARGET_LIQUIDITY * 3,
+        PROVISION_LIQUIDITY * 2,
+        total_supply,
+    ]);
+
+    let config = &world.config;
+
+    let ctx = world.scenario.ctx();
+
+    let (mut memez_fun, metadata_cap) = memez_pump::new<
+        Meme,
+        SUI,
+        ConfigurableWitness,
+        MigrationWitness,
+    >(
+        config,
+        create_treasury_cap_for_testing(ctx),
+        mint_for_testing(2_000_000_000, ctx),
+        pump_config,
+        first_purchase,
+        memez_metadata::new_for_test(ctx),
+        vector[STAKE_HOLDER],
+        true,
+        ADMIN,
+        memez_allowed_versions::get_current_allowed_versions_for_testing(),
+        ctx,
+    );
+
+    destroy(metadata_cap);
+
+    assert_eq(
+        memez_pump::liquidity_provision(&mut memez_fun),
+        pump_config.liquidity_provision(),
+    );
+
+    let dev_purchase = memez_pump::dev_purchase(&mut memez_fun);
+
+    let cp = memez_pump::constant_product_mut(&mut memez_fun);
+
+    let swap_fee = cp.quote_swap_fee().calculate(first_purchase_value);
+
+    let expected_dev_purchase = get_amount_out!(
+        first_purchase_value - swap_fee,
+        pump_config.virtual_liquidity(),
+        total_supply - pump_config.liquidity_provision(),
+    );
+
+    let meme_swap_fee = cp.meme_swap_fee().calculate(expected_dev_purchase);
+
+    let cp = memez_pump::constant_product_mut(&mut memez_fun);
+
+    assert_eq(cp.virtual_liquidity(), pump_config.virtual_liquidity());
+    assert_eq(cp.target_quote_liquidity(), pump_config.target_quote_liquidity());
+    assert_eq(cp.quote_balance().value(), first_purchase_value - swap_fee);
+    assert_eq(
+        cp.meme_balance().value(),
+        total_supply - pump_config.liquidity_provision() - dev_purchase - meme_swap_fee,
+    );
+
+    let dev_purchase = memez_pump::dev_purchase_claim(
+        &mut memez_fun,
+        memez_allowed_versions::get_current_allowed_versions_for_testing(),
+        ctx,
+    );
+
+    assert_eq(dev_purchase.burn_for_testing(), expected_dev_purchase - meme_swap_fee);
 
     destroy(memez_fun);
     end(world);
@@ -1242,6 +1356,8 @@ fun start(): World {
     config.add_quote_coin<DefaultKey, SUI>(&witness, scenario.ctx());
 
     config.add_migrator_witness<DefaultKey, MigrationWitness>(&witness, scenario.ctx());
+
+    config.set_public_key<DefaultKey>(&witness, PUBLIC_KEY, scenario.ctx());
 
     config.set_fees<DefaultKey>(
         &witness,

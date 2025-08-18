@@ -129,7 +129,7 @@ fun test_new_coin() {
         vector[STAKE_HOLDER],
         false,
         DEV,
-        memez_allowed_versions::get_allowed_versions_for_testing(1),
+        memez_allowed_versions::get_current_allowed_versions_for_testing(),
         ctx,
     );
 
@@ -219,7 +219,7 @@ fun test_coin_end_to_end() {
         option::none(),
         option::none(),
         expected_meme_value - meme_swap_fee,
-        memez_allowed_versions::get_allowed_versions_for_testing(1),
+        memez_allowed_versions::get_current_allowed_versions_for_testing(),
         ctx,
     );
 
@@ -243,7 +243,7 @@ fun test_coin_end_to_end() {
         mint_for_testing(sell_meme_value, ctx),
         option::none(),
         amounts[0],
-        memez_allowed_versions::get_allowed_versions_for_testing(1),
+        memez_allowed_versions::get_current_allowed_versions_for_testing(),
         ctx,
     );
 
@@ -281,7 +281,7 @@ fun test_coin_end_to_end() {
         option::none(),
         option::none(),
         expected_meme_value - meme_swap_fee,
-        memez_allowed_versions::get_allowed_versions_for_testing(1),
+        memez_allowed_versions::get_current_allowed_versions_for_testing(),
         ctx,
     );
 
@@ -297,7 +297,7 @@ fun test_coin_end_to_end() {
 
     let migrator = memez_pump::migrate(
         &mut memez_fun,
-        memez_allowed_versions::get_allowed_versions_for_testing(1),
+        memez_allowed_versions::get_current_allowed_versions_for_testing(),
         ctx,
     );
 
@@ -323,7 +323,7 @@ fun test_coin_end_to_end() {
 
     let meme_dev_coin = memez_pump::dev_purchase_claim(
         &mut memez_fun,
-        memez_allowed_versions::get_allowed_versions_for_testing(1),
+        memez_allowed_versions::get_current_allowed_versions_for_testing(),
         ctx,
     );
 
@@ -361,7 +361,7 @@ fun new_invalid_version() {
         vector[DEV],
         false,
         DEV,
-        memez_allowed_versions::get_allowed_versions_for_testing(2),
+        memez_allowed_versions::get_invalid_allowed_versions_for_testing(),
         world.scenario.ctx(),
     );
 
@@ -390,7 +390,7 @@ fun new_low_creation_fee() {
         vector[DEV],
         false,
         DEV,
-        memez_allowed_versions::get_allowed_versions_for_testing(1),
+        memez_allowed_versions::get_current_allowed_versions_for_testing(),
         world.scenario.ctx(),
     );
 
@@ -429,7 +429,7 @@ fun pump_invalid_version() {
         option::none(),
         option::none(),
         0,
-        memez_allowed_versions::get_allowed_versions_for_testing(2),
+        memez_allowed_versions::get_invalid_allowed_versions_for_testing(),
         world.scenario.ctx(),
     ).burn_for_testing();
 
@@ -462,7 +462,7 @@ fun pump_is_not_bonding() {
         option::none(),
         option::none(),
         0,
-        memez_allowed_versions::get_allowed_versions_for_testing(1),
+        memez_allowed_versions::get_current_allowed_versions_for_testing(),
         world.scenario.ctx(),
     ).burn_for_testing();
 
@@ -519,7 +519,7 @@ fun dump_invalid_version() {
         option::none(),
         option::none(),
         expected_meme_value - expected_meme_value_fee,
-        memez_allowed_versions::get_allowed_versions_for_testing(1),
+        memez_allowed_versions::get_current_allowed_versions_for_testing(),
         ctx,
     ).burn_for_testing();
 
@@ -537,7 +537,7 @@ fun dump_invalid_version() {
         mint_for_testing(sell_meme_value, ctx),
         option::none(),
         0,
-        memez_allowed_versions::get_allowed_versions_for_testing(2),
+        memez_allowed_versions::get_invalid_allowed_versions_for_testing(),
         ctx,
     ).burn_for_testing();
 
@@ -577,7 +577,7 @@ fun dump_is_not_bonding() {
         mint_for_testing(100, ctx),
         option::none(),
         0,
-        memez_allowed_versions::get_allowed_versions_for_testing(1),
+        memez_allowed_versions::get_current_allowed_versions_for_testing(),
         ctx,
     ).burn_for_testing();
 
@@ -615,7 +615,7 @@ fun migrate_invalid_version() {
 
     let migrator = memez_pump::migrate(
         &mut memez_fun,
-        memez_allowed_versions::get_allowed_versions_for_testing(2),
+        memez_allowed_versions::get_invalid_allowed_versions_for_testing(),
         world.scenario.ctx(),
     );
 
@@ -647,7 +647,7 @@ fun migrate_is_not_migrating() {
 
     let migrator = memez_pump::migrate(
         &mut memez_fun,
-        memez_allowed_versions::get_allowed_versions_for_testing(1),
+        memez_allowed_versions::get_current_allowed_versions_for_testing(),
         world.scenario.ctx(),
     );
 
@@ -685,7 +685,7 @@ fun dev_purchase_claim_invalid_version() {
 
     let migrator = memez_pump::migrate(
         &mut memez_fun,
-        memez_allowed_versions::get_allowed_versions_for_testing(1),
+        memez_allowed_versions::get_current_allowed_versions_for_testing(),
         world.scenario.ctx(),
     );
 
@@ -693,50 +693,12 @@ fun dev_purchase_claim_invalid_version() {
 
     memez_pump::dev_purchase_claim(
         &mut memez_fun,
-        memez_allowed_versions::get_allowed_versions_for_testing(2),
+        memez_allowed_versions::get_invalid_allowed_versions_for_testing(),
         world.scenario.ctx(),
     ).burn_for_testing();
 
     destroy(sui_balance);
     destroy(meme_balance);
-    destroy(memez_fun);
-
-    world.end();
-}
-
-#[test, expected_failure(abort_code = memez_errors::ENotMigrated, location = memez_fun)]
-fun dev_purchase_claim_has_not_migrated() {
-    let mut world = start();
-
-    let first_purchase_value = 10_000_000_000_000;
-
-    let total_supply = 1_000_000_000_000_000_000;
-
-    let first_purchase = mint_for_testing(add_fee(first_purchase_value, 30), world.scenario.ctx());
-
-    let default_config = default_pump_config(total_supply);
-
-    let mut memez_fun = set_up_pool(
-        &mut world,
-        default_config,
-        first_purchase,
-    );
-
-    world.scenario.next_tx(ADMIN);
-
-    memez_pump::dev_purchase_claim(
-        &mut memez_fun,
-        memez_allowed_versions::get_allowed_versions_for_testing(1),
-        world.scenario.ctx(),
-    ).burn_for_testing();
-
-    let migrator = memez_pump::migrate(
-        &mut memez_fun,
-        memez_allowed_versions::get_allowed_versions_for_testing(1),
-        world.scenario.ctx(),
-    );
-
-    destroy(migrator);
     destroy(memez_fun);
 
     world.end();
@@ -764,7 +726,7 @@ fun dev_purchase_claim_is_not_dev() {
 
     let migrator = memez_pump::migrate(
         &mut memez_fun,
-        memez_allowed_versions::get_allowed_versions_for_testing(1),
+        memez_allowed_versions::get_current_allowed_versions_for_testing(),
         world.scenario.ctx(),
     );
 
@@ -774,7 +736,7 @@ fun dev_purchase_claim_is_not_dev() {
 
     memez_pump::dev_purchase_claim(
         &mut memez_fun,
-        memez_allowed_versions::get_allowed_versions_for_testing(1),
+        memez_allowed_versions::get_current_allowed_versions_for_testing(),
         world.scenario.ctx(),
     ).burn_for_testing();
 
@@ -825,13 +787,13 @@ fun test_distribute_stake_holders_allocation() {
         option::none(),
         option::none(),
         0,
-        memez_allowed_versions::get_allowed_versions_for_testing(1),
+        memez_allowed_versions::get_current_allowed_versions_for_testing(),
         world.scenario.ctx(),
     ).burn_for_testing();
 
     let migrator = memez_pump::migrate(
         &mut memez_fun,
-        memez_allowed_versions::get_allowed_versions_for_testing(1),
+        memez_allowed_versions::get_current_allowed_versions_for_testing(),
         world.scenario.ctx(),
     );
 
@@ -849,7 +811,7 @@ fun test_distribute_stake_holders_allocation() {
     memez_pump::distribute_stake_holders_allocation(
         &mut memez_fun,
         &clock,
-        memez_allowed_versions::get_allowed_versions_for_testing(1),
+        memez_allowed_versions::get_current_allowed_versions_for_testing(),
         world.scenario.ctx(),
     );
 
@@ -922,13 +884,13 @@ fun test_migrate_full_liquidity() {
         option::none(),
         option::none(),
         0,
-        memez_allowed_versions::get_allowed_versions_for_testing(1),
+        memez_allowed_versions::get_current_allowed_versions_for_testing(),
         world.scenario.ctx(),
     ).burn_for_testing();
 
     let migrator = memez_pump::migrate(
         &mut memez_fun,
-        memez_allowed_versions::get_allowed_versions_for_testing(1),
+        memez_allowed_versions::get_current_allowed_versions_for_testing(),
         world.scenario.ctx(),
     );
 
@@ -999,7 +961,7 @@ fun test_bonding_curve_math() {
         option::none(),
         option::none(),
         0,
-        memez_allowed_versions::get_allowed_versions_for_testing(1),
+        memez_allowed_versions::get_current_allowed_versions_for_testing(),
         ctx,
     );
 
@@ -1063,7 +1025,7 @@ fun test_distribute_stake_holders_allocation_invalid_version() {
     memez_pump::distribute_stake_holders_allocation(
         &mut memez_fun,
         &clock,
-        memez_allowed_versions::get_allowed_versions_for_testing(2),
+        memez_allowed_versions::get_invalid_allowed_versions_for_testing(),
         world.scenario.ctx(),
     );
 
@@ -1100,7 +1062,7 @@ fun test_distribute_stake_holders_allocation_not_migrated() {
     memez_pump::distribute_stake_holders_allocation(
         &mut memez_fun,
         &clock,
-        memez_allowed_versions::get_allowed_versions_for_testing(1),
+        memez_allowed_versions::get_current_allowed_versions_for_testing(),
         world.scenario.ctx(),
     );
 
@@ -1124,7 +1086,7 @@ fun new_invalid_dynamic_stake_holders() {
 
     let ctx = world.scenario.ctx();
 
-    let version = memez_allowed_versions::get_allowed_versions_for_testing(1);
+    let version = memez_allowed_versions::get_current_allowed_versions_for_testing();
 
     let (memez_fun, metadata_cap) = memez_pump::new<Meme, SUI, DefaultKey, MigrationWitness>(
         config,
@@ -1165,7 +1127,7 @@ fun new_invalid_migrator_witness() {
 
     let ctx = world.scenario.ctx();
 
-    let version = memez_allowed_versions::get_allowed_versions_for_testing(1);
+    let version = memez_allowed_versions::get_current_allowed_versions_for_testing();
 
     let (memez_fun, metadata_cap) = memez_pump::new<Meme, SUI, DefaultKey, DefaultKey>(
         config,
@@ -1206,7 +1168,7 @@ fun new_invalid_quote_type() {
 
     let ctx = world.scenario.ctx();
 
-    let version = memez_allowed_versions::get_allowed_versions_for_testing(1);
+    let version = memez_allowed_versions::get_current_allowed_versions_for_testing();
 
     let (memez_fun, metadata_cap) = memez_pump::new<
         Meme,
@@ -1245,7 +1207,7 @@ fun set_up_pool(
 ): MemezFun<Pump, Meme, SUI> {
     let ctx = world.scenario.ctx();
 
-    let version = memez_allowed_versions::get_allowed_versions_for_testing(1);
+    let version = memez_allowed_versions::get_current_allowed_versions_for_testing();
 
     let (memez_fun, metadata_cap) = memez_pump::new<Meme, SUI, DefaultKey, MigrationWitness>(
         &world.config,

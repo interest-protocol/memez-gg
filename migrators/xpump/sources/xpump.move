@@ -401,7 +401,9 @@ public fun treasury_collect_fee<Meme>(
         &mut position_data.position,
     );
 
-    let sui_treasury_fee = sui_balance.split(treasury_fee.calc_up(sui_amount));
+    let sui_balance_value = sui_balance.value();
+
+    let sui_treasury_fee = sui_balance.split(treasury_fee.calc_up(sui_amount).min(sui_balance_value));
 
     emit(CollectFee {
         pool: position_data.pool,
@@ -438,6 +440,36 @@ public fun position_data_owner<Meme>(config: &XPumpConfig): address {
 }
 
 // === Admin Functions ===
+
+public fun treasury_collect_position_v2_fee<Meme>(
+    config: &mut XPumpConfig,
+    bluefin_config: &GlobalConfig,
+    pool: &mut Pool<Meme, SUI>,
+    clock: &Clock,
+    _: &Admin,
+    ctx: &mut TxContext,
+): (Coin<Meme>, Coin<SUI>) {
+   let position_v2_data = config.position_mut_v2<Meme>();
+
+    let (meme_amount, sui_amount, meme_balance, sui_balance) = pool::collect_fee<Meme, SUI>(
+        clock,
+        bluefin_config,
+        pool,
+        &mut position_v2_data.position,
+    );
+
+    emit(CollectFee {
+        pool: position_v2_data.pool,
+        position_owner: position_v2_data.position_owner,
+        position: object::id_address(&position_v2_data.position),
+        owner_meme_amount: 0,
+        owner_sui_amount: 0,
+        treasury_meme_amount: meme_amount,
+        treasury_sui_amount: sui_amount,
+    });
+
+    (meme_balance.into_coin(ctx), sui_balance.into_coin(ctx))
+}
 
 public fun set_initialize_price(self: &mut XPumpConfig, _: &Admin, initialize_price: u128) {
     assert!(initialize_price != 0);
@@ -593,6 +625,10 @@ fun get_position<Meme>(config: &XPumpConfig): &PositionData<Meme> {
 
 fun position_mut<Meme>(config: &mut XPumpConfig): &mut PositionData<Meme> {
     df::borrow_mut<_, PositionData<Meme>>(&mut config.id, PositionKey(type_name::get<Meme>()))
+}
+
+fun position_mut_v2<Meme>(config: &mut XPumpConfig): &mut PositionData<Meme> {
+    df::borrow_mut<_, PositionData<Meme>>(&mut config.id, PositionKeyV2(type_name::get<Meme>()))
 }
 
 fun save_position<Meme>(config: &mut XPumpConfig, position: PositionData<Meme>) {

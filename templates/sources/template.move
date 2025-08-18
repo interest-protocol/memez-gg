@@ -1,17 +1,17 @@
 #[allow(implicit_const_copy)]
-module memez_templates::meme;
+module memez_templates::last_test;
 
 use sui::{
     coin,
     url::new_unsafe_from_bytes
 };
 
-public struct MEME has drop()
+public struct LAST_TEST has drop()
 
 const DECIMALS: u8 = 9;
-const METADATA: vector<vector<u8>> = vector[b"MEME", b"Meme Coin", b"Just a meme coin", b"https://memez.gg"];
+const METADATA: vector<vector<u8>> = vector[b"LAST_TEST", b"Last Test Coin", b"Just a last test coin", b"https://memez.gg"];
 
-fun init(witness: MEME, ctx: &mut TxContext) {
+fun init(witness: LAST_TEST, ctx: &mut TxContext) {
     let (treasury, metadata) = coin::create_currency(
         witness, 
         DECIMALS, 

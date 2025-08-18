@@ -224,7 +224,6 @@ public fun dev_purchase_claim<Meme, Quote>(
 ): Coin<Meme> {
     allowed_versions.assert_pkg_version();
 
-    self.assert_migrated();
     self.assert_is_dev(ctx);
 
     let state = self.state_mut<Meme, Quote>();

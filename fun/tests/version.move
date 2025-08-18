@@ -8,6 +8,8 @@ use sui::{test_scenario::{Self as ts, Scenario}, test_utils::{assert_eq, destroy
 
 const ADMIN: address = @0x1;
 
+const RANDOM_HIGH_VERSION: u64 = 1234567890;
+
 public struct World {
     scenario: Scenario,
     av: MemezAV,
@@ -30,15 +32,15 @@ fun test_admin_functions() {
 
     assert_eq(world.av.allowed_versions(), vector[1]);
 
-    world.av.add(&witness, 2);
+    world.av.add(&witness, current_version());
 
-    world.av.add(&witness, 3);
+    world.av.add(&witness, RANDOM_HIGH_VERSION);
 
-    assert_eq(world.av.allowed_versions(), vector[1, 2, 3]);
+    assert_eq(world.av.allowed_versions(), vector[1, current_version(), RANDOM_HIGH_VERSION]);
 
-    world.av.remove(&witness, 2);
+    world.av.remove(&witness, RANDOM_HIGH_VERSION);
 
-    assert_eq(world.av.allowed_versions(), vector[1, 3]);
+    assert_eq(world.av.allowed_versions(), vector[1, current_version()]);
 
     end(world);
 }
@@ -47,13 +49,15 @@ fun test_admin_functions() {
 fun test_assert_pkg_version() {
     let mut world = start();
 
-    world.av.get_allowed_versions().assert_pkg_version();
-
     let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
-    world.av.add(&witness, 2);
+    world.av.add(&witness, current_version());    
 
-    memez_allowed_versions::get_allowed_versions_for_testing(1).assert_pkg_version();
+    world.av.get_allowed_versions().assert_pkg_version();
+
+    world.av.add(&witness, RANDOM_HIGH_VERSION);  
+
+    memez_allowed_versions::get_allowed_versions_for_testing(2).assert_pkg_version();
 
     end(world);
 }
@@ -76,9 +80,9 @@ fun test_outdated_package_version() {
 
     let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
-    world.av.add(&witness, 2);
+    world.av.add(&witness, current_version());
 
-    assert_eq(world.av.allowed_versions(), vector[2]);
+    assert_eq(world.av.allowed_versions(), vector[current_version()]);
 
     world.av.get_allowed_versions().assert_pkg_version();
 
@@ -97,7 +101,7 @@ fun test_remove_current_version_not_allowed() {
 
     let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
-    world.av.remove(&witness, 1);
+    world.av.remove(&witness, current_version());
 
     end(world);
 }
@@ -116,4 +120,8 @@ fun start(): World {
 
 fun end(world: World) {
     destroy(world);
+}
+
+fun current_version(): u64 {
+    memez_allowed_versions::version()
 }

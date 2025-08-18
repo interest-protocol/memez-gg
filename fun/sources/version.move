@@ -10,7 +10,14 @@ use sui::vec_set::{Self, VecSet};
 
 // === Constants ===
 
-const VERSION: u64 = 1;
+const ORIGINAL_VERSION: u64 = 1;
+
+/// !Important: This is the current version of the package.
+/// If you are updating the package, you must increment the version.
+/// If you are adding a new version, you must add it to the vector.
+/// If you are removing a version, you must remove it from the vector.
+/// If you are changing the version, you must change the VERSION constant.
+const VERSION: u64 = 2;
 
 // === Structs ===
 
@@ -26,7 +33,7 @@ public struct AllowedVersions(vector<u64>) has drop;
 fun init(ctx: &mut TxContext) {
     let version = MemezAV {
         id: object::new(ctx),
-        allowed_versions: vec_set::singleton(VERSION),
+        allowed_versions: vec_set::singleton(ORIGINAL_VERSION),
     };
 
     transfer::share_object(version);
@@ -75,4 +82,9 @@ public fun get_allowed_versions_for_testing(version: u64): AllowedVersions {
 #[test_only]
 public fun remove_for_testing(self: &mut MemezAV, version: u64) {
     self.allowed_versions.remove(&version);
+}
+
+#[test_only]
+public fun version(): u64 {
+    VERSION
 }

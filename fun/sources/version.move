@@ -80,6 +80,16 @@ public fun get_allowed_versions_for_testing(version: u64): AllowedVersions {
 }
 
 #[test_only]
+public fun get_current_allowed_versions_for_testing(): AllowedVersions {
+    AllowedVersions(vector[VERSION])
+}
+
+#[test_only]
+public fun get_invalid_allowed_versions_for_testing(): AllowedVersions {
+    AllowedVersions(vector[VERSION + 1])
+}
+
+#[test_only]
 public fun remove_for_testing(self: &mut MemezAV, version: u64) {
     self.allowed_versions.remove(&version);
 }

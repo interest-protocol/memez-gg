@@ -17,19 +17,6 @@ public struct MemezWallet has key {
 
 // === Public Mutative Functions ===
 
-public fun new<T>(config_key: String, ctx: &mut TxContext): MemezWallet {
-    assert_is_authorized<T>();
-    MemezWallet {
-        id: object::new(ctx),
-        config_key,
-    }
-}
-
-public fun transfer<T>(wallet: MemezWallet, to: address) {
-    assert_is_authorized<T>();
-    transfer::transfer(wallet, to);
-}
-
 public fun public_receive<T: key + store>(
     wallet: &mut MemezWallet,
     object: Receiving<T>,
@@ -50,6 +37,21 @@ public fun public_receive_coins<T: key + store>(
     });
 
     coin_to_send
+}
+
+// === Memez Fun Only Functions ===
+
+public fun new<T>(config_key: String, ctx: &mut TxContext): MemezWallet {
+    assert_is_authorized<T>();
+    MemezWallet {
+        id: object::new(ctx),
+        config_key,
+    }
+}
+
+public fun transfer<T>(wallet: MemezWallet, to: address) {
+    assert_is_authorized<T>();
+    transfer::transfer(wallet, to);
 }
 
 // === Admin Functions ===

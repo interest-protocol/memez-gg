@@ -19,7 +19,7 @@ public struct MemezWallet has key {
 
 public struct MemezWalletRegistry has key {
     id: UID,
-    /// ctx.sender() -> wallet.id.to_address()
+    /// Owner -> wallet.id.to_address()
     wallets: Table<address, address>,
 }
 
@@ -67,7 +67,7 @@ public fun merge_coins<T>(
     transfer::public_transfer(wallet.merge(coins, ctx), wallet.id.to_address());
 }
 
-public fun public_receive<T: key + store>(
+public fun receive<T: key + store>(
     wallet: &mut MemezWallet,
     object: Receiving<T>,
     ctx: &mut TxContext,
@@ -77,7 +77,7 @@ public fun public_receive<T: key + store>(
     transfer::public_receive(&mut wallet.id, object)
 }
 
-public fun public_receive_coins<T>(
+public fun receive_coins<T>(
     wallet: &mut MemezWallet,
     coins: vector<Receiving<Coin<T>>>,
     ctx: &mut TxContext,

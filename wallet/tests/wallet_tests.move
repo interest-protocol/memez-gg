@@ -85,7 +85,7 @@ fun test_public_receive() {
 
     env.scenario.next_tx(USER);
 
-    let nft = wallet.public_receive<NFT>(
+    let nft = wallet.receive<NFT>(
         test_scenario::receiving_ticket_by_id<NFT>(nft_id),
         env.scenario.ctx(),
     );
@@ -151,7 +151,7 @@ fun test_public_receive_coins() {
     // Only the owner
     env.scenario.next_tx(USER);
 
-    let coin = wallet.public_receive_coins(
+    let coin = wallet.receive_coins(
         vector[
             test_scenario::receiving_ticket_by_id<Coin<SUI>>(coin_1_id),
             test_scenario::receiving_ticket_by_id<Coin<SUI>>(coin_2_id),
@@ -179,7 +179,7 @@ fun test_public_receive_invalid_owner() {
 
     env.scenario.next_tx(SENDER);
 
-    let _nft = wallet.public_receive<NFT>(
+    let _nft = wallet.receive<NFT>(
         test_scenario::receiving_ticket_by_id<NFT>(nft_id),
         env.scenario.ctx(),
     );
@@ -218,7 +218,7 @@ fun test_public_receive_coins_invalid_owner() {
 
     env.scenario.next_tx(SENDER);
 
-    let _coin = wallet.public_receive_coins(
+    let _coin = wallet.receive_coins(
         vector[
             test_scenario::receiving_ticket_by_id<Coin<SUI>>(coin_1_id),
             test_scenario::receiving_ticket_by_id<Coin<SUI>>(coin_2_id),

@@ -19,7 +19,7 @@ public struct MemezVaultRegistry has key {
 
 // === Public Mutative Functions ===
 
-public fun new(registry: &mut MemezVaultRegistry, owner: address, ctx: &mut TxContext) {
+public fun new(registry: &mut MemezVaultRegistry, owner: address, ctx: &mut TxContext): MemezVault {
     assert!(!registry.wallets.contains(owner));
 
     let vault = MemezVault {
@@ -29,6 +29,10 @@ public fun new(registry: &mut MemezVaultRegistry, owner: address, ctx: &mut TxCo
 
     registry.wallets.add(owner, vault.id.to_address());
 
+    vault
+}
+
+public fun share(vault: MemezVault) {
     transfer::share_object(vault);
 }
 

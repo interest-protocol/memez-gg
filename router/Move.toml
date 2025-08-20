@@ -1,0 +1,17 @@
+[package]
+name = "memez_router"
+edition = "2024.beta"
+license = "Apache-2.0"           
+authors = ["Jose Cerqueira (jose@interestprotocol.com)"]   
+
+[dependencies]
+MemezFun = { local = "../fun" }
+memez_wallet = { local = "../wallet" }
+
+ipx_coin_standard = { r.mvr = "@interest/coin-standard" }
+
+[addresses]
+memez_router = "0x0"
+
+[r.mvr]
+network = "mainnet"

@@ -6,6 +6,8 @@ use sui::{coin::{Self, Coin}, package, table::{Self, Table}, transfer::Receiving
 
 const EInvalidOwner: u64 = 0;
 
+const EDuplicateWallet: u64 = 1;
+
 // === Structs ===
 
 public struct MEMEZ_WALLET() has drop;
@@ -17,7 +19,7 @@ public struct MemezWallet has key {
 
 public struct MemezWalletRegistry has key {
     id: UID,
-    /// ctx.sender() -> vault.id.to_address()
+    /// ctx.sender() -> wallet.id.to_address()
     wallets: Table<address, address>,
 }
 
@@ -41,53 +43,53 @@ public fun new(
     owner: address,
     ctx: &mut TxContext,
 ): MemezWallet {
-    assert!(!registry.wallets.contains(owner));
+    assert!(!registry.wallets.contains(owner), EDuplicateWallet);
 
-    let vault = MemezWallet {
+    let wallet = MemezWallet {
         id: object::new(ctx),
         owner,
     };
 
-    registry.wallets.add(owner, vault.id.to_address());
+    registry.wallets.add(owner, wallet.id.to_address());
 
-    vault
+    wallet
 }
 
-public fun share(vault: MemezWallet) {
-    transfer::share_object(vault);
+public fun share(wallet: MemezWallet) {
+    transfer::share_object(wallet);
 }
 
 public fun merge_coins<T>(
-    vault: &mut MemezWallet,
+    wallet: &mut MemezWallet,
     coins: vector<Receiving<Coin<T>>>,
     ctx: &mut TxContext,
 ) {
-    transfer::public_transfer(vault.merge(coins, ctx), vault.id.to_address());
+    transfer::public_transfer(wallet.merge(coins, ctx), wallet.id.to_address());
 }
 
 public fun public_receive<T: key + store>(
-    vault: &mut MemezWallet,
+    wallet: &mut MemezWallet,
     object: Receiving<T>,
     ctx: &mut TxContext,
 ): T {
-    vault.assert_is_owner(ctx);
+    wallet.assert_is_owner(ctx);
 
-    transfer::public_receive(&mut vault.id, object)
+    transfer::public_receive(&mut wallet.id, object)
 }
 
 public fun public_receive_coins<T>(
-    vault: &mut MemezWallet,
+    wallet: &mut MemezWallet,
     coins: vector<Receiving<Coin<T>>>,
     ctx: &mut TxContext,
 ): Coin<T> {
-    vault.assert_is_owner(ctx);
+    wallet.assert_is_owner(ctx);
 
-    vault.merge(coins, ctx)
+    wallet.merge(coins, ctx)
 }
 
 // === Public View Functions ===
 
-public fun vault_address(registry: &MemezWalletRegistry, owner: address): Option<address> {
+public fun wallet_address(registry: &MemezWalletRegistry, owner: address): Option<address> {
     if (registry.wallets.contains(owner)) {
         option::some(registry.wallets[owner])
     } else {
@@ -97,17 +99,17 @@ public fun vault_address(registry: &MemezWalletRegistry, owner: address): Option
 
 // === Private Functions ===
 
-fun assert_is_owner(vault: &MemezWallet, ctx: &TxContext) {
-    assert!(vault.owner == ctx.sender(), EInvalidOwner);
+fun assert_is_owner(wallet: &MemezWallet, ctx: &TxContext) {
+    assert!(wallet.owner == ctx.sender(), EInvalidOwner);
 }
 
 fun merge<T>(
-    vault: &mut MemezWallet,
+    wallet: &mut MemezWallet,
     coins: vector<Receiving<Coin<T>>>,
     ctx: &mut TxContext,
 ): Coin<T> {
     coins.fold!(coin::zero<T>(ctx), |mut acc, coin| {
-        acc.join(transfer::public_receive(&mut vault.id, coin));
+        acc.join(transfer::public_receive(&mut wallet.id, coin));
 
         acc
     })
@@ -118,4 +120,9 @@ fun merge<T>(
 #[test_only]
 public fun init_for_test(ctx: &mut TxContext) {
     init(MEMEZ_WALLET(), ctx);
+}
+
+#[test_only]
+public fun owner(wallet: &MemezWallet): address {
+    wallet.owner
 }

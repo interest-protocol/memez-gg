@@ -19,7 +19,7 @@ public struct MemezVaultRegistry has key {
 
 // === Public Mutative Functions ===
 
-public fun merge_coins<T: key + store>(
+public fun merge_coins<T>(
     vault: &mut MemezVault,
     coins: vector<Receiving<Coin<T>>>,
     ctx: &mut TxContext,
@@ -37,7 +37,7 @@ public fun public_receive<T: key + store>(
     transfer::public_receive(&mut vault.id, object)
 }
 
-public fun public_receive_coins<T: key + store>(
+public fun public_receive_coins<T>(
     vault: &mut MemezVault,
     coins: vector<Receiving<Coin<T>>>,
     ctx: &mut TxContext,
@@ -91,7 +91,7 @@ fun assert_is_owner(vault: &MemezVault, ctx: &TxContext) {
     assert!(vault.owner == ctx.sender());
 }
 
-fun merge<T: key + store>(
+fun merge<T>(
     vault: &mut MemezVault,
     coins: vector<Receiving<Coin<T>>>,
     ctx: &mut TxContext,

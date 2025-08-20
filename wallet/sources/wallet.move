@@ -1,6 +1,6 @@
 module memez_wallet::memez_wallet;
 
-use sui::{coin::{Self, Coin}, table::{Self, Table}, transfer::Receiving, package};
+use sui::{coin::{Self, Coin}, package, table::{Self, Table}, transfer::Receiving};
 
 // === Errors ===
 
@@ -36,7 +36,11 @@ fun init(otw: MEMEZ_WALLET, ctx: &mut TxContext) {
 
 // === Public Mutative Functions ===
 
-public fun new(registry: &mut MemezWalletRegistry, owner: address, ctx: &mut TxContext): MemezWallet {
+public fun new(
+    registry: &mut MemezWalletRegistry,
+    owner: address,
+    ctx: &mut TxContext,
+): MemezWallet {
     assert!(!registry.wallets.contains(owner));
 
     let vault = MemezWallet {

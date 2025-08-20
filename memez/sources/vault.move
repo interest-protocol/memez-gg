@@ -19,6 +19,21 @@ public struct MemezVaultRegistry has key {
 
 // === Public Mutative Functions ===
 
+public fun new(registry: &mut MemezVaultRegistry, ctx: &mut TxContext) {
+    let sender = ctx.sender();
+
+    assert!(!registry.wallets.contains(sender));
+
+    let vault = MemezVault {
+        id: object::new(ctx),
+        owner: sender,
+    };
+
+    registry.wallets.add(sender, vault.id.to_address());
+
+    transfer::share_object(vault);
+}
+
 public fun merge_coins<T>(
     vault: &mut MemezVault,
     coins: vector<Receiving<Coin<T>>>,
@@ -55,23 +70,6 @@ public fun user_vault_address(registry: &MemezVaultRegistry, user: address): Opt
     } else {
         option::none()
     }
-}
-
-// === Admin Only Functions ===
-
-public fun new(registry: &mut MemezVaultRegistry, ctx: &mut TxContext) {
-    let sender = ctx.sender();
-
-    assert!(!registry.wallets.contains(sender));
-
-    let vault = MemezVault {
-        id: object::new(ctx),
-        owner: sender,
-    };
-
-    registry.wallets.add(sender, vault.id.to_address());
-
-    transfer::share_object(vault);
 }
 
 // === Admin Functions ===

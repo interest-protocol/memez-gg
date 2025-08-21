@@ -51,6 +51,12 @@ public(package) fun borrow_mut(self: &mut MemezMetadata): &mut VecMap<String, St
     df::borrow_mut(&mut self.id, Key())
 }
 
+public(package) fun update(self: &mut MemezMetadata, metadata: VecMap<String, String>) {
+    df::remove_if_exists<Key, VecMap<String, String>>(&mut self.id, Key());
+
+    df::add(&mut self.id, Key(), metadata);
+}
+
 // === Test Functions ===
 
 #[test_only]

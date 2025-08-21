@@ -3,7 +3,7 @@ module memez_fun::memez_metadata_tests;
 
 use memez_fun::{gg::{Self, GG}, memez_errors, memez_metadata, usdc::{Self, USDC}};
 use std::unit_test::assert_eq;
-use sui::{coin::CoinMetadata, test_scenario as ts, test_utils::destroy};
+use sui::{coin::CoinMetadata, test_scenario as ts, test_utils::destroy, vec_map};
 
 const ADMIN: address = @0x0;
 
@@ -33,6 +33,20 @@ fun test_end_to_end() {
 
     assert_eq!(metadata.borrow()[&b"Telegram".to_string()], b"https://t.me/memez_fun".to_string());
     assert_eq!(metadata.decimals(), 9);
+
+    let new_metadata = vec_map::from_keys_values(
+        vector[b"Discord".to_string()],
+        vector[b"https://discord.gg/memez_fun".to_string()],
+    );
+
+    metadata.update(new_metadata);
+
+    assert_eq!(
+        metadata.borrow()[&b"Discord".to_string()],
+        b"https://discord.gg/memez_fun".to_string(),
+    );
+
+    assert_eq!(metadata.borrow().contains(&b"Twitter".to_string()), false);
 
     destroy(metadata);
     destroy(coin_metadata);

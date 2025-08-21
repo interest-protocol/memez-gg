@@ -22,7 +22,7 @@ G:::::G        G::::GG:::::G        G::::G
 #[allow(unused_function)]
 module memez_fun::memez_fun;
 
-use ipx_coin_standard::ipx_coin_standard::IPXTreasuryStandard;
+use ipx_coin_standard::ipx_coin_standard::{MetadataCap, IPXTreasuryStandard};
 use memez_fun::{
     memez_allowed_versions::AllowedVersions,
     memez_events,
@@ -84,6 +84,19 @@ public fun destroy<Meme, Quote, Witness: drop>(
     );
 
     (dev, meme_balance, quote_balance)
+}
+
+public fun update_metadata<Curve, Meme, Quote>(
+    self: &mut MemezFun<Curve, Meme, Quote>,
+    metadata_cap: &MetadataCap,
+    metadata: VecMap<String, String>,
+) {
+    assert!(
+        metadata_cap.ipx_treasury() == self.ipx_meme_coin_treasury,
+        memez_fun::memez_errors::invalid_metadata_cap!(),
+    );
+
+    self.metadata.update(metadata);
 }
 
 // === Public View Functions ===

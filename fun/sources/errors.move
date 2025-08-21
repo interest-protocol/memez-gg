@@ -90,6 +90,9 @@ const EMigratorWitnessNotSupported: u64 = 26;
 #[test_only]
 const EInvalidPumpSignature: u64 = 27;
 
+#[test_only]
+const EInvalidMetadataCap: u64 = 28;
+
 // === Public Package Functions ===
 
 public(package) macro fun insufficient_value(): u64 {
@@ -202,4 +205,8 @@ public(package) macro fun migrator_witness_not_supported(): u64 {
 
 public(package) macro fun invalid_pump_signature(): u64 {
     27
+}
+
+public(package) macro fun invalid_metadata_cap(): u64 {
+    28
 }

@@ -1,13 +1,22 @@
 #[test_only]
 module memez_fun::memez_fun_tests;
 
-use memez_fun::{memez_errors, memez_fun, memez_metadata, memez_versioned::{Self, Versioned}};
+use ipx_coin_standard::ipx_coin_standard;
+use memez_fun::{
+    gg::{Self, GG},
+    memez_errors,
+    memez_fun,
+    memez_metadata,
+    memez_versioned::{Self, Versioned}
+};
 use std::type_name;
 use sui::{
     balance,
+    coin::TreasuryCap,
     sui::SUI,
     test_scenario::{Self as ts, Scenario},
-    test_utils::{assert_eq, destroy}
+    test_utils::{assert_eq, destroy},
+    vec_map
 };
 
 const ADMIN: address = @0x1;
@@ -188,6 +197,115 @@ fun test_assert_is_dev() {
 
     memez_fun.assert_is_dev(world.scenario.ctx());
 
+    destroy(memez_fun);
+    world.end();
+}
+
+#[test]
+fun test_update_metadata() {
+    let mut world = start();
+
+    gg::init_for_testing(world.scenario.ctx());
+
+    world.scenario.next_tx(ADMIN);
+
+    let treasury_cap = world.scenario.take_from_sender<TreasuryCap<GG>>();
+
+    let (mut ipx_treasury, mut witness) = ipx_coin_standard::new(
+        treasury_cap,
+        world.scenario.ctx(),
+    );
+
+    let metadata_cap = witness.create_metadata_cap(world.scenario.ctx());
+
+    ipx_treasury.destroy_witness<GG>(witness);
+
+    let versioned = world.versioned.pop_back();
+
+    let inner_state = object::id_address(&versioned);
+
+    let mut memez_fun = memez_fun::new<Curve, Meme, SUI, ConfigKey, MigrationWitness>(
+        versioned,
+        vector[1, 2],
+        inner_state,
+        memez_metadata::new_for_test(world.scenario.ctx()),
+        object::id_address(&ipx_treasury),
+        0,
+        0,
+        0,
+        TOTAL_SUPPLY,
+        DEV,
+        world.scenario.ctx(),
+    );
+
+    // There is a config_key
+    assert_eq(memez_fun.metadata().size(), 1);
+
+    let new_metadata = vec_map::from_keys_values(
+        vector[b"Twitter".to_string(), b"Discord".to_string()],
+        vector[b"https://twitter.com/memez".to_string(), b"https://discord.com/memez".to_string()],
+    );
+
+    memez_fun.update_metadata(&metadata_cap, new_metadata);
+
+    assert_eq(memez_fun.metadata().size(), 2);
+    assert_eq(
+        memez_fun.metadata()[&b"Twitter".to_string()],
+        b"https://twitter.com/memez".to_string(),
+    );
+    assert_eq(
+        memez_fun.metadata()[&b"Discord".to_string()],
+        b"https://discord.com/memez".to_string(),
+    );
+
+    destroy(metadata_cap);
+    destroy(ipx_treasury);
+    destroy(memez_fun);
+    world.end();
+}
+
+#[test, expected_failure(abort_code = memez_errors::EInvalidMetadataCap, location = memez_fun)]
+fun test_update_metadata_invalid_metadata_cap() {
+    let mut world = start();
+
+    gg::init_for_testing(world.scenario.ctx());
+
+    world.scenario.next_tx(ADMIN);
+
+    let treasury_cap = world.scenario.take_from_sender<TreasuryCap<GG>>();
+
+    let (mut ipx_treasury, mut witness) = ipx_coin_standard::new(
+        treasury_cap,
+        world.scenario.ctx(),
+    );
+
+    let metadata_cap = witness.create_metadata_cap(world.scenario.ctx());
+
+    ipx_treasury.destroy_witness<GG>(witness);
+
+    let versioned = world.versioned.pop_back();
+
+    let inner_state = object::id_address(&versioned);
+
+    let mut memez_fun = memez_fun::new<Curve, Meme, SUI, ConfigKey, MigrationWitness>(
+        versioned,
+        vector[1, 2],
+        inner_state,
+        memez_metadata::new_for_test(world.scenario.ctx()),
+        // Invalid IPX treasury address
+        @0x3,
+        0,
+        0,
+        0,
+        TOTAL_SUPPLY,
+        DEV,
+        world.scenario.ctx(),
+    );
+
+    memez_fun.update_metadata(&metadata_cap, vec_map::empty());
+
+    destroy(metadata_cap);
+    destroy(ipx_treasury);
     destroy(memez_fun);
     world.end();
 }

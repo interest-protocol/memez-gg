@@ -57,7 +57,7 @@ fun test_assert_pkg_version() {
 
     world.av.add(&witness, RANDOM_HIGH_VERSION);  
 
-    memez_allowed_versions::get_allowed_versions_for_testing(2).assert_pkg_version();
+    memez_allowed_versions::get_allowed_versions_for_testing(3).assert_pkg_version();
 
     end(world);
 }

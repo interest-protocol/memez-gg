@@ -17,7 +17,7 @@ const ORIGINAL_VERSION: u64 = 1;
 /// If you are adding a new version, you must add it to the vector.
 /// If you are removing a version, you must remove it from the vector.
 /// If you are changing the version, you must change the VERSION constant.
-const VERSION: u64 = 2;
+const VERSION: u64 = 3;
 
 // === Structs ===
 

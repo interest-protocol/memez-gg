@@ -43,6 +43,8 @@ public struct World {
 
 const TOTAL_SUPPLY: u64 = 1_000_000_000_000_000_000;
 
+const CONFIG_METADATA_KEY: vector<u8> = b"config_key";
+
 #[test]
 fun test_new() {
     let mut world = start();
@@ -241,6 +243,8 @@ fun test_update_metadata() {
     // There is a config_key
     assert_eq(memez_fun.metadata().size(), 1);
 
+    let config_key = memez_fun.metadata()[&CONFIG_METADATA_KEY.to_string()];
+
     let new_metadata = vec_map::from_keys_values(
         vector[b"Twitter".to_string(), b"Discord".to_string()],
         vector[b"https://twitter.com/memez".to_string(), b"https://discord.com/memez".to_string()],
@@ -248,7 +252,7 @@ fun test_update_metadata() {
 
     memez_fun.update_metadata(&metadata_cap, new_metadata);
 
-    assert_eq(memez_fun.metadata().size(), 2);
+    assert_eq(memez_fun.metadata().size(), 3);
     assert_eq(
         memez_fun.metadata()[&b"Twitter".to_string()],
         b"https://twitter.com/memez".to_string(),
@@ -256,6 +260,11 @@ fun test_update_metadata() {
     assert_eq(
         memez_fun.metadata()[&b"Discord".to_string()],
         b"https://discord.com/memez".to_string(),
+    );
+    // You cannot remove the config_key
+    assert_eq(
+        memez_fun.metadata()[&CONFIG_METADATA_KEY.to_string()],
+        config_key,
     );
 
     destroy(metadata_cap);

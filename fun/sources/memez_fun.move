@@ -89,12 +89,18 @@ public fun destroy<Meme, Quote, Witness: drop>(
 public fun update_metadata<Curve, Meme, Quote>(
     self: &mut MemezFun<Curve, Meme, Quote>,
     metadata_cap: &MetadataCap,
-    metadata: VecMap<String, String>,
+    mut metadata: VecMap<String, String>,
 ) {
     assert!(
         metadata_cap.ipx_treasury() == self.ipx_meme_coin_treasury,
         memez_fun::memez_errors::invalid_metadata_cap!(),
     );
+
+    let key = CONFIG_METADATA_KEY.to_string();
+
+    let config_value = self.metadata()[&key];
+
+    metadata.insert(key, config_value);
 
     self.metadata.update(metadata);
 }

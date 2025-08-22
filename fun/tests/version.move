@@ -51,13 +51,13 @@ fun test_assert_pkg_version() {
 
     let witness = access_control::sign_in_for_testing<MEMEZ>(0);
 
-    world.av.add(&witness, current_version());    
+    world.av.add(&witness, current_version());
 
     world.av.get_allowed_versions().assert_pkg_version();
 
-    world.av.add(&witness, RANDOM_HIGH_VERSION);  
+    world.av.add(&witness, RANDOM_HIGH_VERSION);
 
-    memez_allowed_versions::get_allowed_versions_for_testing(3).assert_pkg_version();
+    memez_allowed_versions::get_allowed_versions_for_testing(4).assert_pkg_version();
 
     end(world);
 }

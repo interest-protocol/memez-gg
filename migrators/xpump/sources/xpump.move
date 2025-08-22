@@ -192,7 +192,6 @@ public fun migrate_to_new_pool_v3<Meme, Quote, CoinTypeFee>(
     config.assert_package_version();
 
     assert!(meme_metadata.get_decimals() == MEME_DECIMALS, EInvalidDecimals);
-    assert!(ipx_treasury.total_supply<Meme>() == MEME_TOTAL_SUPPLY, EInvalidTotalSupply);
 
     let (dev, meme_balance, mut quote_balance) = migrator.destroy(Witness());
 

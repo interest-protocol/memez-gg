@@ -13,7 +13,7 @@ public fun migrate<Meme, Quote>(
     migrator: MemezMigrator<Meme, Quote>,
     ctx: &mut TxContext,
 ) {
-    let (meme_balance, quote_balance) = migrator.destroy(Witness());
+    let (_,meme_balance, quote_balance) = migrator.destroy(Witness());
 
     let sender = ctx.sender();
 

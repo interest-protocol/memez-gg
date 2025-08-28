@@ -5,7 +5,7 @@ license = "Apache-2.0"
 authors = ["Jose Cerqueira (jose@interestprotocol.com)"]   
 
 [dependencies]
-MemezFun = { local = "../fun" }
+MemezFun = { local = "../../fun" }
 memez_wallet = { local = "../wallet" }
 
 ipx_coin_standard = { r.mvr = "@interest/coin-standard" }

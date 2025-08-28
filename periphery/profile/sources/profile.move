@@ -1,6 +1,6 @@
 module blast_profile::blast_profile;
 
-use std::{string::String, type_name};
+use std::string::String;
 use sui::{
     bag::{Self, Bag},
     bcs,
@@ -211,13 +211,6 @@ public fun set_public_key(
 
 public fun set_version(config: &mut BlastProfileConfig, version: u64) {
     config.version = version;
-}
-
-public fun add_quest_config<QuestKey: copy + drop + store, QuestConfig: store>(
-    config: &mut BlastProfileConfig,
-    quest_config: QuestConfig,
-) {
-    config.quests_config.add(type_name::get<QuestKey>(), quest_config);
 }
 
 // === Package Only Functions ===

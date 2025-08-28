@@ -1,5 +1,5 @@
 [package]
-name = "memez_profile"
+name = "blast_profile"
 edition = "2024.beta"
 license = "Apache-2.0"           
 authors = ["Jose Cerqueira (jose@interestprotocol.com)"]   
@@ -8,4 +8,4 @@ authors = ["Jose Cerqueira (jose@interestprotocol.com)"]
 MemezFun = { local = "../../fun" }
 
 [addresses]
-memez_profile = "0x0"
+blast_profile = "0x0"

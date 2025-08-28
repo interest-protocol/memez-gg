@@ -153,7 +153,7 @@ public fun feedback(
     if (profile.feedback.contains(user)) {
         let feedback = &mut profile.feedback[user];
 
-        if (*feedback == like) return;
+        assert!(*feedback != like, blast_profile::blast_profile_errors::repeated_feedback!());
 
         config_feedback.switch_feedback(like);
 

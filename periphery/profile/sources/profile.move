@@ -14,7 +14,7 @@ const CONFIG_METADATA_KEY: vector<u8> = b"config_key";
 // === Structs ===
 
 public struct Trades has store {
-    total_quote_coin: u64,
+    total_sui_buy_volume: u64,
     sui_per_coin: VecMap<TypeName, u64>,
 }
 

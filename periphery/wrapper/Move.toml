@@ -1,0 +1,15 @@
+[package]
+name = "memez_wrapper"
+edition = "2024.beta"
+license = "Apache-2.0"           
+authors = ["Jose Cerqueira (jose@interestprotocol.com)"]   
+
+[dependencies]
+MemezFun = { local = "../../fun" }
+ipx_coin_standard = { r.mvr = "@interest/coin-standard" }
+
+[addresses]
+memez_wrapper = "0x0"
+
+[r.mvr]
+network = "mainnet"

@@ -15,7 +15,7 @@ const CONFIG_METADATA_KEY: vector<u8> = b"config_key";
 
 public struct Trades has store {
     total_quote_coin: u64,
-    quote_per_coin: VecMap<TypeName, u64>,
+    sui_per_coin: VecMap<TypeName, u64>,
 }
 
 public struct BlastProfile has key {
@@ -25,7 +25,7 @@ public struct BlastProfile has key {
     /// ctx.epoch() -> Trades
     trades: Table<u64, Trades>,
     metadata: VecMap<String, String>,
-    total_quote_coin: u64,
+    total_sui_buy_volume: u64,
     owner: address,
 }
 
@@ -111,7 +111,7 @@ public fun new(
         name,
         image_url,
         metadata: vec_map::empty(),
-        total_quote_coin: 0,
+        total_sui_buy_volume: 0,
         owner: sender,
         trades: table::new(ctx),
     };

@@ -35,6 +35,7 @@ public struct BlastProfileConfig has key {
     profiles: Table<address, address>,
     /// BlastProfile.id.to_address() -> nonce
     nonces: Table<address, u64>,
+    /// BlastProfile.id.to_address() -> Feedback
     feedback: Table<address, Feedback>,
     quests_config: Bag,
     version: u64,
@@ -151,6 +152,8 @@ public fun feedback(
 
     if (profile.feedback.contains(user)) {
         let feedback = &mut profile.feedback[user];
+
+        if (*feedback == like) return;
 
         config_feedback.switch_feedback(like);
 

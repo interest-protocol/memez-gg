@@ -16,6 +16,9 @@ const ERepeatedFeedback: u64 = 4;
 #[test_only]
 const ENotOwner: u64 = 5;
 
+#[test_only]
+const EQuestAlreadyInitialized: u64 = 6;
+
 public(package) macro fun profile_already_created(): u64 {
     1
 }
@@ -34,4 +37,8 @@ public(package) macro fun repeated_feedback(): u64 {
 
 public(package) macro fun not_owner(): u64 {
     5
+}
+
+public(package) macro fun quest_already_initialized(): u64 {
+    6
 }

@@ -105,7 +105,7 @@ public fun new(
     name: String,
     image_url: String,
     ctx: &mut TxContext,
-) {
+): BlastProfile {
     let sender = ctx.sender();
 
     assert!(
@@ -125,6 +125,10 @@ public fun new(
 
     config.profiles.add(sender, profile.id.to_address());
 
+    profile
+}
+
+public fun share(profile: BlastProfile) {
     transfer::share_object(profile);
 }
 

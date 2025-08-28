@@ -1,49 +1,50 @@
-#[allow(unused_field)]
 module blast_profile::blast_profile;
 
-use memez_fun::memez_pump;
-use std::{string::String, type_name::{Self, TypeName}};
-use sui::{bcs, display, ed25519, package, table::{Self, Table}, vec_map::{Self, VecMap}};
-
-// === Constants ===
-
-const MAX_COINS_PER_EPOCH: u64 = 100;
-
-const CONFIG_METADATA_KEY: vector<u8> = b"config_key";
+use std::{string::String, type_name};
+use sui::{
+    bag::{Self, Bag},
+    bcs,
+    display,
+    ed25519,
+    package,
+    table::{Self, Table},
+    vec_map::{Self, VecMap}
+};
 
 // === Structs ===
-
-public struct Trades has store {
-    total_sui_buy_volume: u64,
-    sui_per_coin: VecMap<TypeName, u64>,
-}
 
 public struct BlastProfile has key {
     id: UID,
     name: String,
     image_url: String,
-    /// ctx.epoch() -> Trades
-    trades: Table<u64, Trades>,
-    metadata: VecMap<String, String>,
-    total_sui_buy_volume: u64,
+    quests: Bag,
     owner: address,
+    feedback: Table<address, bool>,
+    metadata: VecMap<String, String>,
+}
+
+public struct Feedback has store {
+    likes: u64,
+    dislikes: u64,
 }
 
 public struct BlastProfileConfig has key {
     id: UID,
+    public_key: vector<u8>,
     /// ctx.sender() -> BlastProfile.id.to_address()
     profiles: Table<address, address>,
     /// BlastProfile.id.to_address() -> nonce
     nonces: Table<address, u64>,
-    public_key: vector<u8>,
-    minimum_quote_value: u64,
+    feedback: Table<address, Feedback>,
+    quests_config: Bag,
+    version: u64,
 }
 
 public struct BlastProfileAdmin has key, store {
     id: UID,
 }
 
-public struct SignatureMessage has copy, drop, store {
+public struct MetadataMessage has copy, drop, store {
     blast_profile: address,
     new_metadata: VecMap<String, String>,
     nonce: u64,
@@ -58,10 +59,12 @@ fun init(otw: BLAST_PROFILE, ctx: &mut TxContext) {
 
     let config = BlastProfileConfig {
         id: object::new(ctx),
-        profiles: table::new(ctx),
         public_key: vector[],
-        minimum_quote_value: 0,
+        profiles: table::new(ctx),
+        feedback: table::new(ctx),
+        quests_config: bag::new(ctx),
         nonces: table::new(ctx),
+        version: blast_profile::blast_profile_constants::package_version!(),
     };
 
     let admin = BlastProfileAdmin {
@@ -104,16 +107,19 @@ public fun new(
 ) {
     let sender = ctx.sender();
 
-    assert!(!config.profiles.contains(sender));
+    assert!(
+        !config.profiles.contains(sender),
+        blast_profile::blast_profile_errors::profile_already_created!(),
+    );
 
     let profile = BlastProfile {
         id: object::new(ctx),
         name,
         image_url,
-        metadata: vec_map::empty(),
-        total_sui_buy_volume: 0,
+        quests: bag::new(ctx),
         owner: sender,
-        trades: table::new(ctx),
+        feedback: table::new(ctx),
+        metadata: vec_map::empty(),
     };
 
     config.profiles.add(sender, profile.id.to_address());
@@ -127,6 +133,33 @@ public fun update_image_url(profile: &mut BlastProfile, image_url: String, _ctx:
 
 public fun update_name(profile: &mut BlastProfile, name: String, _ctx: &mut TxContext) {
     profile.name = name;
+}
+
+public fun feedback(
+    config: &mut BlastProfileConfig,
+    profile: &mut BlastProfile,
+    user: address,
+    like: bool,
+    _ctx: &mut TxContext,
+) {
+    assert!(
+        config.feedback.contains(user),
+        blast_profile::blast_profile_errors::profile_does_not_exist!(),
+    );
+
+    let config_feedback = &mut config.feedback[user];
+
+    if (profile.feedback.contains(user)) {
+        let feedback = &mut profile.feedback[user];
+
+        config_feedback.switch_feedback(like);
+
+        *feedback = like;
+    } else {
+        config_feedback.increment_feedback(like);
+
+        profile.feedback.add(user, like);
+    };
 }
 
 public fun update_metadata(
@@ -144,7 +177,7 @@ public fun update_metadata(
 
     let nonce = &mut config.nonces[profile_address];
 
-    let message = SignatureMessage {
+    let message = MetadataMessage {
         blast_profile: profile_address,
         new_metadata: metadata,
         nonce: *nonce,
@@ -152,7 +185,10 @@ public fun update_metadata(
 
     *nonce = *nonce + 1;
 
-    assert!(ed25519::ed25519_verify(&signature, &config.public_key, &bcs::to_bytes(&message)));
+    assert!(
+        ed25519::ed25519_verify(&signature, &config.public_key, &bcs::to_bytes(&message)),
+        blast_profile::blast_profile_errors::invalid_metadata_signature!(),
+    );
 
     profile.metadata = metadata;
 }
@@ -173,11 +209,43 @@ public fun set_public_key(
     config.public_key = public_key;
 }
 
-public fun set_minimum_quote_value(
+public fun set_version(config: &mut BlastProfileConfig, version: u64) {
+    config.version = version;
+}
+
+public fun add_quest_config<QuestKey: copy + drop + store, QuestConfig: store>(
     config: &mut BlastProfileConfig,
-    _: &BlastProfileAdmin,
-    minimum_quote_value: u64,
+    quest_config: QuestConfig,
 ) {
-    assert!(minimum_quote_value != 0);
-    config.minimum_quote_value = minimum_quote_value;
+    config.quests_config.add(type_name::get<QuestKey>(), quest_config);
+}
+
+// === Package Only Functions ===
+
+public(package) fun quests_config_mut(config: &mut BlastProfileConfig): &mut Bag {
+    &mut config.quests_config
+}
+
+public(package) fun profile_quests_mut(profile: &mut BlastProfile): &mut Bag {
+    &mut profile.quests
+}
+
+// === Private Functions ===
+
+fun increment_feedback(feedback: &mut Feedback, like: bool) {
+    if (like) {
+        feedback.likes = feedback.likes + 1;
+    } else {
+        feedback.dislikes = feedback.dislikes + 1;
+    };
+}
+
+fun switch_feedback(feedback: &mut Feedback, like: bool) {
+    if (like) {
+        feedback.likes = feedback.likes + 1;
+        feedback.dislikes = feedback.dislikes - 1;
+    } else {
+        feedback.dislikes = feedback.dislikes + 1;
+        feedback.likes = feedback.likes - 1;
+    };
 }

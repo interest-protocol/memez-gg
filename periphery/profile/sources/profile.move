@@ -125,14 +125,18 @@ public fun new(
 
     config.profiles.add(sender, profile.id.to_address());
 
-    transfer::transfer(profile, sender);
+    transfer::share_object(profile);
 }
 
-public fun update_image_url(profile: &mut BlastProfile, image_url: String, _ctx: &mut TxContext) {
+public fun update_image_url(profile: &mut BlastProfile, image_url: String, ctx: &mut TxContext) {
+    profile.assert_is_owner(ctx);
+
     profile.image_url = image_url;
 }
 
-public fun update_name(profile: &mut BlastProfile, name: String, _ctx: &mut TxContext) {
+public fun update_name(profile: &mut BlastProfile, name: String, ctx: &mut TxContext) {
+    profile.assert_is_owner(ctx);
+
     profile.name = name;
 }
 
@@ -141,8 +145,10 @@ public fun feedback(
     profile: &mut BlastProfile,
     user: address,
     like: bool,
-    _ctx: &mut TxContext,
+    ctx: &mut TxContext,
 ) {
+    profile.assert_is_owner(ctx);
+
     assert!(
         config.feedback.contains(user),
         blast_profile::blast_profile_errors::profile_does_not_exist!(),
@@ -170,8 +176,10 @@ public fun update_metadata(
     profile: &mut BlastProfile,
     metadata: VecMap<String, String>,
     signature: vector<u8>,
-    _ctx: &mut TxContext,
+    ctx: &mut TxContext,
 ) {
+    profile.assert_is_owner(ctx);
+
     let profile_address = profile.id.to_address();
 
     if (!config.nonces.contains(profile_address)) {
@@ -227,6 +235,10 @@ public(package) fun profile_quests_mut(profile: &mut BlastProfile): &mut Bag {
 }
 
 // === Private Functions ===
+
+fun assert_is_owner(profile: &BlastProfile, ctx: &TxContext) {
+    assert!(profile.owner == ctx.sender(), blast_profile::blast_profile_errors::not_owner!());
+}
 
 fun increment_feedback(feedback: &mut Feedback, like: bool) {
     if (like) {

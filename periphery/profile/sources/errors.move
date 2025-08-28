@@ -13,6 +13,9 @@ const EProfileDoesNotExist: u64 = 3;
 #[test_only]
 const ERepeatedFeedback: u64 = 4;
 
+#[test_only]
+const ENotOwner: u64 = 5;
+
 public(package) macro fun profile_already_created(): u64 {
     1
 }
@@ -27,4 +30,8 @@ public(package) macro fun profile_does_not_exist(): u64 {
 
 public(package) macro fun repeated_feedback(): u64 {
     4
+}
+
+public(package) macro fun not_owner(): u64 {
+    5
 }

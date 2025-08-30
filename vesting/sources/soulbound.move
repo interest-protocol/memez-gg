@@ -29,7 +29,7 @@ public fun new<T>(
     assert!(duration != 0, memez_vesting::memez_vesting_errors::zero_duration!());
     assert!(coin_value != 0, memez_vesting::memez_vesting_errors::zero_allocation!());
 
-    let memez_soul_bound_vesting = MemezSoulBoundVesting {
+    let memez_soulbound_vesting = MemezSoulBoundVesting {
         id: object::new(ctx),
         balance: coin.into_balance(),
         released: 0,
@@ -39,14 +39,14 @@ public fun new<T>(
     };
 
     memez_vesting::memez_vesting_events::new<T>(
-        memez_soul_bound_vesting.id.to_address(),
+        memez_soulbound_vesting.id.to_address(),
         owner,
         coin_value,
         start,
         duration,
     );
 
-    memez_soul_bound_vesting
+    memez_soulbound_vesting
 }
 
 public fun transfer_to_owner<T>(self: MemezSoulBoundVesting<T>) {

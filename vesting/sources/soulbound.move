@@ -100,6 +100,11 @@ public fun vesting_status<T>(self: &MemezSoulBoundVesting<T>, clock: &Clock): u6
 // === Tests ===
 
 #[test_only]
+public fun id<T>(self: &MemezSoulBoundVesting<T>): address {
+    self.id.to_address()
+}
+
+#[test_only]
 public fun balance<T>(self: &MemezSoulBoundVesting<T>): u64 {
     self.balance.value()
 }

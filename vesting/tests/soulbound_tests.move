@@ -88,7 +88,7 @@ fun test_end_to_end() {
 
     assert_eq(
         claimed_events[0],
-        memez_vesting_events::claimed_event<SUI>(wallet_id, first_claim, coin_amount - first_claim),
+        memez_vesting_events::claimed_event<SUI>(wallet_id, first_claim),
     );
 
     // Clock is at 7
@@ -111,7 +111,6 @@ fun test_end_to_end() {
         memez_vesting_events::claimed_event<SUI>(
             wallet_id,
             second_claim,
-            coin_amount - second_claim - first_claim,
         ),
     );
 
@@ -130,7 +129,7 @@ fun test_end_to_end() {
 
     assert_eq(claimed_events.length(), 3);
 
-    assert_eq(claimed_events[2], memez_vesting_events::claimed_event<SUI>(wallet_id, claim, 0));
+    assert_eq(claimed_events[2], memez_vesting_events::claimed_event<SUI>(wallet_id, claim));
 
     wallet.destroy_zero();
 

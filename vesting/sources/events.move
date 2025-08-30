@@ -19,7 +19,6 @@ public struct New has copy, drop {
 public struct Claimed has copy, drop {
     memez_vesting: address,
     amount: u64,
-    remaining: u64,
     coinType: String,
 }
 
@@ -49,12 +48,11 @@ public(package) fun new<T>(
     );
 }
 
-public(package) fun claimed<T>(memez_vesting: address, amount: u64, remaining: u64) {
+public(package) fun claimed<T>(memez_vesting: address, amount: u64) {
     emit(
         Event(Claimed {
             memez_vesting,
             amount,
-            remaining,
             coinType: type_name::get<T>().into_string(),
         }),
     );
@@ -85,8 +83,8 @@ public fun new_event<T>(
 }
 
 #[test_only]
-public fun claimed_event<T>(memez_vesting: address, amount: u64, remaining: u64): Event<Claimed> {
-    Event(Claimed { memez_vesting, amount, remaining, coinType: type_name::get<T>().into_string() })
+public fun claimed_event<T>(memez_vesting: address, amount: u64): Event<Claimed> {
+    Event(Claimed { memez_vesting, amount, coinType: type_name::get<T>().into_string() })
 }
 
 #[test_only]

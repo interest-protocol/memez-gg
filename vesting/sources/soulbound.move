@@ -68,7 +68,6 @@ public fun claim<T>(
     memez_vesting::memez_vesting_events::claimed<T>(
         self.id.to_address(),
         releasable,
-        self.balance.value(),
     );
 
     coin

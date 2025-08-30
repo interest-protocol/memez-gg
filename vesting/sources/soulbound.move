@@ -1,21 +1,10 @@
-module memez_vesting::memez_vesting;
+module memez_vesting::memez_soulbound_vesting;
 
 use sui::{balance::Balance, clock::Clock, coin::Coin};
 
-// === Errors ===
-
-#[error]
-const EZeroAllocation: vector<u8> = b"You cannot create a vesting contract with zero allocation";
-
-#[error]
-const EZeroDuration: vector<u8> = b"You cannot create a vesting contract with zero duration";
-
-#[error]
-const EZeroStart: vector<u8> = b"You cannot create a vesting contract in the past";
-
 // === Structs ===
 
-public struct MemezVesting<phantom T> has key, store {
+public struct MemezSoulBoundVesting<phantom T> has key {
     id: UID,
     balance: Balance<T>,
     start: u64,
@@ -31,12 +20,12 @@ public fun new<T>(
     start: u64,
     duration: u64,
     ctx: &mut TxContext,
-): MemezVesting<T> {
-    assert!(start >= clock.timestamp_ms(), EZeroStart);
-    assert!(duration != 0, EZeroDuration);
-    assert!(coin.value() != 0, EZeroAllocation);
+): MemezSoulBoundVesting<T> {
+    assert!(start >= clock.timestamp_ms(), memez_vesting::memez_vesting_errors::invalid_start!());
+    assert!(duration != 0, memez_vesting::memez_vesting_errors::zero_duration!());
+    assert!(coin.value() != 0, memez_vesting::memez_vesting_errors::zero_allocation!());
 
-    MemezVesting {
+    MemezSoulBoundVesting {
         id: object::new(ctx),
         balance: coin.into_balance(),
         released: 0,
@@ -45,7 +34,11 @@ public fun new<T>(
     }
 }
 
-public fun claim<T>(self: &mut MemezVesting<T>, clock: &Clock, ctx: &mut TxContext): Coin<T> {
+public fun claim<T>(
+    self: &mut MemezSoulBoundVesting<T>,
+    clock: &Clock,
+    ctx: &mut TxContext,
+): Coin<T> {
     let releasable = vesting_status(self, clock);
 
     *&mut self.released = self.released + releasable;
@@ -53,8 +46,8 @@ public fun claim<T>(self: &mut MemezVesting<T>, clock: &Clock, ctx: &mut TxConte
     self.balance.split(releasable).into_coin(ctx)
 }
 
-public fun destroy_zero<T>(self: MemezVesting<T>) {
-    let MemezVesting { id, balance, .. } = self;
+public fun destroy_zero<T>(self: MemezSoulBoundVesting<T>) {
+    let MemezSoulBoundVesting { id, balance, .. } = self;
 
     id.delete();
 
@@ -63,7 +56,7 @@ public fun destroy_zero<T>(self: MemezVesting<T>) {
 
 // === Public View Function ===
 
-public fun vesting_status<T>(self: &MemezVesting<T>, clock: &Clock): u64 {
+public fun vesting_status<T>(self: &MemezSoulBoundVesting<T>, clock: &Clock): u64 {
     let vested = memez_vesting::memez_vesting_core::linear_vesting_amount!(
         self.start,
         self.duration,
@@ -77,21 +70,21 @@ public fun vesting_status<T>(self: &MemezVesting<T>, clock: &Clock): u64 {
 // === Tests ===
 
 #[test_only]
-public fun balance<T>(self: &MemezVesting<T>): u64 {
+public fun balance<T>(self: &MemezSoulBoundVesting<T>): u64 {
     self.balance.value()
 }
 
 #[test_only]
-public fun start<T>(self: &MemezVesting<T>): u64 {
+public fun start<T>(self: &MemezSoulBoundVesting<T>): u64 {
     self.start
 }
 
 #[test_only]
-public fun released<T>(self: &MemezVesting<T>): u64 {
+public fun released<T>(self: &MemezSoulBoundVesting<T>): u64 {
     self.released
 }
 
 #[test_only]
-public fun duration<T>(self: &MemezVesting<T>): u64 {
+public fun duration<T>(self: &MemezSoulBoundVesting<T>): u64 {
     self.duration
 }

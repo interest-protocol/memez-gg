@@ -23,8 +23,8 @@ public struct ProfileRating has store {
 // === Initialization ===
 
 public fun init_quest(config: &mut BlastProfileConfig, ctx: &mut TxContext) {
-    let config_mut = config.quests_config_mut();
     let key = ConfigKey();
+    let config_mut = config.quests_config_mut();
 
     assert!(
         !config_mut.contains(key),

@@ -9,6 +9,7 @@ public struct Event<T: copy + drop>(T) has copy, drop;
 
 public struct New has copy, drop {
     memez_vesting: address,
+    owner: address,
     amount: u64,
     start: u64,
     duration: u64,
@@ -29,10 +30,17 @@ public struct Destroyed has copy, drop {
 
 // === Public Package Functions ===
 
-public(package) fun new<T>(memez_vesting: address, amount: u64, start: u64, duration: u64) {
+public(package) fun new<T>(
+    memez_vesting: address,
+    owner: address,
+    amount: u64,
+    start: u64,
+    duration: u64,
+) {
     emit(
         Event(New {
             memez_vesting,
+            owner,
             amount,
             start,
             duration,

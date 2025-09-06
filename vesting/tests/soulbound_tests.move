@@ -28,7 +28,7 @@ public struct Env {
 fun test_end_to_end() {
     let mut env = start();
 
-    let start = 1;
+    let start = 1 + memez_vesting::memez_vesting_constants::delay_margin_ms!();
     let duration = 8;
     let coin_amount = 1234567890;
 
@@ -37,7 +37,7 @@ fun test_end_to_end() {
     let wallet = memez_soulbound_vesting::new(
         &env.clock,
         total_coin,
-        1,
+        start,
         duration,
         OWNER,
         env.scenario.ctx(),
@@ -54,7 +54,7 @@ fun test_end_to_end() {
         memez_vesting_events::new_event<SUI>(wallet.id(), OWNER, coin_amount, start, duration),
     );
 
-    env.clock.increment_for_testing(start);
+    env.clock.increment_for_testing(1);
 
     assert_eq(wallet.balance(), coin_amount);
     assert_eq(wallet.start(), start);
@@ -248,7 +248,9 @@ fun test_zero_start() {
 fun start(): Env {
     let mut scenario = ts::begin(SENDER);
 
-    let clock = clock::create_for_testing(scenario.ctx());
+    let mut clock = clock::create_for_testing(scenario.ctx());
+
+    clock.increment_for_testing(memez_vesting::memez_vesting_constants::delay_margin_ms!());
 
     Env { scenario, clock }
 }

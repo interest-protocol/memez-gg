@@ -1,6 +1,6 @@
 module memez_vesting::memez_vesting_core;
 
-// === Public Package Functions ===
+// === Package Functions ===
 
 public(package) macro fun linear_vesting_amount(
     $start: u64,

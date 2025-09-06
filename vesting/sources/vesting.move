@@ -32,7 +32,10 @@ public fun new<T>(
     duration: u64,
     ctx: &mut TxContext,
 ): MemezVesting<T> {
-    assert!(start >= clock.timestamp_ms(), EZeroStart);
+    assert!(
+        start >= clock.timestamp_ms() - memez_vesting::memez_vesting_constants::delay_margin_ms!(),
+        EZeroStart,
+    );
     assert!(duration != 0, EZeroDuration);
     assert!(coin.value() != 0, EZeroAllocation);
 
@@ -74,7 +77,7 @@ public fun vesting_status<T>(self: &MemezVesting<T>, clock: &Clock): u64 {
     vested - self.released
 }
 
-// === Tests ===
+// === Test Functions ===
 
 #[test_only]
 public fun balance<T>(self: &MemezVesting<T>): u64 {

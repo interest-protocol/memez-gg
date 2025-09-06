@@ -62,7 +62,7 @@ public(package) fun destroyed<T>(memez_vesting: address) {
     emit(Event(Destroyed { memez_vesting, coinType: type_name::get<T>().into_string() }));
 }
 
-// === Test Only Functions ===
+// === Test Functions ===
 
 #[test_only]
 public fun new_event<T>(

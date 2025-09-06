@@ -1,6 +1,6 @@
 module memez_vesting::memez_vesting_errors;
 
-// === Public Package Functions ===
+// === Package Functions ===
 
 #[test_only]
 const EInvalidStart: u64 = 1;

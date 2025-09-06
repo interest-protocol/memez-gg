@@ -1,29 +1,25 @@
 #[test_only]
 module memez_vesting::memez_vesting_tests;
 
-use sui::{
-    coin,
-    clock,
-    sui::SUI,
-    test_utils::{assert_eq, destroy}
-};
-
-use memez_vesting::memez_vesting;
+use memez_vesting::{memez_vesting, memez_vesting_constants};
+use sui::{clock, coin, sui::SUI, test_utils::{assert_eq, destroy}};
 
 #[test]
 fun test_end_to_end() {
     let mut ctx = tx_context::dummy();
 
-    let start = 1;
+    let start = 1 + memez_vesting_constants::delay_margin_ms!();
     let duration = 8;
     let coin_amount = 1234567890;
 
     let total_coin = coin::mint_for_testing<SUI>(coin_amount, &mut ctx);
     let mut clock = clock::create_for_testing(&mut ctx);
-    
-    let mut wallet = memez_vesting::new(&clock, total_coin, 1, duration, &mut ctx);
 
-    clock.increment_for_testing(start);
+    clock.increment_for_testing(memez_vesting_constants::delay_margin_ms!());
+
+    let mut wallet = memez_vesting::new(&clock, total_coin, start, duration, &mut ctx);
+
+    clock.increment_for_testing(1);
 
     assert_eq(wallet.balance(), coin_amount);
     assert_eq(wallet.start(), start);
@@ -70,9 +66,11 @@ fun test_destroy_non_zero_wallet() {
     let coin_amount = 1234567890;
 
     let total_coin = coin::mint_for_testing<SUI>(coin_amount, &mut ctx);
-    let clock = clock::create_for_testing(&mut ctx);
+    let mut clock = clock::create_for_testing(&mut ctx);
 
-    let wallet = memez_vesting::new(&clock,total_coin, 0, end, &mut ctx);
+    clock.increment_for_testing(memez_vesting_constants::delay_margin_ms!());
+
+    let wallet = memez_vesting::new(&clock, total_coin, 0, end, &mut ctx);
 
     wallet.destroy_zero();
     clock::destroy_for_testing(clock);
@@ -83,14 +81,16 @@ fun test_destroy_non_zero_wallet() {
 fun test_zero_duration() {
     let mut ctx = tx_context::dummy();
 
-    let clock = clock::create_for_testing(&mut ctx);
-    
+    let mut clock = clock::create_for_testing(&mut ctx);
+
+    clock.increment_for_testing(memez_vesting_constants::delay_margin_ms!());
+
     let coin_amount = 1234567890;
     let total_coin = coin::mint_for_testing<SUI>(coin_amount, &mut ctx);
 
     let wallet = memez_vesting::new(&clock, total_coin, 1, 0, &mut ctx);
 
-    clock::destroy_for_testing(clock);  
+    clock::destroy_for_testing(clock);
     destroy(wallet);
 }
 
@@ -99,14 +99,16 @@ fun test_zero_duration() {
 fun test_zero_allocation() {
     let mut ctx = tx_context::dummy();
 
-    let clock = clock::create_for_testing(&mut ctx);
+    let mut clock = clock::create_for_testing(&mut ctx);
+
+    clock.increment_for_testing(memez_vesting_constants::delay_margin_ms!());
 
     let coin_amount = 0;
     let total_coin = coin::mint_for_testing<SUI>(coin_amount, &mut ctx);
 
     let wallet = memez_vesting::new(&clock, total_coin, 1, 8, &mut ctx);
 
-    clock::destroy_for_testing(clock);  
+    clock::destroy_for_testing(clock);
     destroy(wallet);
 }
 
@@ -117,6 +119,8 @@ fun test_zero_start() {
 
     let mut clock = clock::create_for_testing(&mut ctx);
 
+    clock.increment_for_testing(memez_vesting_constants::delay_margin_ms!());
+
     let coin_amount = 1234567890;
     let total_coin = coin::mint_for_testing<SUI>(coin_amount, &mut ctx);
 
@@ -124,6 +128,6 @@ fun test_zero_start() {
 
     let wallet = memez_vesting::new(&clock, total_coin, 0, 8, &mut ctx);
 
-    clock::destroy_for_testing(clock);  
+    clock::destroy_for_testing(clock);
     destroy(wallet);
 }

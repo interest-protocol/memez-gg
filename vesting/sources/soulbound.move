@@ -25,7 +25,10 @@ public fun new<T>(
 ): MemezSoulBoundVesting<T> {
     let coin_value = coin.value();
 
-    assert!(start >= clock.timestamp_ms(), memez_vesting::memez_vesting_errors::invalid_start!());
+    assert!(
+        start >= clock.timestamp_ms() - memez_vesting::memez_vesting_constants::delay_margin_ms!(),
+        memez_vesting::memez_vesting_errors::invalid_start!(),
+    );
     assert!(duration != 0, memez_vesting::memez_vesting_errors::zero_duration!());
     assert!(coin_value != 0, memez_vesting::memez_vesting_errors::zero_allocation!());
 
@@ -96,7 +99,7 @@ public fun vesting_status<T>(self: &MemezSoulBoundVesting<T>, clock: &Clock): u6
     vested - self.released
 }
 
-// === Tests ===
+// === Test Functions ===
 
 #[test_only]
 public fun id<T>(self: &MemezSoulBoundVesting<T>): address {

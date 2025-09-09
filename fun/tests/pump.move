@@ -920,6 +920,8 @@ fun test_distribute_stake_holders_allocation() {
 
     let mut clock = clock::create_for_testing(world.scenario.ctx());
 
+    clock.increment_for_testing(60_000);
+
     clock.increment_for_testing(VESTING_PERIOD);
 
     memez_pump::distribute_stake_holders_allocation(

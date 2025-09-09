@@ -264,7 +264,9 @@ fun test_take() {
 
     let mut allocation_balance = mint_for_testing<Meme>(200 * POW_9, scenario.ctx()).into_balance();
 
-    let clock = clock::create_for_testing(scenario.ctx());
+    let mut clock = clock::create_for_testing(scenario.ctx());
+
+    clock.increment_for_testing(60_000);
 
     let mut allocation_fee = fees.allocation(
         &mut allocation_balance,

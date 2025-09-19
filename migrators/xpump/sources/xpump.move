@@ -324,33 +324,8 @@ public fun collect_fee<Meme>(
 
     let position_data = config.position_mut<Meme>();
 
-    collect_fee_internal(
-        position_data,
-        bluefin_config,
-        pool,
-        clock,
-        position_owner,
-        treasury_fee,
-        treasury,
-        ctx,
-    )
-}
-
-public fun collect_fee_v2<Meme>(
-    config: &mut XPumpConfig,
-    bluefin_config: &GlobalConfig,
-    pool: &mut Pool<Meme, SUI>,
-    clock: &Clock,
-    position_owner: &PositionOwner,
-    ctx: &mut TxContext,
-): Coin<SUI> {
-    config.assert_package_version();
-
-    let treasury_fee = config.treasury_fee;
-
-    let treasury = config.treasury;
-
-    let position_data = config.position_mut_v2<Meme>();
+    assert!(position_owner.position == object::id_address(&position_data.position));
+    assert!(position_owner.pool == object::id_address(pool));
 
     collect_fee_internal(
         position_data,
@@ -375,7 +350,7 @@ public fun collect_all_fees<Meme>(
     let mut fee = collect_fee(config, bluefin_config, pool, clock, position_owner, ctx);
 
     if (config.has_position_v2<Meme>()) {
-        fee.join(collect_fee_v2(config, bluefin_config, pool, clock, position_owner, ctx));
+        fee.join(collect_fee_v2_internal(config, bluefin_config, pool, clock, position_owner, ctx));
     };
 
     fee
@@ -627,6 +602,32 @@ fun share_pool_and_save_position<Meme, Quote>(
     destroy_zero_or_transfer(excess_quote.into_coin(ctx), config.treasury);
 }
 
+fun collect_fee_v2_internal<Meme>(
+    config: &mut XPumpConfig,
+    bluefin_config: &GlobalConfig,
+    pool: &mut Pool<Meme, SUI>,
+    clock: &Clock,
+    position_owner: &PositionOwner,
+    ctx: &mut TxContext,
+): Coin<SUI> {
+    let treasury_fee = config.treasury_fee;
+
+    let treasury = config.treasury;
+
+    let position_data = config.position_mut_v2<Meme>();
+
+    collect_fee_internal(
+        position_data,
+        bluefin_config,
+        pool,
+        clock,
+        position_owner,
+        treasury_fee,
+        treasury,
+        ctx,
+    )
+}
+
 fun collect_fee_internal<Meme>(
     position_data: &mut PositionData<Meme>,
     bluefin_config: &GlobalConfig,
@@ -637,9 +638,6 @@ fun collect_fee_internal<Meme>(
     treasury: address,
     ctx: &mut TxContext,
 ): Coin<SUI> {
-    assert!(position_owner.position == object::id_address(&position_data.position));
-    assert!(position_owner.pool == object::id_address(pool));
-
     let (meme_amount, sui_amount, meme_balance, mut sui_balance) = pool::collect_fee<Meme, SUI>(
         clock,
         bluefin_config,

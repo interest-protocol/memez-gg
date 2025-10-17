@@ -1,0 +1,15 @@
+[package]
+name = "memez_presale"
+edition = "2024.beta" 
+license = "MIT"          
+authors = ["Jose Cerqueira (jose@interestprotocol.com)"]    
+
+[dependencies]
+
+interest_bps = { r.mvr = "@interest/bps" }
+
+[addresses]
+memez_presale = "0x0"
+
+[r.mvr]
+network = "mainnet"

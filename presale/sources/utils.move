@@ -3,15 +3,15 @@
 
 module memez_presale::memez_utils;
 
-use sui::{balance::Balance, coin::Coin};
 use interest_bps::bps;
+use sui::{balance::Balance, coin::Coin};
 
 // === Public Package Functions ===
 
 public(package) macro fun assert_coin_has_value<$T>($coin: &Coin<$T>): u64 {
     let coin = $coin;
     let value = coin.value();
-    assert!(value > 0, 0);
+    assert!(value > 0, memez_presale::memez_errors::coin_has_no_value!());
     value
 }
 
@@ -42,6 +42,6 @@ public(package) macro fun validate_bps($percentages: vector<u64>) {
     let percentages = $percentages;
     assert!(
         percentages.fold!(0, |acc, bps| acc + bps) == bps::max_value!(),
-        0,
+        memez_presale::memez_errors::invalid_bps_percentages!(),
     );
 }

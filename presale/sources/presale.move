@@ -2,6 +2,7 @@
 
 module memez_presale::memez_presale;
 
+use interest_access_control::access_control;
 use interest_bps::bps::{Self, BPS};
 use std::type_name::{Self, TypeName};
 use sui::{balance::Balance, coin_registry, derived_object, package, sui::SUI, table::Table};
@@ -85,4 +86,18 @@ public struct Developer<phantom CoinType> has key {
 
 // === Initialization ===
 
-fun init(otw: MEMEZ_PRESALE, ctx: &mut TxContext) {}
+fun init(otw: MEMEZ_PRESALE, ctx: &mut TxContext) {
+    transfer::share_object(Config {
+        id: object::new(ctx),
+        sui_fees: Fees {
+            creation: 0,
+            success: bps::new(0),
+        },
+        coin_fees: Fees {
+            creation: 0,
+            success: bps::new(0),
+        },
+    });
+    transfer::public_share_object(access_control::default(&otw, ctx));
+    package::claim_and_keep(otw, ctx);
+}

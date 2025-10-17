@@ -3,8 +3,8 @@
 module memez_presale::memez_presale;
 
 use interest_bps::bps::{Self, BPS};
-use sui::{balance::Balance, coin_registry, derived_object, package, sui::SUI, table::Table};
 use std::type_name::{Self, TypeName};
+use sui::{balance::Balance, coin_registry, derived_object, package, sui::SUI, table::Table};
 
 // === Structs ===
 
@@ -28,17 +28,22 @@ public struct Account<phantom CoinType> has key {
 
 public struct Time has copy, drop, store {
     start: u64,
-    end: u64, 
+    end: u64,
     /// Add Liquidity to the DEX
-    launch: u64, 
+    launch: u64,
     /// Release the coins to the users
-    release: u64
+    release: u64,
 }
 
 public enum Status has copy, drop, store {
     Failed,
-    Success, 
-    Migrated
+    Success,
+    Migrated,
+}
+
+public struct Balances<phantom CoinType> has store {
+    sui: Balance<SUI>,
+    coin: Balance<CoinType>,
 }
 
 public struct Migrator<phantom CoinType> {
@@ -61,11 +66,17 @@ public struct Presale<phantom CoinType> has key {
     liquidity_coin_provision: u64,
     sui_fees: Fees,
     coin_fees: Fees,
-    sui_balance: Balance<SUI>,
-    coin_balance: Balance<CoinType>,
+    balances: Balances<CoinType>,
+    fee_balances: Balances<CoinType>,
     /// ctx.sender() -> Account.address
-    accounts: Table<address, address>, 
+    accounts: Table<address, address>,
     status: Status,
+}
+
+public struct Config has key {
+    id: UID,
+    sui_fees: Fees,
+    coin_fees: Fees,
 }
 
 public struct Developer<phantom CoinType> has key {

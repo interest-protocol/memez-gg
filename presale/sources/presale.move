@@ -16,7 +16,7 @@ public enum Methodology {
 }
 
 public struct Fees has copy, drop, store {
-    creation: BPS,
+    creation: u64,
     success: BPS,
 }
 

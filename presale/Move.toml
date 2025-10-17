@@ -6,6 +6,8 @@ authors = ["Jose Cerqueira (jose@interestprotocol.com)"]
 
 [dependencies]
 
+MemezVesting = { local = "../vesting" }
+
 interest_bps = { r.mvr = "@interest/bps" }
 
 [addresses]

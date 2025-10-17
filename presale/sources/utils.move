@@ -4,6 +4,7 @@
 module memez_presale::memez_utils;
 
 use sui::{balance::Balance, coin::Coin};
+use interest_bps::bps;
 
 // === Public Package Functions ===
 
@@ -12,12 +13,6 @@ public(package) macro fun assert_coin_has_value<$T>($coin: &Coin<$T>): u64 {
     let value = coin.value();
     assert!(value > 0, 0);
     value
-}
-
-public(package) macro fun assert_slippage($amount: u64, $minimum_expected: u64) {
-    let amount = $amount;
-    let minimum_expected = $minimum_expected;
-    assert!(amount >= minimum_expected, 0);
 }
 
 public(package) macro fun destroy_or_burn<$Meme>(
@@ -41,4 +36,12 @@ public(package) macro fun destroy_or_return<$Meme>($coin: Coin<$Meme>, $ctx: &Tx
     let coin = $coin;
     let ctx = $ctx;
     if (coin.value() == 0) coin.destroy_zero() else transfer::public_transfer(coin, ctx.sender());
+}
+
+public(package) macro fun validate_bps($percentages: vector<u64>) {
+    let percentages = $percentages;
+    assert!(
+        percentages.fold!(0, |acc, bps| acc + bps) == bps::max_value!(),
+        0,
+    );
 }

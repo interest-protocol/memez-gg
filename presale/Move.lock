@@ -2,10 +2,12 @@
 
 [move]
 version = 3
-manifest_digest = "E0D795FEACD0361D5F36C5BBAB617868E79796549E7644351FC5365538431B45"
-deps_digest = "F9B494B64F0615AED0E98FC12A85B85ECD2BC5185C22D30E7F67786BB52E507C"
+manifest_digest = "B7ABD1AB4F13762CC14F10EDD85C997B2B3588DE604D7BEA298EB2E36458F7B0"
+deps_digest = "52B406A7A21811BEF51751CF88DA0E76DAEFFEAC888D4F4060B1A72BBE7D8D35"
 dependencies = [
   { id = "Bridge", name = "Bridge" },
+  { id = "InterestBPS", name = "InterestBPS" },
+  { id = "MemezVesting", name = "MemezVesting" },
   { id = "MoveStdlib", name = "MoveStdlib" },
   { id = "Sui", name = "Sui" },
   { id = "SuiSystem", name = "SuiSystem" },
@@ -16,6 +18,38 @@ id = "Bridge"
 source = { git = "https://github.com/MystenLabs/sui.git", rev = "4e8b6eda7d6411d80c62f39ac8a4f028e8d174c4", subdir = "crates/sui-framework/packages/bridge" }
 
 dependencies = [
+  { id = "MoveStdlib", name = "MoveStdlib" },
+  { id = "Sui", name = "Sui" },
+  { id = "SuiSystem", name = "SuiSystem" },
+]
+
+[[move.package]]
+id = "DeepBook"
+source = { git = "https://github.com/MystenLabs/sui.git", rev = "9c04e1840eb5", subdir = "crates/sui-framework/packages/deepbook" }
+
+dependencies = [
+  { id = "MoveStdlib", name = "MoveStdlib" },
+  { id = "Sui", name = "Sui" },
+]
+
+[[move.package]]
+id = "InterestBPS"
+source = { git = "https://github.com/interest-protocol/interest-mvr", rev = "deploy/bps", subdir = "bps" }
+
+dependencies = [
+  { id = "Bridge", name = "Bridge" },
+  { id = "DeepBook", name = "DeepBook" },
+  { id = "MoveStdlib", name = "MoveStdlib" },
+  { id = "Sui", name = "Sui" },
+  { id = "SuiSystem", name = "SuiSystem" },
+]
+
+[[move.package]]
+id = "MemezVesting"
+source = { local = "../vesting" }
+
+dependencies = [
+  { id = "Bridge", name = "Bridge" },
   { id = "MoveStdlib", name = "MoveStdlib" },
   { id = "Sui", name = "Sui" },
   { id = "SuiSystem", name = "SuiSystem" },
@@ -46,11 +80,3 @@ dependencies = [
 compiler-version = "1.58.1"
 edition = "2024.beta"
 flavor = "sui"
-
-[env]
-
-[env.mainnet]
-chain-id = "35834a8a"
-original-published-id = "0xefeccfe90d08fda805b71dca66f2140ee1df06bded9ddd5614d3dd228aa85073"
-latest-published-id = "0xefeccfe90d08fda805b71dca66f2140ee1df06bded9ddd5614d3dd228aa85073"
-published-version = "1"

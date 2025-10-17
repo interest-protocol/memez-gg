@@ -21,12 +21,6 @@ public struct Fees has copy, drop, store {
     success: BPS,
 }
 
-public struct Account<phantom CoinType> has key {
-    id: UID,
-    sui_value: u64,
-    coin_value: u64,
-}
-
 public struct Time has copy, drop, store {
     start: u64,
     end: u64,
@@ -47,6 +41,8 @@ public struct Balances<phantom CoinType> has store {
     coin: Balance<CoinType>,
 }
 
+// === Hot Potato ===
+
 public struct Migrator<phantom CoinType> {
     witness: TypeName,
     presale: address,
@@ -54,6 +50,20 @@ public struct Migrator<phantom CoinType> {
     coin_balance: Balance<CoinType>,
     sui_balance: Balance<SUI>,
 }
+
+// === Owned Objects ===
+
+public struct Account<phantom CoinType> has key {
+    id: UID,
+    sui_value: u64,
+    coin_value: u64,
+}
+
+public struct Developer<phantom CoinType> has key {
+    id: UID,
+}
+
+// === Shared Objects ===
 
 public struct Presale<phantom CoinType> has key {
     id: UID,
@@ -78,10 +88,6 @@ public struct Config has key {
     id: UID,
     sui_fees: Fees,
     coin_fees: Fees,
-}
-
-public struct Developer<phantom CoinType> has key {
-    id: UID,
 }
 
 // === Initialization ===

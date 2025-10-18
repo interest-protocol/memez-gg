@@ -58,7 +58,7 @@ public(package) fun send<T>(allocation: &mut Allocation<T>, clock: &Clock, ctx: 
             memez_soulbound_vesting::new(
                 clock,
                 recipient_coin,
-                clock.timestamp_ms() +recipient.start_duration,
+                clock.timestamp_ms() + recipient.start_duration,
                 recipient.vesting_duration,
                 recipient.address,
                 ctx,

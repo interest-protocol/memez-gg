@@ -14,6 +14,7 @@ use sui::{
     sui::SUI,
     table::{Self, Table}
 };
+use memez_presale::memez_allocation::{Self, Allocation};
 
 // === Structs ===
 
@@ -117,6 +118,7 @@ public struct MemezPresale<phantom CoinType> has key {
     accounts: Table<address, address>,
     status: Status,
     metadata_cap: MetadataCap<CoinType>,
+    allocation: Allocation<CoinType>,
 }
 
 public struct Config has key {
@@ -233,12 +235,12 @@ public fun set_raise_amounts(
 
 public fun set_coin_metadata(
     constructor: &mut PresaleConstructor,
-    coin_decimals: u8,
     coin_total_supply: u64,
     coin_name: String,
     coin_symbol: String,
     coin_description: String,
     coin_icon_url: String,
+    coin_decimals: u8,
 ) {
     assert!(coin_decimals > 0, memez_presale::memez_errors::zero_coin_decimals!());
     assert!(coin_total_supply > 0, memez_presale::memez_errors::zero_coin_total_supply!());
@@ -256,6 +258,7 @@ public fun finalize<CoinType: copy + drop + store>(
     coin_registry: &mut CoinRegistry,
     _: &CoinType,
     sui_fee: Coin<SUI>,
+    allocation_bps_value: u64,
     ctx: &mut TxContext,
 ): (MemezPresale<MemezPresale<CoinType>>, Developer<MemezPresale<CoinType>>) {
     assert!(sui_fee.value() >= constructor.creation_sui_fee, memez_presale::memez_errors::insufficient_sui_fee!());
@@ -271,7 +274,14 @@ public fun finalize<CoinType: copy + drop + store>(
         ctx,
     );
 
-    let coin_balance = treasury_cap.mint_balance(constructor.coin_total_supply.destroy_some());
+    let mut coin_balance = treasury_cap.mint_balance(constructor.coin_total_supply.destroy_some());
+    
+    let coin_allocation = if (allocation_bps_value > 0) {
+        let coin_balance_value = coin_balance.value();
+        coin_balance.split(bps::new(allocation_bps_value).calc(coin_balance_value))
+    } else {
+        balance::zero()
+    };
 
     match (constructor.coin_supply_type.destroy_some()) {
         SupplyType::Burnable => {
@@ -311,6 +321,7 @@ public fun finalize<CoinType: copy + drop + store>(
         accounts: table::new(ctx),
         status: Status::Created,
         metadata_cap,
+        allocation: memez_allocation::new_allocation(coin_allocation),
     };
 
     (presale, developer)

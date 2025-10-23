@@ -30,9 +30,14 @@ public struct SuccessFees has copy, drop, store {
     sui: BPS,
 }
 
-public struct Time has copy, drop, store {
+public struct Phase has copy, drop, store {
     start: u64,
     end: u64,
+    price: u128,
+}
+
+public struct Time has copy, drop, store {
+    phases: vector<Phase>,
     /// Add Liquidity to the DEX
     launch: u64,
     /// Release the coins to the users
@@ -172,23 +177,19 @@ public fun initialize(config: &Config): PresaleConstructor {
 public fun set_time(
     constructor: &mut PresaleConstructor,
     clock: &Clock,
-    start: u64,
-    end: u64,
     launch: u64,
     release: u64,
 ) {
-    assert!(start >= clock.timestamp_ms(), memez_presale::memez_errors::invalid_start!());
-    assert!(end > start, memez_presale::memez_errors::invalid_end!());
-    assert!(launch >= end, memez_presale::memez_errors::invalid_launch!());
+    assert!(launch >= clock.timestamp_ms(), memez_presale::memez_errors::invalid_launch!());
     assert!(release >= launch, memez_presale::memez_errors::invalid_release!());
 
-    constructor.time =
-        option::some(Time {
-            start,
-            end,
-            launch,
-            release,
-        });
+    constructor.time = option::some(Time { launch, release, phases: vector[] });
+}
+
+public fun add_phase(constructor: &mut PresaleConstructor, clock: &Clock, start: u64, end: u64, price: u128) {
+    assert!(start >= clock.timestamp_ms(), memez_presale::memez_errors::invalid_start!());
+    assert!(end > start, memez_presale::memez_errors::invalid_end!());
+    constructor.time.borrow_mut().phases.push_back(Phase { start, end, price });
 }
 
 public fun set_price(constructor: &mut PresaleConstructor, price: u128) {

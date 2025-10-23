@@ -74,6 +74,7 @@ public struct PresaleConstructor has copy, drop {
     coin_description: Option<String>,
     coin_icon_url: Option<String>,
     coin_supply_type: Option<SupplyType>,
+    whitelist_merkle_root: vector<u8>,
 }
 
 // === Hot Potato ===
@@ -119,6 +120,7 @@ public struct MemezPresale<phantom CoinType> has key {
     status: Status,
     metadata_cap: MetadataCap<CoinType>,
     allocation: Allocation<CoinType>,
+    whitelist_merkle_root: vector<u8>,
 }
 
 public struct Config has key {
@@ -163,6 +165,7 @@ public fun initialize(config: &Config): PresaleConstructor {
         coin_description: option::none(),
         coin_icon_url: option::none(),
         coin_supply_type: option::none(),
+        whitelist_merkle_root: vector[],
     }
 }
 
@@ -192,6 +195,10 @@ public fun set_price(constructor: &mut PresaleConstructor, price: u128) {
     assert!(price > 0, memez_presale::memez_errors::zero_price!());
 
     constructor.price = option::some(price);
+}
+
+public fun set_whitelist_merkle_root(constructor: &mut PresaleConstructor, whitelist_merkle_root: vector<u8>) {
+    constructor.whitelist_merkle_root = whitelist_merkle_root;
 }
 
 public fun set_methodology_overflow(constructor: &mut PresaleConstructor) {
@@ -322,6 +329,7 @@ public fun finalize<CoinType: copy + drop + store>(
         status: Status::Created,
         metadata_cap,
         allocation: memez_allocation::new_allocation(coin_allocation),
+        whitelist_merkle_root: constructor.whitelist_merkle_root,
     };
 
     (presale, developer)

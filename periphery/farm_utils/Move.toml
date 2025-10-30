@@ -1,0 +1,18 @@
+[package]
+name = "farm_utils"
+edition = "2024.beta"
+license = "Apache-2.0"           
+authors = ["Jose Cerqueira (jose@interestprotocol.com)"]   
+
+[dependencies]
+
+interest_access_control = { r.mvr = "@interest/acl" }
+
+InterestFarms = { git = "https://github.com/interest-protocol/interest-mvr.git", subdir = "interest-farms/contracts", rev = "main" }
+
+[addresses]
+farm_utils = "0x0"
+
+[r.mvr]
+network = "mainnet"
+

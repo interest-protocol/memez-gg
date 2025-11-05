@@ -36,7 +36,7 @@ fun init(otw: MEMEZ_WALLET, ctx: &mut TxContext) {
     package::claim_and_keep(otw, ctx);
 }
 
-// === Create new registry ===
+// === Public Mutative Functions ===
 
 public fun new_wallet_registry(ctx: &mut TxContext) {
     let registry = MemezWalletRegistry {
@@ -46,8 +46,6 @@ public fun new_wallet_registry(ctx: &mut TxContext) {
 
     transfer::share_object(registry);
 }
-
-// === Public Mutative Functions ===
 
 public fun new(
     registry: &mut MemezWalletRegistry,
